@@ -1,4 +1,5 @@
 const logger = require('./logger');
+const BaseException = require('../exceptions/BaseException');
 
 const errorHandler = (err, req, res, next) => {
   logger.error(err.message, {
@@ -7,6 +8,15 @@ const errorHandler = (err, req, res, next) => {
     stack: err.stack
   });
 
+  if (err instanceof BaseException) {
+    return res.status(err.statusCode).json({
+      success: false,
+      message: err.message,
+      ...(err.errors && { errors: err.errors }),
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
+  }
+
   if (err.name === 'ValidationError') {
     const errors = Object.values(err.errors).map(e => ({
       field: e.path,
@@ -14,37 +24,37 @@ const errorHandler = (err, req, res, next) => {
     }));
     
     return res.status(400).json({
-      status: 'error',
-      message: 'Invalid input data',
+      success: false,
+      message: 'Validation failed',
       errors
     });
   }
 
   if (err.name === 'CastError') {
     return res.status(400).json({
-      status: 'error',
+      success: false,
       message: 'Invalid ID format'
     });
   }
 
   if (err.code === 11000) {
     const field = Object.keys(err.keyValue)[0];
-    return res.status(400).json({
-      status: 'error',
+    return res.status(409).json({
+      success: false,
       message: `${field} already exists`
     });
   }
 
   if (err.name === 'JsonWebTokenError') {
     return res.status(401).json({
-      status: 'error',
+      success: false,
       message: 'Invalid token'
     });
   }
 
   if (err.name === 'TokenExpiredError') {
     return res.status(401).json({
-      status: 'error',
+      success: false,
       message: 'Token expired'
     });
   }
@@ -53,7 +63,7 @@ const errorHandler = (err, req, res, next) => {
   const message = err.message || 'Something went wrong. Please try again later.';
 
   res.status(statusCode).json({
-    status: 'error',
+    success: false,
     message,
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
@@ -61,7 +71,7 @@ const errorHandler = (err, req, res, next) => {
 
 const notFound = (req, res) => {
   res.status(404).json({
-    status: 'error',
+    success: false,
     message: 'Resource not found'
   });
 };

@@ -37,32 +37,6 @@ class ETACalculator {
     
     return `${hours} hr ${mins} min`;
   }
-  
-  static calculateFromSpeed(distanceKm, avgSpeedKmh) {
-    if (avgSpeedKmh <= 0) return 0;
-    
-    const travelTimeHours = distanceKm / avgSpeedKmh;
-    return Math.round(travelTimeHours * 60);
-  }
-  
-  static estimateWithTraffic(distanceKm, baseTraffic = 'moderate', timeOfDay = null) {
-    let trafficCondition = baseTraffic;
-    
-    if (timeOfDay) {
-      const hour = new Date(timeOfDay).getHours();
-      if (hour >= 7 && hour <= 9) {
-        trafficCondition = 'peak';
-      } else if (hour >= 16 && hour <= 18) {
-        trafficCondition = 'peak';
-      } else if (hour >= 10 && hour <= 15) {
-        trafficCondition = 'moderate';
-      } else {
-        trafficCondition = 'light';
-      }
-    }
-    
-    return this.calculate(distanceKm, trafficCondition);
-  }
 }
 
 module.exports = ETACalculator;

@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
   
   password: {
     type: String,
-    required: [true, 'Password is required'],
+    required: false,
     minlength: [6, 'Password must be at least 6 characters'],
     select: false
   },
@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema({
   
   phone: {
     type: String,
-    required: [true, 'Phone number is required'],
+    required: false,
     trim: true
   },
   
@@ -69,6 +69,22 @@ const userSchema = new mongoose.Schema({
   totalReviews: {
     type: Number,
     default: 0
+  },
+
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+
+  isGoogleUser: {
+    type: Boolean,
+    default: false
+  },
+
+  emailVerified: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true
@@ -82,7 +98,7 @@ userSchema.methods.toJSON = function() {
 };
 
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password') || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });
@@ -90,11 +106,5 @@ userSchema.pre('save', async function(next) {
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
-
-userSchema.virtual('fullName').get(function() {
-  return `${this.firstName} ${this.lastName}`;
-});
-
-userSchema.index({ email: 1 });
 
 module.exports = mongoose.model('User', userSchema);

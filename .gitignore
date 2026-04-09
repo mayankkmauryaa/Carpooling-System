@@ -1,4 +1,6 @@
 node_modules
-*.md 
 !README.md
 .env
+bla bla.md
+uber sd.md
+process.md

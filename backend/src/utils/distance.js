@@ -26,44 +26,6 @@ class DistanceCalculator {
   static isWithinRadius(lat1, lng1, lat2, lng2, radiusKm) {
     return this.haversine(lat1, lng1, lat2, lng2) <= radiusKm;
   }
-  
-  static calculateBearing(lat1, lng1, lat2, lng2) {
-    const dLng = this.toRadians(lng2 - lng1);
-    const lat1Rad = this.toRadians(lat1);
-    const lat2Rad = this.toRadians(lat2);
-    
-    const y = Math.sin(dLng) * Math.cos(lat2Rad);
-    const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) -
-              Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLng);
-    
-    let bearing = Math.atan2(y, x);
-    bearing = (bearing * 180 / Math.PI + 360) % 360;
-    
-    return bearing;
-  }
-  
-  static destinationPoint(lat, lng, bearing, distanceKm) {
-    const R = 6371;
-    const angularDistance = distanceKm / R;
-    const bearingRad = this.toRadians(bearing);
-    const lat1Rad = this.toRadians(lat);
-    const lng1Rad = this.toRadians(lng);
-    
-    const lat2 = Math.asin(
-      Math.sin(lat1Rad) * Math.cos(angularDistance) +
-      Math.cos(lat1Rad) * Math.sin(angularDistance) * Math.cos(bearingRad)
-    );
-    
-    const lng2 = lng1Rad + Math.atan2(
-      Math.sin(bearingRad) * Math.sin(angularDistance) * Math.cos(lat1Rad),
-      Math.cos(angularDistance) - Math.sin(lat1Rad) * Math.sin(lat2)
-    );
-    
-    return {
-      lat: lat2 * 180 / Math.PI,
-      lng: lng2 * 180 / Math.PI
-    };
-  }
 }
 
 module.exports = DistanceCalculator;

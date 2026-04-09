@@ -1,13 +1,8 @@
+const DistanceCalculator = require('./distance');
+const S2CellManager = require('./s2Cell');
+
 const calculateDistance = (coord1, coord2) => {
-  const R = 6371;
-  const dLat = (coord2[1] - coord1[1]) * Math.PI / 180;
-  const dLon = (coord2[0] - coord1[0]) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(coord1[1] * Math.PI / 180) * Math.cos(coord2[1] * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+  return DistanceCalculator.haversine(coord1[1], coord1[0], coord2[1], coord2[0]);
 };
 
 const calculateRouteMatchPercentage = (driverPickup, driverDrop, riderPickup, riderDrop) => {
@@ -15,7 +10,6 @@ const calculateRouteMatchPercentage = (driverPickup, driverDrop, riderPickup, ri
   const dropDistance = calculateDistance(driverDrop, riderDrop);
   
   const totalRouteDistance = calculateDistance(driverPickup, driverDrop);
-  const riderRouteDistance = calculateDistance(riderPickup, riderDrop);
   
   if (totalRouteDistance === 0) return 0;
   
@@ -60,23 +54,22 @@ const paginate = (query, page = 1, limit = 10) => {
   return query.skip(skip).limit(limit);
 };
 
+const generateS2CellId = (coordinates) => {
+  return S2CellManager.latLngToCellId(coordinates[1], coordinates[0]);
+};
+
 const generateMaskedPhone = (phone) => {
   const digits = phone.replace(/\D/g, '');
   if (digits.length < 4) return 'XXX-XXX-XXXX';
   return `+${digits.slice(0, 2)}-555-${digits.slice(-4)}`;
 };
 
-const generateS2CellId = (coordinates) => {
-  const lat = coordinates[1];
-  const lng = coordinates[0];
-  return `CELL_${Math.floor(lat * 100)}_${Math.floor(lng * 100)}`;
-};
-
 module.exports = {
   calculateDistance,
   calculateRouteMatchPercentage,
+  calculateRouteAlignment,
   filterByPreferences,
   paginate,
-  generateMaskedPhone,
-  generateS2CellId
+  generateS2CellId,
+  generateMaskedPhone
 };

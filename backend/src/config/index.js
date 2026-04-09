@@ -1,16 +1,19 @@
 require("dotenv").config();
 
-const config = {
-  PORT: process.env.PORT || 3000,
-  MONGODB_URI:
-    process.env.MONGODB_URI || "mongodb://localhost:27017/carpooling",
-  JWT_SECRET: process.env.JWT_SECRET || "default_secret_key",
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
-  BYCRYPT_ROUNDS: 12,
-};
+const config = require("./config");
+const databaseConfig = require("./database");
+const jwtConfig = require("./jwt");
+const redisConfig = require("./redis");
+const rateLimitConfig = require("./rateLimit");
+const appConfig = require("./app");
+const googleConfig = require("./google");
 
-module.exports = config;
-// Why this file?
-// - Centralizes all settings in one place
-// - If you need to change the database, change it here
-// - If you need to change JWT secret, change it here
+module.exports = {
+  config,
+  database: databaseConfig,
+  jwt: jwtConfig,
+  redis: redisConfig,
+  rateLimit: rateLimitConfig,
+  app: appConfig,
+  google: googleConfig
+};
