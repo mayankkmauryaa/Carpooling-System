@@ -1,0 +1,241 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int       @id @default(autoincrement())
+  email           String    @unique
+  password        String?
+  firstName       String
+  lastName        String
+  phone           String?
+  role            Role      @default(RIDER)
+  profilePicture  String?
+  isProfileBlurred Boolean  @default(true)
+  isActive        Boolean   @default(true)
+  rating          Float     @default(0)
+  totalReviews    Int       @default(0)
+  googleId        String?   @unique
+  isGoogleUser    Boolean   @default(false)
+  emailVerified   Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  vehicles        Vehicle[]
+  ridePools       RidePool[]
+  tripsAsDriver   Trip[]    @relation("DriverTrips")
+  tripsAsRider    Trip[]    @relation("RiderTrips")
+  sentMessages    Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  reviewsGiven    Review[]  @relation("ReviewsGiven")
+  reviewsReceived Review[]  @relation("ReviewsReceived")
+  sosAlerts       SOSAlert[]
+  rideRequests    RideRequest[]
+
+  @@index([email])
+  @@index([role])
+  @@index([googleId])
+}
+
+model Vehicle {
+  id                  Int       @id @default(autoincrement())
+  driverId            Int
+  model               String
+  licensePlate        String    @unique
+  color               String
+  capacity            Int
+  preferences         Json      @default("{\"smoking\": false, \"pets\": false, \"music\": true}")
+  isActive            Boolean   @default(true)
+  registrationExpiry  DateTime
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  driver              User      @relation(fields: [driverId], references: [id])
+  ridePools           RidePool[]
+
+  @@index([driverId])
+}
+
+model RidePool {
+  id              Int       @id @default(autoincrement())
+  driverId        Int
+  vehicleId       Int
+  pickupLocation  Json
+  dropLocation    Json
+  departureTime   DateTime
+  availableSeats  Int
+  pricePerSeat    Float
+  status          RideStatus @default(ACTIVE)
+  preferences     Json      @default("{\"smoking\": false, \"pets\": false, \"femaleOnly\": false, \"music\": true}")
+  routeData       Json?
+  bookedSeats     Int       @default(0)
+  passengers      Json      @default("[]")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  driver          User      @relation(fields: [driverId], references: [id])
+  vehicle         Vehicle   @relation(fields: [vehicleId], references: [id])
+  trips           Trip[]
+  messages        Message[]
+  rideRequests    RideRequest[]
+  sosAlerts       SOSAlert[]
+
+  @@index([pickupLocation])
+  @@index([dropLocation])
+  @@index([departureTime])
+  @@index([status])
+  @@index([driverId])
+}
+
+model Trip {
+  id              Int       @id @default(autoincrement())
+  ridePoolId      Int
+  driverId        Int
+  riderIds        Int[]
+  startTime       DateTime?
+  endTime         DateTime?
+  status          TripStatus @default(SCHEDULED)
+  totalFare      Float     @default(0)
+  actualDistance Float?
+  actualDuration Int?
+  startLocation  Json?
+  endLocation    Json?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  ridePool        RidePool  @relation(fields: [ridePoolId], references: [id])
+  driver          User      @relation("DriverTrips", fields: [driverId], references: [id])
+  riders          User[]    @relation("RiderTrips")
+  reviews         Review[]
+
+  @@index([ridePoolId])
+  @@index([driverId])
+  @@index([status])
+}
+
+model Message {
+  id              Int       @id @default(autoincrement())
+  senderId        Int
+  receiverId      Int
+  ridePoolId      Int?
+  content         String
+  isRead          Boolean   @default(false)
+  isSystemMessage Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  sender          User      @relation("SentMessages", fields: [senderId], references: [id])
+  receiver        User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  ridePool        RidePool? @relation(fields: [ridePoolId], references: [id])
+
+  @@index([senderId, receiverId])
+  @@index([createdAt])
+}
+
+model Review {
+  id          Int       @id @default(autoincrement())
+  tripId      Int
+  reviewerId  Int
+  revieweeId  Int
+  type        ReviewType
+  rating      Int
+  comment     String?
+  isVisible   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  trip        Trip      @relation(fields: [tripId], references: [id])
+  reviewer    User      @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewee    User      @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+
+  @@index([tripId])
+  @@index([reviewerId])
+  @@index([revieweeId])
+}
+
+model SOSAlert {
+  id              Int         @id @default(autoincrement())
+  userId          Int
+  ridePoolId      Int?
+  message         String?
+  location        Json?
+  status          SOSStatus   @default(ACTIVE)
+  acknowledgedBy  Int?
+  acknowledgedAt  DateTime?
+  resolvedAt      DateTime?
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user            User        @relation(fields: [userId], references: [id])
+  ridePool        RidePool?   @relation(fields: [ridePoolId], references: [id])
+
+  @@index([userId])
+  @@index([ridePoolId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model RideRequest {
+  id              Int             @id @default(autoincrement())
+  ridePoolId      Int
+  riderId         Int
+  status          RequestStatus   @default(PENDING)
+  pickupLocation  Json?
+  dropLocation    Json?
+  requestedAt     DateTime        @default(now())
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  ridePool        RidePool        @relation(fields: [ridePoolId], references: [id])
+  rider           User            @relation(fields: [riderId], references: [id])
+
+  @@index([ridePoolId])
+  @@index([riderId])
+  @@index([status])
+}
+
+enum Role {
+  DRIVER
+  RIDER
+  ADMIN
+}
+
+enum RideStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum TripStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ReviewType {
+  DRIVER_TO_RIDER
+  RIDER_TO_DRIVER
+}
+
+enum SOSStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}

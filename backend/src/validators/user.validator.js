@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const { objectIdSchema, paginationSchema, passwordSchema } = require('./common.schemas');
+const { paramIdSchema, paginationSchema, passwordSchema } = require('./common.schemas');
 
 const updateProfileSchema = Joi.object({
   firstName: Joi.string()
@@ -35,12 +35,12 @@ const changePasswordSchema = Joi.object({
   newPassword: passwordSchema
 });
 
-const userIdParamSchema = objectIdSchema;
+const userIdParamSchema = paramIdSchema;
 
 const userReviewsQuerySchema = paginationSchema;
 
 const getAllUsersQuerySchema = paginationSchema.append({
-  role: Joi.string().valid('driver', 'rider', 'admin'),
+  role: Joi.string().valid('DRIVER', 'RIDER', 'ADMIN'),
   search: Joi.string().trim()
 });
 

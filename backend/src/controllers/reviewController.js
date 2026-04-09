@@ -3,7 +3,7 @@ const { ApiResponse, PaginatedResponse } = require('../dto');
 
 exports.createReview = async (req, res, next) => {
   try {
-    await reviewService.createReview(req.user._id, req.body);
+    await reviewService.createReview(req.user.id, req.body);
     res.status(201).json(ApiResponse.created(null, 'Review submitted'));
   } catch (error) {
     next(error);
@@ -42,7 +42,7 @@ exports.getAllReviews = async (req, res, next) => {
 exports.getMyReviews = async (req, res, next) => {
   try {
     const { page = 1, limit = 20 } = req.query;
-    const result = await reviewService.getMyReviews(req.user._id, { page, limit });
+    const result = await reviewService.getMyReviews(req.user.id, { page, limit });
     res.json(PaginatedResponse.format(result));
   } catch (error) {
     next(error);
@@ -60,7 +60,7 @@ exports.getReviewById = async (req, res, next) => {
 
 exports.deleteReview = async (req, res, next) => {
   try {
-    const result = await reviewService.deleteReview(req.params.id, req.user._id, req.user.role);
+    const result = await reviewService.deleteReview(req.params.id, req.user.id, req.user.role);
     res.json(ApiResponse.success(result));
   } catch (error) {
     next(error);

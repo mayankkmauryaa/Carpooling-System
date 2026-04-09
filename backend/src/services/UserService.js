@@ -1,5 +1,5 @@
+const bcrypt = require('bcryptjs');
 const BaseService = require('./base/BaseService');
-const User = require('../models/User');
 const { userRepository, reviewRepository } = require('../repositories');
 const { NotFoundException, BadRequestException } = require('../exceptions');
 const logger = require('../middleware/logger');
@@ -27,19 +27,23 @@ class UserService extends BaseService {
   }
 
   async changePassword(userId, currentPassword, newPassword) {
-    const user = await User.findById(userId).select('+password');
+    const user = await userRepository.findById(userId);
     
     if (!user) {
       throw NotFoundException.user(userId);
     }
 
-    const isMatch = await user.comparePassword(currentPassword);
-    if (!isMatch) {
-      throw BadRequestException.incorrectPassword();
+    if (!user.password) {
+      throw BadRequestException('Cannot change password for Google users');
     }
 
-    user.password = newPassword;
-    await user.save();
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      throw BadRequestException('Current password is incorrect');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    await this.repository.updateById(userId, { password: hashedPassword });
 
     logger.info('Password changed', { userId });
 
@@ -51,14 +55,11 @@ class UserService extends BaseService {
     if (!user) {
       throw NotFoundException.user(userId);
     }
-    return user.toJSON();
+    return user;
   }
 
   async getAllUsers(options = {}) {
-    return await this.paginate({}, {
-      select: '-password',
-      ...options
-    });
+    return await this.repository.paginate({}, options);
   }
 
   async toggleUserStatus(userId) {
@@ -80,17 +81,11 @@ class UserService extends BaseService {
   }
 
   async getDrivers(options = {}) {
-    return await this.paginate({ role: 'driver' }, {
-      select: '-password',
-      ...options
-    });
+    return await this.repository.paginate({ role: 'DRIVER' }, options);
   }
 
   async getRiders(options = {}) {
-    return await this.paginate({ role: 'rider' }, {
-      select: '-password',
-      ...options
-    });
+    return await this.repository.paginate({ role: 'RIDER' }, options);
   }
 
   async getUserReviews(userId, options = {}) {

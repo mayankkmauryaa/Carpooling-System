@@ -30,11 +30,11 @@ class MessageService extends BaseService {
 
     const enrichedConversations = await Promise.all(
       conversations.map(async (conv) => {
-        const user = await userRepository.findById(conv._id, {
-          select: 'firstName lastName profilePicture'
+        const user = await userRepository.findById(conv.userId, {
+          select: { firstName: true, lastName: true, profilePicture: true }
         });
         return {
-          userId: conv._id,
+          userId: conv.userId,
           user,
           lastMessage: conv.lastMessage,
           lastMessageAt: conv.lastMessageAt,
@@ -60,7 +60,7 @@ class MessageService extends BaseService {
       content
     });
 
-    logger.info('Message sent', { messageId: message._id, from: senderId, to: receiverId });
+    logger.info('Message sent', { messageId: message.id, from: senderId, to: receiverId });
 
     return message;
   }
@@ -82,7 +82,7 @@ class MessageService extends BaseService {
       throw NotFoundException.message(messageId);
     }
 
-    if (message.senderId.toString() !== userId.toString()) {
+    if (message.senderId !== userId) {
       throw ForbiddenException.notOwner();
     }
 

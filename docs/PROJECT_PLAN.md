@@ -2,7 +2,7 @@
 
 ## 🎯 Objective
 
-Build a complete carpooling application using MERN stack while learning core system design concepts through pair programming.
+Build a complete carpooling application using Node.js + Express + PostgreSQL (Neon) + Prisma while learning core system design concepts through pair programming.
 
 ---
 
@@ -15,7 +15,7 @@ Build a complete carpooling application using MERN stack while learning core sys
 #### Week 1: Node.js & Express Setup
 
 - [ ] Initialize Node.js project with package.json
-- [ ] Install dependencies: express, mongoose, dotenv, cors, bcryptjs, jsonwebtoken
+- [ ] Install dependencies: express, dotenv, cors, bcryptjs, jsonwebtoken, prisma
 - [ ] Create basic Express server structure
 - [ ] Setup development environment (nodemon)
 - [ ] Learn: REST API conventions, HTTP methods
@@ -24,11 +24,12 @@ Build a complete carpooling application using MERN stack while learning core sys
 
 #### Week 2: Database & Models (OOPS Focus)
 
-- [ ] Connect to MongoDB
-- [ ] Create User model with proper encapsulation
+- [ ] Connect to PostgreSQL (Neon DB)
+- [ ] Initialize Prisma with PostgreSQL
+- [ ] Create User model with proper relations
 - [ ] Create Vehicle model
-- [ ] Implement CRUD operations
-- [ ] Learn: Encapsulation in Mongoose, schema design
+- [ ] Implement CRUD operations with repositories
+- [ ] Learn: Prisma relations, type safety, enums
 
 **Console Demo:** Perform CRUD operations on users and vehicles
 
@@ -157,7 +158,8 @@ Build a complete carpooling application using MERN stack while learning core sys
 
 - Node.js v14+
 - Express.js
-- MongoDB with Mongoose
+- PostgreSQL with Prisma ORM
+- Neon DB (serverless PostgreSQL)
 - JWT for authentication
 - bcryptjs for password hashing
 
@@ -193,7 +195,7 @@ Build a complete carpooling application using MERN stack while learning core sys
 ## 📝 Deliverables
 
 1. **Backend API** - Full REST API with all services
-2. **Database Models** - MongoDB schemas with OOPS principles
+2. **Database Models** - PostgreSQL/Prisma schemas with relations
 3. **Console Demos** - Learning exercises for each concept
 4. **Frontend** - React application with key features
 5. **Documentation** - README, API docs, architecture docs

@@ -1,70 +1,146 @@
-const BaseRepository = require('./base/BaseRepository');
-const Message = require('../models/Message');
+const { prisma } = require('../database/connection');
 
-class MessageRepository extends BaseRepository {
-  constructor() {
-    super(Message);
+class MessageRepository {
+  async findById(id, options = {}) {
+    const { include } = options;
+    return await prisma.message.findUnique({
+      where: { id },
+      include: include || undefined
+    });
+  }
+
+  async findOne(query, options = {}) {
+    const { include } = options;
+    return await prisma.message.findFirst({
+      where: query,
+      include: include || undefined
+    });
+  }
+
+  async findAll(query = {}, options = {}) {
+    const { 
+      include, 
+      orderBy = { createdAt: 'desc' }, 
+      skip = 0, 
+      take = 20 
+    } = options;
+    
+    return await prisma.message.findMany({
+      where: query,
+      include: include || undefined,
+      orderBy,
+      skip,
+      take
+    });
+  }
+
+  async count(query = {}) {
+    return await prisma.message.count({ where: query });
+  }
+
+  async create(data) {
+    return await prisma.message.create({ data });
+  }
+
+  async updateById(id, data, options = {}) {
+    return await prisma.message.update({
+      where: { id },
+      data,
+      ...options
+    });
+  }
+
+  async deleteById(id) {
+    return await prisma.message.delete({ where: { id } });
+  }
+
+  async deleteMany(query) {
+    return await prisma.message.deleteMany({ where: query });
+  }
+
+  async paginate(query = {}, options = {}) {
+    const { 
+      include, 
+      orderBy = { createdAt: 'desc' }, 
+      page = 1, 
+      limit = 20 
+    } = options;
+    
+    const skip = (page - 1) * limit;
+    const total = await this.count(query);
+    
+    const items = await prisma.message.findMany({
+      where: query,
+      include: include || undefined,
+      orderBy,
+      skip,
+      take: limit
+    });
+    
+    return {
+      items,
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit)
+    };
   }
 
   async findConversation(userId1, userId2, options = {}) {
     const { page = 1, limit = 50 } = options;
     const skip = (page - 1) * limit;
 
-    return await this.model.find({
-      $or: [
-        { senderId: userId1, receiverId: userId2 },
-        { senderId: userId2, receiverId: userId1 }
-      ]
-    })
-      .sort('-createdAt')
-      .skip(skip)
-      .limit(limit);
+    return await prisma.message.findMany({
+      where: {
+        OR: [
+          { senderId: userId1, receiverId: userId2 },
+          { senderId: userId2, receiverId: userId1 }
+        ]
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit
+    });
   }
 
   async getConversations(userId) {
-    return await this.model.aggregate([
-      {
-        $match: {
-          $or: [{ senderId: userId }, { receiverId: userId }]
-        }
+    const messages = await prisma.message.findMany({
+      where: {
+        OR: [{ senderId: userId }, { receiverId: userId }]
       },
-      { $sort: { createdAt: -1 } },
-      {
-        $group: {
-          _id: {
-            $cond: [
-              { $eq: ['$senderId', userId] },
-              '$receiverId',
-              '$senderId'
-            ]
-          },
-          lastMessage: { $first: '$content' },
-          lastMessageAt: { $first: '$createdAt' },
-          unreadCount: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    { $eq: ['$receiverId', userId] },
-                    { $eq: ['$isRead', false] }
-                  ]
-                },
-                1,
-                0
-              ]
-            }
-          }
-        }
-      },
-      { $sort: { lastMessageAt: -1 } }
-    ]);
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const conversationsMap = new Map();
+
+    for (const msg of messages) {
+      const otherUserId = msg.senderId === userId ? msg.receiverId : msg.senderId;
+      
+      if (!conversationsMap.has(otherUserId)) {
+        conversationsMap.set(otherUserId, {
+          userId: otherUserId,
+          lastMessage: msg.content,
+          lastMessageAt: msg.createdAt,
+          unreadCount: 0
+        });
+      }
+
+      if (msg.receiverId === userId && !msg.isRead) {
+        const conv = conversationsMap.get(otherUserId);
+        conv.unreadCount++;
+      }
+    }
+
+    return Array.from(conversationsMap.values()).sort(
+      (a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt)
+    );
   }
 
   async markAsRead(senderId, receiverId) {
-    return await this.model.updateMany(
-      { senderId, receiverId, isRead: false },
-      { isRead: true }
-    );
+    return await prisma.message.updateMany({
+      where: { senderId, receiverId, isRead: false },
+      data: { isRead: true }
+    });
   }
 
   async getUnreadCount(userId) {
@@ -72,11 +148,13 @@ class MessageRepository extends BaseRepository {
   }
 
   async deleteConversation(userId1, userId2) {
-    return await this.model.deleteMany({
-      $or: [
-        { senderId: userId1, receiverId: userId2 },
-        { senderId: userId2, receiverId: userId1 }
-      ]
+    return await prisma.message.deleteMany({
+      where: {
+        OR: [
+          { senderId: userId1, receiverId: userId2 },
+          { senderId: userId2, receiverId: userId1 }
+        ]
+      }
     });
   }
 }

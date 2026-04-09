@@ -12,11 +12,11 @@ class SOSService extends BaseService {
     const alert = await this.repository.createAlert({
       userId,
       ...alertData,
-      status: 'active'
+      status: 'ACTIVE'
     });
 
     logger.warn('SOS Alert Created', {
-      alertId: alert._id,
+      alertId: alert.id,
       userId,
       ridePoolId: alertData.ridePoolId,
       location: alertData.location
@@ -71,9 +71,9 @@ class SOSService extends BaseService {
   async getAlertStats() {
     const [total, active, acknowledged, resolved] = await Promise.all([
       this.count({}),
-      this.count({ status: 'active' }),
-      this.count({ status: 'acknowledged' }),
-      this.count({ status: 'resolved' })
+      this.count({ status: 'ACTIVE' }),
+      this.count({ status: 'ACKNOWLEDGED' }),
+      this.count({ status: 'RESOLVED' })
     ]);
 
     return { total, active, acknowledged, resolved };

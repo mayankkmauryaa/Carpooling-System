@@ -29,7 +29,7 @@ const registerSchema = Joi.object({
     }),
   role: Joi.string()
     .valid(...Object.values(ROLES))
-    .default('rider')
+    .default('RIDER')
     .messages({
       'any.only': 'Invalid role'
     })

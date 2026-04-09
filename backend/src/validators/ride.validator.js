@@ -1,12 +1,12 @@
 const Joi = require('joi');
-const { coordinatesSchema, preferencesSchema, objectIdSchema, paginationSchema } = require('./common.schemas');
+const { coordinatesSchema, preferencesSchema, paramIdSchema, paginationSchema } = require('./common.schemas');
 
 const createRideSchema = Joi.object({
   vehicleId: Joi.string()
-    .length(24)
+    .pattern(/^\d+$/)
     .required()
     .messages({
-      'string.length': 'Invalid vehicle ID format',
+      'string.pattern.base': 'Invalid vehicle ID format',
       'any.required': 'Vehicle is required'
     }),
   pickupLocation: coordinatesSchema.required(),
@@ -68,14 +68,14 @@ const joinRideSchema = Joi.object({
   }).required()
 });
 
-const rideIdParamSchema = objectIdSchema;
+const rideIdParamSchema = paramIdSchema;
 
 const respondToRequestSchema = Joi.object({
   action: Joi.string()
-    .valid('approve', 'reject')
+    .valid('APPROVED', 'REJECTED')
     .required()
     .messages({
-      'any.only': 'Action must be approve or reject',
+      'any.only': 'Action must be APPROVED or REJECTED',
       'any.required': 'Action is required'
     }),
   reason: Joi.string().max(500)
@@ -83,7 +83,7 @@ const respondToRequestSchema = Joi.object({
 
 const updateRideStatusSchema = Joi.object({
   status: Joi.string()
-    .valid('active', 'completed', 'cancelled')
+    .valid('ACTIVE', 'COMPLETED', 'CANCELLED')
     .required()
     .messages({
       'any.only': 'Invalid status',

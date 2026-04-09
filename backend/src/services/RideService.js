@@ -2,9 +2,8 @@ const BaseService = require('./base/BaseService');
 const { rideRepository, vehicleRepository, userRepository, rideRequestRepository } = require('../repositories');
 const { NotFoundException, ForbiddenException, ConflictException, BadRequestException } = require('../exceptions');
 const { ROLES } = require('../constants/roles');
-const { generateS2CellId } = require('../utils/helpers');
+const { generateS2CellId, calculateDistance, calculateRouteMatchPercentage, filterByPreferences } = require('../utils/helpers');
 const logger = require('../middleware/logger');
-const { calculateDistance, calculateRouteMatchPercentage, filterByPreferences } = require('../utils/helpers');
 
 class RideService extends BaseService {
   constructor() {
@@ -19,7 +18,7 @@ class RideService extends BaseService {
     }
 
     const vehicle = await vehicleRepository.findById(rideData.vehicleId);
-    if (!vehicle || vehicle.driverId.toString() !== driverId.toString()) {
+    if (!vehicle || vehicle.driverId !== driverId) {
       throw BadRequestException.invalidField('vehicle', 'Invalid vehicle');
     }
 
@@ -27,18 +26,22 @@ class RideService extends BaseService {
       ...rideData,
       driverId,
       pickupLocation: {
-        ...rideData.pickupLocation,
+        type: 'Point',
+        coordinates: rideData.pickupLocation.coordinates,
+        address: rideData.pickupLocation.address,
         s2CellId: generateS2CellId(rideData.pickupLocation.coordinates)
       },
       dropLocation: {
-        ...rideData.dropLocation,
+        type: 'Point',
+        coordinates: rideData.dropLocation.coordinates,
+        address: rideData.dropLocation.address,
         s2CellId: generateS2CellId(rideData.dropLocation.coordinates)
       }
     };
 
     const ride = await this.repository.create(enrichedData);
 
-    logger.info('Ride created', { rideId: ride._id, driverId });
+    logger.info('Ride created', { rideId: ride.id, driverId });
 
     return ride;
   }
@@ -48,11 +51,11 @@ class RideService extends BaseService {
     
     const query = { driverId };
     if (status) {
-      query.status = status;
+      query.status = status.toUpperCase();
     }
 
-    return await this.paginate(query, {
-      populate: 'vehicleId',
+    return await this.repository.paginate(query, {
+      include: { vehicle: true },
       page,
       limit
     });
@@ -60,10 +63,10 @@ class RideService extends BaseService {
 
   async getRideById(rideId) {
     const ride = await this.repository.findById(rideId, {
-      populate: [
-        { path: 'driverId', select: 'firstName lastName rating totalReviews' },
-        { path: 'vehicleId' }
-      ]
+      include: {
+        driver: { select: { firstName: true, lastName: true, rating: true, totalReviews: true } },
+        vehicle: true
+      }
     });
 
     if (!ride) {
@@ -80,7 +83,7 @@ class RideService extends BaseService {
       throw NotFoundException.ride(rideId);
     }
 
-    if (ride.driverId.toString() !== driverId.toString()) {
+    if (ride.driverId !== driverId) {
       throw ForbiddenException.notOwner();
     }
 
@@ -98,7 +101,7 @@ class RideService extends BaseService {
       throw NotFoundException.ride(rideId);
     }
 
-    if (ride.driverId.toString() !== driverId.toString()) {
+    if (ride.driverId !== driverId) {
       throw ForbiddenException.notOwner();
     }
 
@@ -118,24 +121,23 @@ class RideService extends BaseService {
     } = searchParams;
 
     const query = {
-      status: 'active',
-      availableSeats: { $gte: parseInt(availableSeats) }
+      status: 'ACTIVE',
+      availableSeats: { gte: parseInt(availableSeats) },
+      departureTime: { gte: new Date() }
     };
 
     if (departureDate) {
       const date = new Date(departureDate);
       const nextDay = new Date(date);
       nextDay.setDate(nextDay.getDate() + 1);
-      query.departureTime = { $gte: date, $lt: nextDay };
-    } else {
-      query.departureTime = { $gte: new Date() };
+      query.departureTime = { gte: date, lt: nextDay };
     }
 
     let rides = await this.repository.findAll(query, {
-      populate: [
-        { path: 'driverId', select: 'firstName lastName rating totalReviews profilePicture isProfileBlurred' },
-        { path: 'vehicleId', select: 'model color licensePlate' }
-      ]
+      include: {
+        driver: { select: { firstName: true, lastName: true, rating: true, totalReviews: true, profilePicture: true, isProfileBlurred: true } },
+        vehicle: { select: { model: true, color: true, licensePlate: true } }
+      }
     });
 
     if (pickupLat && pickupLng && dropLat && dropLng) {
@@ -150,7 +152,7 @@ class RideService extends BaseService {
           driverPickup, driverDrop, riderPickup, riderDrop
         );
 
-        return { ...ride.toObject(), matchPercentage };
+        return { ...ride, matchPercentage };
       });
 
       rides = rides.filter(ride => ride.matchPercentage >= 30);
@@ -181,7 +183,7 @@ class RideService extends BaseService {
       throw NotFoundException.ride(rideId);
     }
 
-    if (ride.status !== 'active') {
+    if (ride.status !== 'ACTIVE') {
       throw BadRequestException.rideNotActive();
     }
 
@@ -197,10 +199,10 @@ class RideService extends BaseService {
       dropLocation: requestData.dropLocation
     });
 
-    logger.info('Join request created', { requestId: request._id, rideId, riderId });
+    logger.info('Join request created', { requestId: request.id, rideId, riderId });
 
     return {
-      requestId: request._id,
+      requestId: request.id,
       status: request.status
     };
   }
@@ -212,7 +214,7 @@ class RideService extends BaseService {
       throw NotFoundException.ride(rideId);
     }
 
-    if (ride.driverId.toString() !== driverId.toString()) {
+    if (ride.driverId !== driverId) {
       throw ForbiddenException.notOwner();
     }
 
@@ -226,16 +228,16 @@ class RideService extends BaseService {
         throw BadRequestException.noSeatsAvailable();
       }
 
-      await rideRequestRepository.approve(request._id);
+      await rideRequestRepository.approve(request.id);
       await this.repository.addPassenger(rideId, riderId);
       
-      logger.info('Request approved', { requestId: request._id });
+      logger.info('Request approved', { requestId: request.id });
       
       return { message: 'Request approved' };
     } else {
-      await rideRequestRepository.reject(request._id, reason || 'Driver rejected your request');
+      await rideRequestRepository.reject(request.id, reason || 'Driver rejected your request');
       
-      logger.info('Request rejected', { requestId: request._id, reason });
+      logger.info('Request rejected', { requestId: request.id, reason });
       
       return { message: 'Request rejected' };
     }
@@ -256,18 +258,18 @@ class RideService extends BaseService {
       throw NotFoundException.request();
     }
 
-    await rideRequestRepository.cancel(request._id);
+    await rideRequestRepository.cancel(request.id);
 
     return { message: 'Join request cancelled' };
   }
 
   async getRecommendations() {
     const rides = await this.repository.findUpcomingRides({
-      limit: 10,
-      populate: [
-        { path: 'driverId', select: 'firstName rating' },
-        { path: 'vehicleId', select: 'model color' }
-      ]
+      take: 10,
+      include: {
+        driver: { select: { firstName: true, rating: true } },
+        vehicle: { select: { model: true, color: true } }
+      }
     });
 
     return rides;
@@ -276,17 +278,17 @@ class RideService extends BaseService {
   async getUpcomingRides(options = {}) {
     const { page = 1, limit = 20 } = options;
     
-    return await this.paginate({
-      status: 'active',
-      departureTime: { $gte: new Date() }
+    return await this.repository.paginate({
+      status: 'ACTIVE',
+      departureTime: { gte: new Date() }
     }, {
-      populate: [
-        { path: 'driverId', select: 'firstName lastName rating' },
-        { path: 'vehicleId', select: 'model color' }
-      ],
+      include: {
+        driver: { select: { firstName: true, lastName: true, rating: true } },
+        vehicle: { select: { model: true, color: true } }
+      },
       page,
       limit,
-      sort: { departureTime: 1 }
+      orderBy: { departureTime: 'asc' }
     });
   }
 
@@ -294,10 +296,6 @@ class RideService extends BaseService {
     const coordinates = [parseFloat(lng), parseFloat(lat)];
     
     return await this.repository.searchNearbyRides(coordinates, radius, {
-      populate: [
-        { path: 'driverId', select: 'firstName lastName rating' },
-        { path: 'vehicleId', select: 'model color' }
-      ],
       limit: 20
     });
   }
@@ -307,11 +305,11 @@ class RideService extends BaseService {
     
     const query = { driverId };
     if (status) {
-      query.status = status;
+      query.status = status.toUpperCase();
     }
 
-    return await this.paginate(query, {
-      populate: 'vehicleId',
+    return await this.repository.paginate(query, {
+      include: { vehicle: true },
       page,
       limit
     });
@@ -324,13 +322,13 @@ class RideService extends BaseService {
     const endDate = new Date(date);
     endDate.setDate(endDate.getDate() + 1);
 
-    return await this.paginate({
-      departureTime: { $gte: startDate, $lt: endDate }
+    return await this.repository.paginate({
+      departureTime: { gte: startDate, lt: endDate }
     }, {
-      populate: [
-        { path: 'driverId', select: 'firstName lastName rating' },
-        { path: 'vehicleId', select: 'model color' }
-      ],
+      include: {
+        driver: { select: { firstName: true, lastName: true, rating: true } },
+        vehicle: { select: { model: true, color: true } }
+      },
       page,
       limit
     });
@@ -343,7 +341,7 @@ class RideService extends BaseService {
       throw NotFoundException.ride(rideId);
     }
 
-    const updated = await this.repository.updateById(rideId, { status });
+    const updated = await this.repository.updateById(rideId, { status: status.toUpperCase() });
     
     logger.info('Ride status updated', { rideId, status });
 

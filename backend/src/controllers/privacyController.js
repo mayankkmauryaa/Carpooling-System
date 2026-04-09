@@ -11,7 +11,7 @@ exports.initiateCall = async (req, res, next) => {
     const maskedNumber = generateMaskedPhone(user.phone);
     const callId = `CALL_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    logger.info('Call initiated', { from: req.user._id, to: targetUserId, callId });
+    logger.info('Call initiated', { from: req.user.id, to: targetUserId, callId });
 
     res.json(ApiResponse.success({
       maskedNumber,
@@ -41,22 +41,22 @@ exports.sosAlert = async (req, res, next) => {
   try {
     const { ridePoolId, message, location } = req.body;
 
-    const alert = await sosService.createAlert(req.user._id, {
+    const alert = await sosService.createAlert(req.user.id, {
       ridePoolId,
       message,
       location
     });
 
     logger.error('SOS ALERT', {
-      alertId: alert._id,
-      userId: req.user._id,
+      alertId: alert.id,
+      userId: req.user.id,
       ridePoolId,
       message,
       location,
       timestamp: new Date().toISOString()
     });
 
-    res.status(201).json(ApiResponse.created({ alertId: alert._id }, 'SOS alert sent. Authorities have been notified.'));
+    res.status(201).json(ApiResponse.created({ alertId: alert.id }, 'SOS alert sent. Authorities have been notified.'));
   } catch (error) {
     next(error);
   }
@@ -65,7 +65,7 @@ exports.sosAlert = async (req, res, next) => {
 exports.endCall = async (req, res, next) => {
   try {
     const { callId } = req.body;
-    logger.info('Call ended', { callId, userId: req.user._id });
+    logger.info('Call ended', { callId, userId: req.user.id });
     res.json(ApiResponse.success(null, 'Call ended successfully'));
   } catch (error) {
     next(error);
@@ -75,7 +75,7 @@ exports.endCall = async (req, res, next) => {
 exports.getSOSHistory = async (req, res, next) => {
   try {
     const { page = 1, limit = 20 } = req.query;
-    const result = await sosService.getUserAlerts(req.user._id, { page, limit });
+    const result = await sosService.getUserAlerts(req.user.id, { page, limit });
     res.json(PaginatedResponse.format(result));
   } catch (error) {
     next(error);
@@ -84,7 +84,7 @@ exports.getSOSHistory = async (req, res, next) => {
 
 exports.getPrivacySettings = async (req, res, next) => {
   try {
-    const user = await userService.getProfile(req.user._id);
+    const user = await userService.getProfile(req.user.id);
     res.json(ApiResponse.success({
       isProfileBlurred: user.isProfileBlurred,
       phoneVisibility: 'masked',
@@ -99,7 +99,7 @@ exports.getPrivacySettings = async (req, res, next) => {
 exports.updatePrivacySettings = async (req, res, next) => {
   try {
     const { isProfileBlurred } = req.body;
-    const user = await userService.updateProfile(req.user._id, { isProfileBlurred });
+    const user = await userService.updateProfile(req.user.id, { isProfileBlurred });
     res.json(ApiResponse.success({
       isProfileBlurred: user.isProfileBlurred,
       firstName: user.firstName,
@@ -113,7 +113,7 @@ exports.updatePrivacySettings = async (req, res, next) => {
 
 exports.getProfileVisibility = async (req, res, next) => {
   try {
-    const user = await userService.getProfile(req.user._id);
+    const user = await userService.getProfile(req.user.id);
     res.json(ApiResponse.success({
       firstName: user.firstName,
       lastName: user.isProfileBlurred ? null : user.lastName,

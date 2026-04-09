@@ -4,7 +4,7 @@ const { ApiResponse, PaginatedResponse } = require('../dto');
 exports.getMyTrips = async (req, res, next) => {
   try {
     const { status, page = 1, limit = 10 } = req.query;
-    const result = await tripService.getMyTrips(req.user._id, { status, page, limit });
+    const result = await tripService.getMyTrips(req.user.id, { status, page, limit });
     res.json(PaginatedResponse.format(result));
   } catch (error) {
     next(error);
@@ -13,7 +13,7 @@ exports.getMyTrips = async (req, res, next) => {
 
 exports.getTripById = async (req, res, next) => {
   try {
-    const trip = await tripService.getTripById(req.params.id, req.user._id, req.user.role);
+    const trip = await tripService.getTripById(req.params.id, req.user.id, req.user.role);
     res.json(ApiResponse.success({ trip }));
   } catch (error) {
     next(error);
@@ -22,7 +22,7 @@ exports.getTripById = async (req, res, next) => {
 
 exports.startTrip = async (req, res, next) => {
   try {
-    const trip = await tripService.startTrip(req.params.id, req.user._id);
+    const trip = await tripService.startTrip(req.params.id, req.user.id);
     res.json(ApiResponse.success({ trip }, 'Trip started'));
   } catch (error) {
     next(error);
@@ -32,7 +32,7 @@ exports.startTrip = async (req, res, next) => {
 exports.completeTrip = async (req, res, next) => {
   try {
     const { actualDistance, actualDuration, endLocation } = req.body;
-    const trip = await tripService.completeTrip(req.params.id, req.user._id, {
+    const trip = await tripService.completeTrip(req.params.id, req.user.id, {
       actualDistance,
       actualDuration,
       endLocation
@@ -45,7 +45,7 @@ exports.completeTrip = async (req, res, next) => {
 
 exports.cancelTrip = async (req, res, next) => {
   try {
-    const result = await tripService.cancelTrip(req.params.id, req.user._id);
+    const result = await tripService.cancelTrip(req.params.id, req.user.id);
     res.json(ApiResponse.success(result));
   } catch (error) {
     next(error);
@@ -114,7 +114,7 @@ exports.getTripsByStatus = async (req, res, next) => {
 exports.getUpcomingTrips = async (req, res, next) => {
   try {
     const { page = 1, limit = 20 } = req.query;
-    const result = await tripService.getUpcomingTrips(req.user._id, { page, limit });
+    const result = await tripService.getUpcomingTrips(req.user.id, { page, limit });
     res.json(PaginatedResponse.format(result));
   } catch (error) {
     next(error);

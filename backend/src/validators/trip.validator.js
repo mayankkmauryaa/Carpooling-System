@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const { objectIdSchema, paginationSchema, dateRangeSchema } = require('./common.schemas');
+const { paramIdSchema, paginationSchema, dateRangeSchema } = require('./common.schemas');
 
 const startTripSchema = Joi.object({});
 
@@ -16,10 +16,10 @@ const cancelTripSchema = Joi.object({
   reason: Joi.string().max(500)
 });
 
-const tripIdParamSchema = objectIdSchema;
+const tripIdParamSchema = paramIdSchema;
 
 const getTripsQuerySchema = paginationSchema.append({
-  status: Joi.string().valid('scheduled', 'in-progress', 'completed', 'cancelled')
+  status: Joi.string().valid('SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED')
 }).concat(dateRangeSchema);
 
 module.exports = {

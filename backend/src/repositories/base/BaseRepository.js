@@ -1,147 +1,161 @@
+const { prisma } = require('../database/connection');
+
 class BaseRepository {
   constructor(model) {
     this.model = model;
   }
 
   async findById(id, options = {}) {
-    const { populate, select } = options;
-    let query = this.model.findById(id);
+    const { include, select, where } = options;
     
-    if (populate) {
-      query = query.populate(populate);
+    const query = {
+      where: where || { id: parseInt(id) },
+    };
+
+    if (include) {
+      query.include = include;
     }
-    
+
     if (select) {
-      query = query.select(select);
+      query.select = select;
     }
-    
-    return await query;
+
+    return await prisma[this.model].findUnique(query);
   }
 
   async findOne(query, options = {}) {
-    const { populate, select } = options;
-    let dbQuery = this.model.findOne(query);
+    const { include, select, where } = options;
     
-    if (populate) {
-      dbQuery = dbQuery.populate(populate);
+    const prismaQuery = {
+      where: where || query,
+    };
+
+    if (include) {
+      prismaQuery.include = include;
     }
-    
+
     if (select) {
-      dbQuery = dbQuery.select(select);
+      prismaQuery.select = select;
     }
-    
-    return await dbQuery;
+
+    return await prisma[this.model].findFirst(prismaQuery);
   }
 
   async findAll(query = {}, options = {}) {
     const { 
-      populate, 
+      include, 
       select, 
-      sort = { createdAt: -1 }, 
-      page = 1, 
-      limit = 20 
+      orderBy = { createdAt: 'desc' }, 
+      skip = 0, 
+      take = 20,
+      where 
     } = options;
-    
-    let dbQuery = this.model.find(query);
-    
-    if (populate) {
-      dbQuery = dbQuery.populate(populate);
+
+    const prismaQuery = {
+      where: where || query,
+      orderBy,
+      skip,
+      take,
+    };
+
+    if (include) {
+      prismaQuery.include = include;
     }
-    
+
     if (select) {
-      dbQuery = dbQuery.select(select);
+      prismaQuery.select = select;
     }
-    
-    const skip = (page - 1) * limit;
-    
-    return await dbQuery
-      .sort(sort)
-      .skip(skip)
-      .limit(limit);
+
+    return await prisma[this.model].findMany(prismaQuery);
   }
 
   async count(query = {}) {
-    return await this.model.countDocuments(query);
+    return await prisma[this.model].count({ where: query });
   }
 
   async create(data) {
-    const document = new this.model(data);
-    return await document.save();
+    return await prisma[this.model].create({ data });
   }
 
   async updateById(id, data, options = {}) {
-    const { new: isNew = true, runValidators = true } = options;
-    return await this.model.findByIdAndUpdate(
-      id, 
-      data, 
-      { new: isNew, runValidators }
-    );
+    const { new: isNew = true, where } = options;
+    return await prisma[this.model].update({
+      where: where || { id: parseInt(id) },
+      data,
+    });
   }
 
   async updateOne(query, data, options = {}) {
-    const { new: isNew = true, runValidators = true } = options;
-    return await this.model.findOneAndUpdate(
-      query, 
-      data, 
-      { new: isNew, runValidators }
-    );
+    const { new: isNew = true, where } = options;
+    return await prisma[this.model].update({
+      where: where || query,
+      data,
+    });
   }
 
   async deleteById(id) {
-    return await this.model.findByIdAndDelete(id);
+    return await prisma[this.model].delete({
+      where: { id: parseInt(id) },
+    });
   }
 
   async deleteOne(query) {
-    return await this.model.findOneAndDelete(query);
+    return await prisma[this.model].deleteMany({ where: query });
   }
 
   async exists(query) {
-    const doc = await this.model.findOne(query).select('_id');
+    const doc = await prisma[this.model].findFirst({
+      where: query,
+      select: { id: true },
+    });
     return !!doc;
   }
 
   async paginate(query = {}, options = {}) {
     const { 
-      populate, 
+      include, 
       select, 
-      sort = { createdAt: -1 }, 
+      orderBy = { createdAt: 'desc' }, 
       page = 1, 
-      limit = 20 
+      limit = 20,
+      where 
     } = options;
-    
+
     const skip = (page - 1) * limit;
-    const total = await this.count(query);
-    
-    let dbQuery = this.model.find(query);
-    
-    if (populate) {
-      dbQuery = dbQuery.populate(populate);
+    const prismaQuery = {
+      where: where || query,
+      orderBy,
+      skip,
+      take: limit,
+    };
+
+    if (include) {
+      prismaQuery.include = include;
     }
-    
+
     if (select) {
-      dbQuery = dbQuery.select(select);
+      prismaQuery.select = select;
     }
-    
-    const items = await dbQuery
-      .sort(sort)
-      .skip(skip)
-      .limit(limit);
-    
+
+    const [items, total] = await Promise.all([
+      prisma[this.model].findMany(prismaQuery),
+      prisma[this.model].count({ where: where || query }),
+    ]);
+
     return {
       items,
       total,
       page,
       limit,
-      pages: Math.ceil(total / limit)
+      pages: Math.ceil(total / limit),
     };
   }
 
   async updateMany(query, data) {
-    return await this.model.updateMany(query, data);
-  }
-
-  async aggregate(pipeline) {
-    return await this.model.aggregate(pipeline);
+    return await prisma[this.model].updateMany({
+      where: query,
+      data,
+    });
   }
 }
 

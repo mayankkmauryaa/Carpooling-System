@@ -25,7 +25,7 @@ class VehicleService extends BaseService {
       driverId: userId
     });
 
-    logger.info('Vehicle created', { vehicleId: vehicle._id, driverId: userId });
+    logger.info('Vehicle created', { vehicleId: vehicle.id, driverId: userId });
 
     return vehicle;
   }
@@ -49,7 +49,7 @@ class VehicleService extends BaseService {
       throw NotFoundException.vehicle(vehicleId);
     }
 
-    if (vehicle.driverId.toString() !== userId.toString()) {
+    if (vehicle.driverId !== userId) {
       throw ForbiddenException.notOwner();
     }
 
@@ -67,7 +67,7 @@ class VehicleService extends BaseService {
       throw NotFoundException.vehicle(vehicleId);
     }
 
-    if (vehicle.driverId.toString() !== userId.toString()) {
+    if (vehicle.driverId !== userId) {
       throw ForbiddenException.notOwner();
     }
 
@@ -89,7 +89,7 @@ class VehicleService extends BaseService {
       throw NotFoundException.vehicle(vehicleId);
     }
 
-    if (vehicle.driverId.toString() !== userId.toString()) {
+    if (vehicle.driverId !== userId) {
       throw ForbiddenException.notOwner();
     }
 

@@ -14,9 +14,9 @@ class ValidationException extends BaseException {
     return new ValidationException('Invalid input data', errors);
   }
 
-  static fromMongoose(error) {
-    const errors = Object.values(error.errors || {}).map(err => ({
-      field: err.path,
+  static fromPrisma(error) {
+    const errors = (error.errors || []).map(err => ({
+      field: err.path?.join('.') || 'unknown',
       message: err.message
     }));
     return new ValidationException('Invalid input data', errors);

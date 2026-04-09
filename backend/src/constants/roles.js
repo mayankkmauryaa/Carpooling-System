@@ -1,8 +1,8 @@
 module.exports = {
   ROLES: {
-    DRIVER: 'driver',
-    RIDER: 'rider',
-    ADMIN: 'admin'
+    DRIVER: 'DRIVER',
+    RIDER: 'RIDER',
+    ADMIN: 'ADMIN'
   },
-  DEFAULT_ROLE: 'rider'
+  DEFAULT_ROLE: 'RIDER'
 };

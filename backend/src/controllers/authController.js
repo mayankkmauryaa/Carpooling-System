@@ -22,7 +22,7 @@ exports.login = async (req, res, next) => {
 
 exports.refresh = async (req, res, next) => {
   try {
-    const result = await authService.refreshToken(req.user._id);
+    const result = await authService.refreshToken(req.user.id);
     res.json(ApiResponse.success(result));
   } catch (error) {
     next(error);
@@ -39,7 +39,7 @@ exports.logout = async (req, res, next) => {
 
 exports.getMe = async (req, res, next) => {
   try {
-    const user = await authService.getCurrentUser(req.user._id);
+    const user = await authService.getCurrentUser(req.user.id);
     res.json(ApiResponse.success({ user }));
   } catch (error) {
     next(error);
@@ -47,7 +47,7 @@ exports.getMe = async (req, res, next) => {
 };
 
 exports.verify = async (req, res) => {
-  res.json({ status: 'success', data: { valid: true, userId: req.user._id } });
+  res.json({ status: 'success', data: { valid: true, userId: req.user.id } });
 };
 
 exports.googleAuth = async (req, res, next) => {
@@ -84,7 +84,7 @@ exports.googleMobile = async (req, res, next) => {
 exports.linkGoogleAccount = async (req, res, next) => {
   try {
     const { idToken } = req.body;
-    const result = await authService.linkGoogleAccount(req.user._id, idToken);
+    const result = await authService.linkGoogleAccount(req.user.id, idToken);
     res.json(ApiResponse.success(result, result.message));
   } catch (error) {
     next(error);

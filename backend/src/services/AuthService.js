@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const { OAuth2Client } = require('google-auth-library');
-const { config, jwt: jwtConfig, google: googleConfig } = require('../config');
-const User = require('../models/User');
+const { jwt: jwtConfig, google: googleConfig } = require('../config');
 const { userRepository } = require('../repositories');
 const { AuthException, ConflictException, NotFoundException } = require('../exceptions');
 const logger = require('../middleware/logger');
@@ -10,14 +10,14 @@ const googleClient = new OAuth2Client(googleConfig.GOOGLE_CLIENT_ID);
 
 class AuthService {
   generateToken(userId) {
-    return jwt.sign({ userId }, jwtConfig.secret, {
-      expiresIn: jwtConfig.expiresIn
+    return jwt.sign({ userId }, jwtConfig.JWT_SECRET || jwtConfig.secret, {
+      expiresIn: jwtConfig.JWT_EXPIRES_IN || jwtConfig.expiresIn
     });
   }
 
   verifyToken(token) {
     try {
-      return jwt.verify(token, jwtConfig.secret);
+      return jwt.verify(token, jwtConfig.JWT_SECRET || jwtConfig.secret);
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
         throw AuthException.tokenExpired();
@@ -34,21 +34,23 @@ class AuthService {
       throw ConflictException.emailExists();
     }
 
-    const user = await User.create({
+    const hashedPassword = password ? await bcrypt.hash(password, 12) : null;
+
+    const user = await userRepository.create({
       email,
-      password,
+      password: hashedPassword,
       firstName,
       lastName,
-      phone,
-      role: role || 'rider'
+      phone: phone || null,
+      role: (role || 'rider').toUpperCase()
     });
 
-    const token = this.generateToken(user._id);
+    const token = this.generateToken(user.id);
 
-    logger.info('User registered', { userId: user._id, email: user.email });
+    logger.info('User registered', { userId: user.id, email: user.email });
 
     return {
-      user: user.toJSON(),
+      user: this.sanitizeUser(user),
       token
     };
   }
@@ -65,7 +67,12 @@ class AuthService {
       throw AuthException.invalidCredentials();
     }
 
-    const isMatch = await user.comparePassword(password);
+    if (!user.password) {
+      logger.warn('Login failed - no password', { email });
+      throw AuthException.invalidCredentials();
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       logger.warn('Login failed - invalid password', { email });
       throw AuthException.invalidCredentials();
@@ -75,12 +82,12 @@ class AuthService {
       throw AuthException.accountDeactivated();
     }
 
-    const token = this.generateToken(user._id);
+    const token = this.generateToken(user.id);
 
-    logger.info('User logged in', { userId: user._id });
+    logger.info('User logged in', { userId: user.id });
 
     return {
-      user: user.toJSON(),
+      user: this.sanitizeUser(user),
       token
     };
   }
@@ -96,7 +103,7 @@ class AuthService {
     if (!user) {
       throw NotFoundException.user(userId);
     }
-    return user;
+    return this.sanitizeUser(user);
   }
 
   async googleAuth(idToken) {
@@ -117,12 +124,12 @@ class AuthService {
         profilePicture: picture
       });
 
-      const token = this.generateToken(result.user._id);
+      const token = this.generateToken(result.user.id);
 
-      logger.info('Google auth successful', { userId: result.user._id, email, isNewUser: result.isNewUser });
+      logger.info('Google auth successful', { userId: result.user.id, email, isNewUser: result.isNewUser });
 
       return {
-        user: result.user.toJSON(),
+        user: this.sanitizeUser(result.user),
         token,
         isNewUser: result.isNewUser
       };
@@ -143,25 +150,25 @@ class AuthService {
       }
 
       if (!user.googleId) {
-        user.googleId = googleId;
-        user.isGoogleUser = true;
-        user.emailVerified = true;
-        if (!user.profilePicture && profilePicture) {
-          user.profilePicture = profilePicture;
-        }
-        await user.save();
+        await userRepository.updateById(user.id, {
+          googleId,
+          isGoogleUser: true,
+          emailVerified: true,
+          ...(profilePicture && !user.profilePicture && { profilePicture })
+        });
+        user = await userRepository.findById(user.id);
       }
 
       return { user, isNewUser: false };
     }
 
-    user = await User.create({
+    user = await userRepository.create({
       email,
       password: null,
       firstName: firstName || 'User',
       lastName: lastName || '',
       phone: null,
-      role: 'rider',
+      role: 'RIDER',
       profilePicture: profilePicture || null,
       googleId,
       isGoogleUser: true,
@@ -181,8 +188,8 @@ class AuthService {
       const payload = ticket.getPayload();
       const { sub: googleId, email } = payload;
 
-      const existingGoogleUser = await userRepository.findOne({ googleId });
-      if (existingGoogleUser && existingGoogleUser._id.toString() !== userId) {
+      const existingGoogleUser = await userRepository.findByGoogleId(googleId);
+      if (existingGoogleUser && existingGoogleUser.id !== userId) {
         throw ConflictException('Google account already linked to another user');
       }
 
@@ -192,18 +199,21 @@ class AuthService {
       }
 
       if (user.googleId === googleId) {
-        return { user, message: 'Google account already linked' };
+        return { user: this.sanitizeUser(user), message: 'Google account already linked' };
       }
 
-      user.googleId = googleId;
-      user.isGoogleUser = true;
-      user.emailVerified = true;
-      await user.save();
+      await userRepository.updateById(userId, {
+        googleId,
+        isGoogleUser: true,
+        emailVerified: true
+      });
+
+      user = await userRepository.findById(userId);
 
       logger.info('Google account linked', { userId, googleId });
 
       return {
-        user: user.toJSON(),
+        user: this.sanitizeUser(user),
         message: 'Google account linked successfully'
       };
     } catch (error) {
@@ -258,6 +268,12 @@ class AuthService {
       logger.error('Google callback failed', { error: error.message });
       throw AuthException.invalidToken();
     }
+  }
+
+  sanitizeUser(user) {
+    if (!user) return null;
+    const { password, ...sanitized } = user;
+    return sanitized;
   }
 }
 

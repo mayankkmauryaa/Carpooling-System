@@ -18,13 +18,13 @@ class ReviewService extends BaseService {
       throw NotFoundException.trip(tripId);
     }
 
-    if (trip.status !== 'completed') {
+    if (trip.status !== 'COMPLETED') {
       throw ConflictException('Can only review completed trips');
     }
 
     const isValidReviewer = 
-      trip.driverId.toString() === reviewerId.toString() ||
-      trip.riderIds.some(r => r.toString() === reviewerId.toString());
+      trip.driverId === reviewerId ||
+      trip.riderIds.includes(reviewerId);
 
     if (!isValidReviewer) {
       throw ForbiddenException.notOwner();
@@ -39,7 +39,7 @@ class ReviewService extends BaseService {
       tripId,
       reviewerId,
       revieweeId,
-      type,
+      type: type.toUpperCase().replace('-', '_'),
       rating,
       comment,
       isVisible: true
@@ -47,7 +47,7 @@ class ReviewService extends BaseService {
 
     await userService.updateUserRating(revieweeId);
 
-    logger.info('Review created', { reviewId: review._id });
+    logger.info('Review created', { reviewId: review.id });
 
     return review;
   }
@@ -55,13 +55,13 @@ class ReviewService extends BaseService {
   async getUserReviews(userId, options = {}) {
     const { page = 1, limit = 20 } = options;
     
-    return await this.paginate(
+    return await this.repository.paginate(
       { revieweeId: userId, isVisible: true },
       {
-        populate: [
-          { path: 'reviewerId', select: 'firstName lastName' },
-          'tripId'
-        ],
+        include: {
+          reviewer: { select: { firstName: true, lastName: true } },
+          trip: true
+        },
         page,
         limit
       }
@@ -75,13 +75,13 @@ class ReviewService extends BaseService {
   async getMyReviews(reviewerId, options = {}) {
     const { page = 1, limit = 20 } = options;
     
-    return await this.paginate(
+    return await this.repository.paginate(
       { reviewerId },
       {
-        populate: [
-          { path: 'revieweeId', select: 'firstName lastName' },
-          'tripId'
-        ],
+        include: {
+          reviewee: { select: { firstName: true, lastName: true } },
+          trip: true
+        },
         page,
         limit
       }
@@ -90,11 +90,11 @@ class ReviewService extends BaseService {
 
   async getReviewById(reviewId) {
     const review = await this.findById(reviewId, {
-      populate: [
-        { path: 'reviewerId', select: 'firstName lastName' },
-        { path: 'revieweeId', select: 'firstName lastName' },
-        'tripId'
-      ]
+      include: {
+        reviewer: { select: { firstName: true, lastName: true } },
+        reviewee: { select: { firstName: true, lastName: true } },
+        trip: true
+      }
     });
 
     if (!review) {
@@ -111,7 +111,7 @@ class ReviewService extends BaseService {
       throw NotFoundException.review(reviewId);
     }
 
-    if (review.reviewerId.toString() !== userId.toString() && userRole !== 'admin') {
+    if (review.reviewerId !== userId && userRole !== 'ADMIN') {
       throw ForbiddenException.notOwner();
     }
 
@@ -139,19 +139,19 @@ class ReviewService extends BaseService {
     const { page = 1, limit = 20, type, minRating, maxRating } = options;
     
     const query = {};
-    if (type) query.type = type;
+    if (type) query.type = type.toUpperCase().replace('-', '_');
     if (minRating || maxRating) {
       query.rating = {};
-      if (minRating) query.rating.$gte = parseInt(minRating);
-      if (maxRating) query.rating.$lte = parseInt(maxRating);
+      if (minRating) query.rating.gte = parseInt(minRating);
+      if (maxRating) query.rating.lte = parseInt(maxRating);
     }
 
-    return await this.paginate(query, {
-      populate: [
-        { path: 'reviewerId', select: 'firstName lastName email' },
-        { path: 'revieweeId', select: 'firstName lastName email' },
-        'tripId'
-      ],
+    return await this.repository.paginate(query, {
+      include: {
+        reviewer: { select: { firstName: true, lastName: true, email: true } },
+        reviewee: { select: { firstName: true, lastName: true, email: true } },
+        trip: true
+      },
       page,
       limit
     });

@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const { objectIdSchema, paginationSchema, preferencesSchema } = require('./common.schemas');
+const { paramIdSchema, paginationSchema, preferencesSchema } = require('./common.schemas');
 
 const createVehicleSchema = Joi.object({
   model: Joi.string()
@@ -55,7 +55,7 @@ const updateVehicleSchema = Joi.object({
   registrationExpiry: Joi.date().iso()
 });
 
-const vehicleIdParamSchema = objectIdSchema;
+const vehicleIdParamSchema = paramIdSchema;
 
 const getVehiclesQuerySchema = paginationSchema.append({
   isActive: Joi.boolean(),

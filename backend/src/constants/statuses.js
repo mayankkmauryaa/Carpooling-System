@@ -1,23 +1,23 @@
 module.exports = {
   RIDE_STATUS: {
-    ACTIVE: 'active',
-    COMPLETED: 'completed',
-    CANCELLED: 'cancelled'
+    ACTIVE: 'ACTIVE',
+    COMPLETED: 'COMPLETED',
+    CANCELLED: 'CANCELLED'
   },
   TRIP_STATUS: {
-    SCHEDULED: 'scheduled',
-    IN_PROGRESS: 'in-progress',
-    COMPLETED: 'completed',
-    CANCELLED: 'cancelled'
+    SCHEDULED: 'SCHEDULED',
+    IN_PROGRESS: 'IN_PROGRESS',
+    COMPLETED: 'COMPLETED',
+    CANCELLED: 'CANCELLED'
   },
   REQUEST_STATUS: {
-    PENDING: 'pending',
-    APPROVED: 'approved',
-    REJECTED: 'rejected',
-    CANCELLED: 'cancelled'
+    PENDING: 'PENDING',
+    APPROVED: 'APPROVED',
+    REJECTED: 'REJECTED',
+    CANCELLED: 'CANCELLED'
   },
   REVIEW_TYPE: {
-    DRIVER_TO_RIDER: 'driver-to-rider',
-    RIDER_TO_DRIVER: 'rider-to-driver'
+    DRIVER_TO_RIDER: 'DRIVER_TO_RIDER',
+    RIDER_TO_DRIVER: 'RIDER_TO_DRIVER'
   }
 };

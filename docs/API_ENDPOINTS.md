@@ -33,7 +33,7 @@ Register a new user (driver or rider).
   "message": "User registered successfully",
   "data": {
     "user": {
-      "_id": "507f1f77bcf86cd799439011",
+      "id": 1,
       "email": "john@example.com",
       "firstName": "John",
       "lastName": "Doe",
@@ -67,7 +67,7 @@ Authenticate user and get JWT token.
   "success": true,
   "data": {
     "user": {
-      "_id": "507f1f77bcf86cd799439011",
+      "id": 1,
       "email": "john@example.com",
       "firstName": "John",
       "role": "rider"
@@ -138,7 +138,7 @@ Google OAuth callback endpoint.
   "success": true,
   "data": {
     "user": {
-      "_id": "507f1f77bcf86cd799439011",
+      "id": 1,
       "email": "john@gmail.com",
       "firstName": "John",
       "lastName": "Doe",
@@ -236,7 +236,7 @@ Get current user's profile.
 {
   "success": true,
   "data": {
-    "_id": "507f1f77bcf86cd799439011",
+    "id": 1,
     "email": "john@example.com",
     "firstName": "John",
     "lastName": "Doe",
@@ -276,7 +276,7 @@ Update user profile.
 {
   "success": true,
   "data": {
-    "_id": "507f1f77bcf86cd799439011",
+    "id": 1,
     "firstName": "John",
     "lastName": "Doe"
   }
@@ -343,8 +343,8 @@ Add a new vehicle (Driver only).
   "success": true,
   "message": "Vehicle created successfully",
   "data": {
-    "_id": "507f1f77bcf86cd799439044",
-    "driverId": "507f1f77bcf86cd799439011",
+    "id": 2,
+    "driverId": 1,
     "model": "Toyota Camry",
     "licensePlate": "ABC123",
     "capacity": 4
@@ -368,7 +368,7 @@ Get all vehicles for current driver.
   "data": {
     "items": [
       {
-        "_id": "507f1f77bcf86cd799439044",
+        "id": 2,
         "model": "Toyota Camry",
         "licensePlate": "ABC123",
         "capacity": 4,
@@ -405,7 +405,7 @@ Update vehicle details.
 {
   "success": true,
   "data": {
-    "_id": "507f1f77bcf86cd799439044",
+    "id": 2,
     "model": "Toyota Camry Hybrid"
   }
 }
@@ -442,7 +442,7 @@ Toggle vehicle status.
 {
   "success": true,
   "data": {
-    "_id": "507f1f77bcf86cd799439044",
+    "id": 2,
     "isActive": false
   }
 }
@@ -462,7 +462,7 @@ Create a new ride pool.
 
 ```json
 {
-  "vehicleId": "507f1f77bcf86cd799439044",
+  "vehicleId": 2,
   "pickupLocation": {
     "coordinates": [-122.4194, 37.7749],
     "address": "123 Main St, San Francisco, CA"
@@ -489,8 +489,8 @@ Create a new ride pool.
 {
   "status": "success",
   "data": {
-    "_id": "507f1f77bcf86cd799439055",
-    "driverId": "507f1f77bcf86cd799439011",
+    "id": 3,
+    "driverId": 1,
     "pickupLocation": {
       "coordinates": [-122.4194, 37.7749],
       "address": "123 Main St, San Francisco, CA"
@@ -548,7 +548,7 @@ Get ride pool details.
 {
   "status": "success",
   "data": {
-    "_id": "507f1f77bcf86cd799439055",
+    "id": 3,
     "driver": {
       "firstName": "John",
       "rating": 4.5
@@ -589,7 +589,7 @@ Update ride pool details.
 {
   "status": "success",
   "data": {
-    "_id": "507f1f77bcf86cd799439055",
+    "id": 3,
     "availableSeats": 2
   }
 }
@@ -628,7 +628,7 @@ Get all join requests for a ride.
   "data": {
     "requests": [
       {
-        "_id": "507f1f77bcf86cd799439066",
+        "id": 4,
         "riderId": "507f1f77bcf86cd799439077",
         "status": "pending",
         "requestedAt": "2024-01-15T10:00:00Z"
@@ -701,7 +701,7 @@ GET /api/rides/search?pickupLat=37.7749&pickupLng=-122.4194&dropLat=37.4028&drop
   "data": {
     "rides": [
       {
-        "_id": "507f1f77bcf86cd799439055",
+        "id": 3,
         "driver": {
           "firstName": "John",
           "rating": 4.5
@@ -773,7 +773,7 @@ Request to join a ride pool.
   "status": "success",
   "message": "Join request sent",
   "data": {
-    "requestId": "507f1f77bcf86cd799439066",
+    "requestId": 4,
     "status": "pending"
   }
 }
@@ -858,7 +858,7 @@ Send an in-app message.
 ```json
 {
   "receiverId": "507f1f77bcf86cd799439088",
-  "ridePoolId": "507f1f77bcf86cd799439055",
+  "ridePoolId": 3,
   "content": "Hello! I'm interested in your ride."
 }
 ```
@@ -887,7 +887,7 @@ Send SOS emergency alert.
 
 ```json
 {
-  "ridePoolId": "507f1f77bcf86cd799439055",
+  "ridePoolId": 3,
   "message": "Emergency: Feeling unsafe",
   "location": {
     "coordinates": [-122.4194, 37.7749]
@@ -964,7 +964,7 @@ Get trip details.
 {
   "status": "success",
   "data": {
-    "_id": "507f1f77bcf86cd7994390bb",
+    "id": 5,
     "ridePool": {...},
     "driver": {...},
     "riders": [...],
@@ -1042,7 +1042,7 @@ Submit a review after trip completion.
 
 ```json
 {
-  "tripId": "507f1f77bcf86cd7994390bb",
+  "tripId": 5,
   "revieweeId": "507f1f77bcf86cd799439088",
   "type": "rider-to-driver",
   "rating": 5,

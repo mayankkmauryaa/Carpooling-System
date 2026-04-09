@@ -1,23 +1,23 @@
 const Joi = require('joi');
-const { objectIdSchema, paginationSchema } = require('./common.schemas');
+const { paramIdSchema, paginationSchema } = require('./common.schemas');
 
 const createReviewSchema = Joi.object({
   tripId: Joi.string()
-    .length(24)
+    .pattern(/^\d+$/)
     .required()
     .messages({
-      'string.length': 'Invalid trip ID format',
+      'string.pattern.base': 'Invalid trip ID format',
       'any.required': 'Trip ID is required'
     }),
   revieweeId: Joi.string()
-    .length(24)
+    .pattern(/^\d+$/)
     .required()
     .messages({
-      'string.length': 'Invalid user ID format',
+      'string.pattern.base': 'Invalid user ID format',
       'any.required': 'Reviewee ID is required'
     }),
   type: Joi.string()
-    .valid('driver-to-rider', 'rider-to-driver')
+    .valid('DRIVER_TO_RIDER', 'RIDER_TO_DRIVER')
     .required()
     .messages({
       'any.only': 'Invalid review type',
@@ -41,11 +41,11 @@ const createReviewSchema = Joi.object({
     })
 });
 
-const reviewIdParamSchema = objectIdSchema;
+const reviewIdParamSchema = paramIdSchema;
 
 const userIdParamSchema = Joi.object({
   userId: Joi.string()
-    .length(24)
+    .pattern(/^\d+$/)
     .required()
     .messages({
       'any.required': 'User ID is required'
@@ -54,7 +54,7 @@ const userIdParamSchema = Joi.object({
 
 const tripIdParamSchema = Joi.object({
   tripId: Joi.string()
-    .length(24)
+    .pattern(/^\d+$/)
     .required()
     .messages({
       'any.required': 'Trip ID is required'
@@ -62,7 +62,7 @@ const tripIdParamSchema = Joi.object({
 });
 
 const getReviewsQuerySchema = paginationSchema.append({
-  type: Joi.string().valid('driver-to-rider', 'rider-to-driver'),
+  type: Joi.string().valid('DRIVER_TO_RIDER', 'RIDER_TO_DRIVER'),
   minRating: Joi.number().integer().min(1).max(5),
   maxRating: Joi.number().integer().min(1).max(5)
 });

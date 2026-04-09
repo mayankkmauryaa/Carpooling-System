@@ -1,6 +1,7 @@
 const BaseService = require('./base/BaseService');
 const { tripRepository, rideRepository, userRepository } = require('../repositories');
 const { NotFoundException, ForbiddenException, BadRequestException } = require('../exceptions');
+const { prisma } = require('../database/connection');
 const logger = require('../middleware/logger');
 
 class TripService extends BaseService {
@@ -12,41 +13,40 @@ class TripService extends BaseService {
     const { status, page = 1, limit = 10 } = options;
     
     const query = {
-      $or: [{ driverId: userId }, { riderIds: userId }]
+      OR: [{ driverId: userId }, { riderIds: { has: userId } }]
     };
     
     if (status) {
-      query.status = status;
+      query.status = status.toUpperCase();
     }
 
-    return await this.paginate(query, {
-      populate: [
-        'ridePoolId',
-        { path: 'driverId', select: 'firstName lastName rating' },
-        { path: 'riderIds', select: 'firstName lastName rating' }
-      ],
+    return await this.repository.paginate(query, {
+      include: {
+        ridePool: true,
+        driver: { select: { firstName: true, lastName: true, rating: true } },
+        riders: { select: { firstName: true, lastName: true, rating: true } }
+      },
       page,
       limit
     });
   }
 
-  async getTripById(tripId, userId, userRole = 'rider') {
+  async getTripById(tripId, userId, userRole = 'RIDER') {
     const trip = await this.repository.findById(tripId, {
-      populate: [
-        'ridePoolId',
-        { path: 'driverId', select: 'firstName lastName rating phone' },
-        { path: 'riderIds', select: 'firstName lastName rating phone' }
-      ]
+      include: {
+        ridePool: true,
+        driver: { select: { firstName: true, lastName: true, rating: true, phone: true } },
+        riders: { select: { firstName: true, lastName: true, rating: true, phone: true } }
+      }
     });
 
     if (!trip) {
       throw NotFoundException.trip(tripId);
     }
 
-    const isParticipant = trip.driverId._id.toString() === userId.toString() ||
-      trip.riderIds.some(r => r._id.toString() === userId.toString());
+    const isParticipant = trip.driverId === userId || trip.riderIds.includes(userId);
 
-    if (!isParticipant && userRole !== 'admin') {
+    if (!isParticipant && userRole !== 'ADMIN') {
       throw ForbiddenException.notOwner();
     }
 
@@ -60,19 +60,20 @@ class TripService extends BaseService {
       throw NotFoundException.ride(rideId);
     }
 
-    if (ride.driverId.toString() !== driverId.toString()) {
+    if (ride.driverId !== driverId) {
       throw ForbiddenException.requireDriver();
     }
 
-    if (ride.status !== 'active') {
+    if (ride.status !== 'ACTIVE') {
       throw BadRequestException.rideNotActive();
     }
 
-    const riderIds = ride.passengers
+    const passengers = typeof ride.passengers === 'string' ? JSON.parse(ride.passengers) : (ride.passengers || []);
+    const riderIds = passengers
       .filter(p => p.status === 'confirmed')
       .map(p => p.userId);
 
-    const trip = await this.repository.startTrip(ride._id, driverId, {
+    const trip = await this.repository.startTrip(ride.id, driverId, {
       riderIds,
       startLocation: ride.pickupLocation,
       totalFare: ride.pricePerSeat * riderIds.length
@@ -80,7 +81,7 @@ class TripService extends BaseService {
 
     await rideRepository.updateStatus(rideId, 'completed');
 
-    logger.info('Trip started', { tripId: trip._id });
+    logger.info('Trip started', { tripId: trip.id });
 
     return trip;
   }
@@ -92,11 +93,11 @@ class TripService extends BaseService {
       throw NotFoundException.trip(tripId);
     }
 
-    if (trip.driverId.toString() !== driverId.toString()) {
+    if (trip.driverId !== driverId) {
       throw ForbiddenException.requireDriver();
     }
 
-    if (trip.status !== 'in-progress') {
+    if (trip.status !== 'IN_PROGRESS') {
       throw BadRequestException.tripNotInProgress();
     }
 
@@ -114,8 +115,8 @@ class TripService extends BaseService {
       throw NotFoundException.trip(tripId);
     }
 
-    const isDriver = trip.driverId.toString() === userId.toString();
-    const isRider = trip.riderIds.some(r => r.toString() === userId.toString());
+    const isDriver = trip.driverId === userId;
+    const isRider = trip.riderIds.includes(userId);
 
     if (!isDriver && !isRider) {
       throw ForbiddenException.notOwner();
@@ -130,19 +131,19 @@ class TripService extends BaseService {
     const { page = 1, limit = 20, status, startDate, endDate } = options;
     
     const query = {};
-    if (status) query.status = status;
+    if (status) query.status = status.toUpperCase();
     if (startDate || endDate) {
       query.createdAt = {};
-      if (startDate) query.createdAt.$gte = new Date(startDate);
-      if (endDate) query.createdAt.$lte = new Date(endDate);
+      if (startDate) query.createdAt.gte = new Date(startDate);
+      if (endDate) query.createdAt.lte = new Date(endDate);
     }
 
-    return await this.paginate(query, {
-      populate: [
-        'ridePoolId',
-        { path: 'driverId', select: 'firstName lastName email' },
-        { path: 'riderIds', select: 'firstName lastName email' }
-      ],
+    return await this.repository.paginate(query, {
+      include: {
+        ridePool: true,
+        driver: { select: { firstName: true, lastName: true, email: true } },
+        riders: { select: { firstName: true, lastName: true, email: true } }
+      },
       page,
       limit
     });
@@ -152,10 +153,13 @@ class TripService extends BaseService {
     const { page = 1, limit = 20, status } = options;
     
     const query = { driverId };
-    if (status) query.status = status;
+    if (status) query.status = status.toUpperCase();
 
-    return await this.paginate(query, {
-      populate: ['ridePoolId', { path: 'riderIds', select: 'firstName lastName' }],
+    return await this.repository.paginate(query, {
+      include: { 
+        ridePool: true,
+        riders: { select: { firstName: true, lastName: true } }
+      },
       page,
       limit
     });
@@ -164,11 +168,14 @@ class TripService extends BaseService {
   async getTripsByRider(riderId, options = {}) {
     const { page = 1, limit = 20, status } = options;
     
-    const query = { riderIds: riderId };
-    if (status) query.status = status;
+    const query = { riderIds: { has: riderId } };
+    if (status) query.status = status.toUpperCase();
 
-    return await this.paginate(query, {
-      populate: ['ridePoolId', { path: 'driverId', select: 'firstName lastName' }],
+    return await this.repository.paginate(query, {
+      include: { 
+        ridePool: true,
+        driver: { select: { firstName: true, lastName: true } }
+      },
       page,
       limit
     });
@@ -187,40 +194,33 @@ class TripService extends BaseService {
   async getUpcomingTrips(userId, options = {}) {
     const { page = 1, limit = 20 } = options;
 
-    return await this.paginate({
-      $or: [{ driverId: userId }, { riderIds: userId }],
-      status: 'scheduled'
+    return await this.repository.paginate({
+      OR: [{ driverId: userId }, { riderIds: { has: userId } }],
+      status: 'SCHEDULED'
     }, {
-      populate: [
-        'ridePoolId',
-        { path: 'driverId', select: 'firstName lastName' },
-        { path: 'riderIds', select: 'firstName lastName' }
-      ],
+      include: {
+        ridePool: true,
+        driver: { select: { firstName: true, lastName: true } },
+        riders: { select: { firstName: true, lastName: true } }
+      },
       page,
       limit,
-      sort: { startTime: 1 }
+      orderBy: { startTime: 'asc' }
     });
   }
 
   async getTripStats() {
-    const result = await this.model.aggregate([
-      { $match: { status: 'completed' } },
-      {
-        $group: {
-          _id: null,
-          totalRevenue: { $sum: '$totalFare' },
-          totalDistance: { $sum: '$actualDistance' }
-        }
-      }
-    ]);
-
     const stats = await this.repository.getStatsSimple();
-    const { totalRevenue = 0, totalDistance = 0 } = result[0] || {};
+    
+    const aggregateResult = await prisma.trip.aggregate({
+      where: { status: 'COMPLETED' },
+      _sum: { totalFare: true, actualDistance: true }
+    });
 
     return {
       ...stats,
-      totalRevenue,
-      totalDistance
+      totalRevenue: aggregateResult._sum.totalFare || 0,
+      totalDistance: aggregateResult._sum.actualDistance || 0
     };
   }
 
@@ -232,14 +232,14 @@ class TripService extends BaseService {
     const endDate = new Date(date);
     endDate.setHours(23, 59, 59, 999);
 
-    return await this.paginate({
-      createdAt: { $gte: startDate, $lte: endDate }
+    return await this.repository.paginate({
+      createdAt: { gte: startDate, lte: endDate }
     }, {
-      populate: [
-        'ridePoolId',
-        { path: 'driverId', select: 'firstName lastName' },
-        { path: 'riderIds', select: 'firstName lastName' }
-      ],
+      include: {
+        ridePool: true,
+        driver: { select: { firstName: true, lastName: true } },
+        riders: { select: { firstName: true, lastName: true } }
+      },
       page,
       limit
     });
@@ -248,12 +248,12 @@ class TripService extends BaseService {
   async getTripsByStatus(status, options = {}) {
     const { page = 1, limit = 20 } = options;
 
-    return await this.paginate({ status }, {
-      populate: [
-        'ridePoolId',
-        { path: 'driverId', select: 'firstName lastName' },
-        { path: 'riderIds', select: 'firstName lastName' }
-      ],
+    return await this.repository.paginate({ status: status.toUpperCase() }, {
+      include: {
+        ridePool: true,
+        driver: { select: { firstName: true, lastName: true } },
+        riders: { select: { firstName: true, lastName: true } }
+      },
       page,
       limit
     });

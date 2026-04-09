@@ -3,7 +3,7 @@ const { ApiResponse, PaginatedResponse } = require('../dto');
 
 exports.getProfile = async (req, res, next) => {
   try {
-    const user = await userService.getProfile(req.user._id);
+    const user = await userService.getProfile(req.user.id);
     res.json(ApiResponse.success({ user }));
   } catch (error) {
     next(error);
@@ -12,7 +12,7 @@ exports.getProfile = async (req, res, next) => {
 
 exports.updateProfile = async (req, res, next) => {
   try {
-    const user = await userService.updateProfile(req.user._id, req.body);
+    const user = await userService.updateProfile(req.user.id, req.body);
     res.json(ApiResponse.success({ user }, 'Profile updated successfully'));
   } catch (error) {
     next(error);
@@ -22,7 +22,7 @@ exports.updateProfile = async (req, res, next) => {
 exports.changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    const result = await userService.changePassword(req.user._id, currentPassword, newPassword);
+    const result = await userService.changePassword(req.user.id, currentPassword, newPassword);
     res.json(ApiResponse.success(result));
   } catch (error) {
     next(error);

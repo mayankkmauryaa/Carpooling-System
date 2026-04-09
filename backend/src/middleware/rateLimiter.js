@@ -18,7 +18,7 @@ class RateLimiter {
   }
   
   getKey(req) {
-    return req.user ? req.user._id.toString() : req.ip;
+    return req.user ? req.user.id.toString() : req.ip;
   }
   
   cleanupOldEntries() {

@@ -4,11 +4,12 @@ const helmet = require('helmet');
 const compression = require('compression');
 const hpp = require('hpp');
 const path = require('path');
-const { config } = require('./config');
+const appConfig = require('./config/app');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 const logger = require('./middleware/logger');
-const { globalLimiter, authLimiter } = require('./middleware/rateLimiter');
+const { globalLimiter } = require('./middleware/rateLimiter');
 const v1Routes = require('./routes/v1');
+const { prisma } = require('./database/connection');
 
 const app = express();
 
@@ -33,26 +34,22 @@ app.get('/api/health', (req, res) => {
   res.json({
     success: true,
     message: 'API is running successfully',
+    database: 'PostgreSQL (Neon)',
     timestamp: new Date().toISOString()
   });
 });
 
 app.get('/api/stats', async (req, res, next) => {
   try {
-    const User = require('./models/User');
-    const RidePool = require('./models/RidePool');
-    const Trip = require('./models/Trip');
-    const Vehicle = require('./models/Vehicle');
-
     const [totalUsers, totalDrivers, totalRiders, activeDrivers, totalRides, activeRides, completedTrips, totalVehicles] = await Promise.all([
-      User.countDocuments(),
-      User.countDocuments({ role: 'driver' }),
-      User.countDocuments({ role: 'rider' }),
-      User.countDocuments({ role: 'driver', isActive: true }),
-      RidePool.countDocuments(),
-      RidePool.countDocuments({ status: 'active' }),
-      Trip.countDocuments({ status: 'completed' }),
-      Vehicle.countDocuments()
+      prisma.user.count(),
+      prisma.user.count({ where: { role: 'DRIVER' } }),
+      prisma.user.count({ where: { role: 'RIDER' } }),
+      prisma.user.count({ where: { role: 'DRIVER', isActive: true } }),
+      prisma.ridePool.count(),
+      prisma.ridePool.count({ where: { status: 'ACTIVE' } }),
+      prisma.trip.count({ where: { status: 'COMPLETED' } }),
+      prisma.vehicle.count()
     ]);
 
     res.json({
@@ -73,7 +70,7 @@ app.get('/api/stats', async (req, res, next) => {
   }
 });
 
-app.use(`${config.API_PREFIX}/${config.API_VERSION}`, v1Routes);
+app.use(`${appConfig.API_PREFIX}/${appConfig.API_VERSION}`, v1Routes);
 
 app.use(notFound);
 app.use(errorHandler);

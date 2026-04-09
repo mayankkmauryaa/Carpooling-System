@@ -1,13 +1,100 @@
-const BaseRepository = require('./base/BaseRepository');
-const Vehicle = require('../models/Vehicle');
+const { prisma } = require('../database/connection');
 
-class VehicleRepository extends BaseRepository {
-  constructor() {
-    super(Vehicle);
+class VehicleRepository {
+  async findById(id, options = {}) {
+    const { include } = options;
+    return await prisma.vehicle.findUnique({
+      where: { id },
+      include: include || undefined
+    });
+  }
+
+  async findOne(query, options = {}) {
+    const { include } = options;
+    return await prisma.vehicle.findFirst({
+      where: query,
+      include: include || undefined
+    });
+  }
+
+  async findAll(query = {}, options = {}) {
+    const { 
+      include, 
+      orderBy = { createdAt: 'desc' }, 
+      skip = 0, 
+      take = 20 
+    } = options;
+    
+    return await prisma.vehicle.findMany({
+      where: query,
+      include: include || undefined,
+      orderBy,
+      skip,
+      take
+    });
+  }
+
+  async count(query = {}) {
+    return await prisma.vehicle.count({ where: query });
+  }
+
+  async create(data) {
+    return await prisma.vehicle.create({ data });
+  }
+
+  async updateById(id, data, options = {}) {
+    return await prisma.vehicle.update({
+      where: { id },
+      data,
+      ...options
+    });
+  }
+
+  async deleteById(id) {
+    return await prisma.vehicle.delete({ where: { id } });
+  }
+
+  async exists(query) {
+    const vehicle = await prisma.vehicle.findFirst({ where: query, select: { id: true } });
+    return !!vehicle;
+  }
+
+  async paginate(query = {}, options = {}) {
+    const { 
+      include, 
+      orderBy = { createdAt: 'desc' }, 
+      page = 1, 
+      limit = 20 
+    } = options;
+    
+    const skip = (page - 1) * limit;
+    const total = await this.count(query);
+    
+    const items = await prisma.vehicle.findMany({
+      where: query,
+      include: include || undefined,
+      orderBy,
+      skip,
+      take: limit
+    });
+    
+    return {
+      items,
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit)
+    };
   }
 
   async findByDriver(driverId, options = {}) {
     return await this.findAll({ driverId }, options);
+  }
+
+  async findByLicensePlate(licensePlate) {
+    return await prisma.vehicle.findUnique({ 
+      where: { licensePlate: licensePlate.toUpperCase() } 
+    });
   }
 
   async licensePlateExists(licensePlate) {
@@ -19,28 +106,27 @@ class VehicleRepository extends BaseRepository {
     
     const query = {};
     if (isActive !== undefined) query.isActive = isActive;
-    if (model) query.model = { $regex: model, $options: 'i' };
-    if (color) query.color = { $regex: color, $options: 'i' };
+    if (model) query.model = { contains: model, mode: 'insensitive' };
+    if (color) query.color = { contains: color, mode: 'insensitive' };
     if (search) {
-      query.$or = [
-        { model: { $regex: search, $options: 'i' } },
-        { licensePlate: { $regex: search, $options: 'i' } }
+      query.OR = [
+        { model: { contains: search, mode: 'insensitive' } },
+        { licensePlate: { contains: search, mode: 'insensitive' } }
       ];
     }
 
     return await this.paginate(query, {
-      populate: 'driverId',
+      include: { driver: true },
       page,
       limit,
-      sort: { createdAt: -1 }
+      orderBy: { createdAt: 'desc' }
     });
   }
 
   async toggleStatus(id) {
     const vehicle = await this.findById(id);
     if (vehicle) {
-      vehicle.isActive = !vehicle.isActive;
-      return await vehicle.save();
+      return await this.updateById(id, { isActive: !vehicle.isActive });
     }
     return null;
   }

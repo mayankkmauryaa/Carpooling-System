@@ -2,7 +2,7 @@
 
 ## 📐 Architecture Overview
 
-The system follows a **Service-Oriented Architecture (SOA)** similar to Uber's design, implemented with the MERN stack.
+The system follows a **Service-Oriented Architecture (SOA)** similar to Uber's design, implemented with **Node.js + Express + PostgreSQL (Neon)**.
 
 ```
                               ┌─────────────────────────────────────────────────────────────────────┐
@@ -19,29 +19,29 @@ The system follows a **Service-Oriented Architecture (SOA)** similar to Uber's d
                                                       │   (Express.js)  │
                                                       └────────┬────────┘
                                                                │
-                                       ┌────────────────────────┼─────────────────────────┐
-                                       │                        │                         │
-                               ┌───────▼───────┐    ┌───────────▼───────────┐    ┌────────▼────────┐
-                               │ Auth Service  │    │   Ride Service        │    │ Privacy Service │
-                               │ - JWT Auth    │    │   - Supply (Drivers)  │    │ - Masked Calls  │
-                               │ - Google OAuth│    │   - Demand (Riders)   │    │ - Profile Mask  │
-                               │ - bcrypt      │    │   - Dispatch Matching │    │ - SOS Alerts    │
-                               └───────┬───────┘    │   - Dispatch Matching │    └───────┬─────────┘
-                                       │            └───────────┬───────────┘            │
-                                       │                        │                        │
-                                       └────────────────────────┼────────────────────────┘
+                                        ┌────────────────────────┼─────────────────────────┐
+                                        │                        │                         │
+                                ┌───────▼───────┐    ┌───────────▼───────────┐    ┌────────▼────────┐
+                                │ Auth Service  │    │   Ride Service        │    │ Privacy Service │
+                                │ - JWT Auth    │    │   - Supply (Drivers)  │    │ - Masked Calls  │
+                                │ - Google OAuth│    │   - Demand (Riders)   │    │ - Profile Mask  │
+                                │ - bcrypt      │    │   - Dispatch Matching │    │ - SOS Alerts    │
+                                └───────┬───────┘    │   - Dispatch Matching │    └───────┬─────────┘
+                                        │            └───────────┬───────────┘            │
+                                        │                        │                        │
+                                        └────────────────────────┼────────────────────────┘
+                                                                 │
+                                                    ┌────────────▼────────────┐
+                                                    │    Message Queue        │
+                                                    │    (Event-based)        │
+                                                    └───────────┬─────────────┘
                                                                 │
-                                                   ┌────────────▼────────────┐
-                                                   │    Message Queue        │
-                                                   │    (Event-based)        │
-                                                   └───────────┬─────────────┘
-                                                               │
-                                        ┌──────────────────────┼─────────────────────┐
-                                        │                      │                     │
-                                   ┌────▼─────┐         ┌──────▼──────┐        ┌─────▼──────┐
-                                   │ MongoDB  │         │    Redis    │        │ Analytics  │
-                                   │ Primary  │         │    Cache    │        │   Pipeline │
-                                   └──────────┘         └─────────────┘        └────────────┘
+                                         ┌──────────────────────┼─────────────────────┐
+                                         │                      │                     │
+                                    ┌────▼────────┐       ┌──────▼──────┐       ┌────────────┐
+                                    │ PostgreSQL   │       │    Redis    │       │ Analytics  │
+                                    │ (Neon DB)   │       │    Cache    │       │  Pipeline  │
+                                    └─────────────┘       └─────────────┘       └────────────┘
 ```
 
 ---
@@ -294,165 +294,105 @@ The system follows a **Service-Oriented Architecture (SOA)** similar to Uber's d
 
 ## 🗄️ Database Design
 
-### Primary Database: MongoDB
+### Primary Database: PostgreSQL (Neon DB)
 
-#### Collections
+#### Tables
 
 **users**
 
-```javascript
-{
-  _id: ObjectId,
-  email: String (unique),
-  password: String (hashed, optional for Google users),
-  firstName: String,
-  lastName: String,
-  phone: String (optional for Google users),
-  role: Enum ['driver', 'rider', 'admin'],
-  profilePicture: String,
-  isProfileBlurred: Boolean,
-  rating: Number (0-5),
-  totalReviews: Number,
-  googleId: String (unique, sparse - for Google Sign-In),
-  isGoogleUser: Boolean,
-  emailVerified: Boolean,
-  createdAt: Date,
-  updatedAt: Date
-}
-```
+| Column           | Type             | Description                           |
+| ---------------- | ---------------- | ------------------------------------- |
+| id               | Int (PK)         | Auto-increment ID                     |
+| email            | String (unique)  | User email                            |
+| password         | String?          | Hashed password (optional for Google) |
+| firstName        | String           | First name                            |
+| lastName         | String           | Last name                             |
+| phone            | String?          | Phone (optional for Google)           |
+| role             | Enum             | DRIVER, RIDER, ADMIN                  |
+| profilePicture   | String?          | Profile image URL                     |
+| isProfileBlurred | Boolean          | Privacy setting                       |
+| rating           | Float            | Average rating (0-5)                  |
+| totalReviews     | Int              | Total review count                    |
+| googleId         | String? (unique) | Google Sign-In ID                     |
+| isGoogleUser     | Boolean          | Is Google account                     |
+| emailVerified    | Boolean          | Email verified                        |
+| createdAt        | DateTime         | Creation timestamp                    |
+| updatedAt        | DateTime         | Last update                           |
 
 **vehicles**
 
-```javascript
-{
-  _id: ObjectId,
-  driverId: ObjectId (ref: users),
-  model: String,
-  licensePlate: String (unique),
-  color: String,
-  capacity: Number,
-  preferences: {
-    smoking: Boolean,
-    pets: Boolean,
-    music: Boolean
-  },
-  isActive: Boolean,
-  createdAt: Date
-}
-```
+| Column             | Type            | Description                |
+| ------------------ | --------------- | -------------------------- |
+| id                 | Int (PK)        | Auto-increment ID          |
+| driverId           | Int (FK)        | Reference to User          |
+| model              | String          | Car model                  |
+| licensePlate       | String (unique) | License plate              |
+| color              | String          | Car color                  |
+| capacity           | Int             | Passenger capacity         |
+| preferences        | JSON            | Smoking, pets, music prefs |
+| isActive           | Boolean         | Active status              |
+| registrationExpiry | DateTime        | Registration expiry        |
 
 **ridePools**
 
-```javascript
-{
-  _id: ObjectId,
-  driverId: ObjectId (ref: users),
-  vehicleId: ObjectId (ref: vehicles),
-  pickupLocation: {
-    type: 'Point',
-    coordinates: [longitude, latitude],
-    address: String,
-    s2CellId: String
-  },
-  dropLocation: {
-    type: 'Point',
-    coordinates: [longitude, latitude],
-    address: String,
-    s2CellId: String
-  },
-  departureTime: Date,
-  availableSeats: Number,
-  bookedSeats: Number,
-  pricePerSeat: Number,
-  status: Enum ['active', 'completed', 'cancelled'],
-  preferences: {
-    smoking: Boolean,
-    pets: Boolean,
-    femaleOnly: Boolean,
-    music: Boolean
-  },
-  passengers: [{
-    userId: ObjectId,
-    status: 'confirmed' | 'cancelled',
-    joinedAt: Date
-  }],
-  createdAt: Date
-}
-```
-
-**rideRequests**
-
-```javascript
-{
-  _id: ObjectId,
-  ridePoolId: ObjectId (ref: ridePools),
-  riderId: ObjectId (ref: users),
-  status: Enum ['pending', 'approved', 'rejected', 'cancelled'],
-  pickupLocation: { coordinates: [Number], address: String },
-  dropLocation: { coordinates: [Number], address: String },
-  requestedAt: Date,
-  approvedAt: Date,
-  rejectedAt: Date,
-  rejectionReason: String
-}
-```
+| Column         | Type     | Description                              |
+| -------------- | -------- | ---------------------------------------- |
+| id             | Int (PK) | Auto-increment ID                        |
+| driverId       | Int (FK) | Reference to User                        |
+| vehicleId      | Int (FK) | Reference to Vehicle                     |
+| pickupLocation | JSON     | { type, coordinates, address, s2CellId } |
+| dropLocation   | JSON     | { type, coordinates, address, s2CellId } |
+| departureTime  | DateTime | Scheduled departure                      |
+| availableSeats | Int      | Available seats                          |
+| bookedSeats    | Int      | Booked seats                             |
+| pricePerSeat   | Float    | Price per seat                           |
+| status         | Enum     | ACTIVE, COMPLETED, CANCELLED             |
+| preferences    | JSON     | Ride preferences                         |
+| passengers     | JSON     | Array of passenger info                  |
+| routeData      | JSON?    | Route waypoints, distance                |
 
 **trips**
 
-```javascript
-{
-  _id: ObjectId,
-  ridePoolId: ObjectId (ref: ridePools),
-  driverId: ObjectId (ref: users),
-  riderIds: [ObjectId],
-  startTime: Date,
-  endTime: Date,
-  status: Enum ['scheduled', 'in-progress', 'completed', 'cancelled'],
-  totalFare: Number,
-  actualDistance: Number,
-  actualDuration: Number,
-  startLocation: { coordinates: [Number], address: String },
-  endLocation: { coordinates: [Number], address: String },
-  createdAt: Date
-}
-```
+| Column         | Type      | Description                                  |
+| -------------- | --------- | -------------------------------------------- |
+| id             | Int (PK)  | Auto-increment ID                            |
+| ridePoolId     | Int (FK)  | Reference to RidePool                        |
+| driverId       | Int (FK)  | Reference to User (driver)                   |
+| riderIds       | Int[]     | Array of User IDs                            |
+| startTime      | DateTime? | Trip start                                   |
+| endTime        | DateTime? | Trip end                                     |
+| status         | Enum      | SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED |
+| totalFare      | Float     | Total fare                                   |
+| actualDistance | Float?    | Actual distance traveled                     |
+| actualDuration | Int?      | Actual duration (minutes)                    |
 
 **reviews**
 
-```javascript
-{
-  _id: ObjectId,
-  tripId: ObjectId (ref: trips),
-  reviewerId: ObjectId (ref: users),
-  revieweeId: ObjectId (ref: users),
-  type: Enum ['driver-to-rider', 'rider-to-driver'],
-  rating: Number (1-5),
-  comment: String,
-  isVisible: Boolean,
-  createdAt: Date
-}
-```
+| Column     | Type     | Description                      |
+| ---------- | -------- | -------------------------------- |
+| id         | Int (PK) | Auto-increment ID                |
+| tripId     | Int (FK) | Reference to Trip                |
+| reviewerId | Int (FK) | Reference to User                |
+| revieweeId | Int (FK) | Reference to User                |
+| type       | Enum     | DRIVER_TO_RIDER, RIDER_TO_DRIVER |
+| rating     | Int      | Rating (1-5)                     |
+| comment    | String?  | Review comment                   |
+| isVisible  | Boolean  | Visibility status                |
 
 **sosAlerts**
 
-```javascript
-{
-  _id: ObjectId,
-  userId: ObjectId (ref: users),
-  ridePoolId: ObjectId (ref: ridePools),
-  location: {
-    coordinates: [Number],
-    address: String
-  },
-  message: String,
-  status: Enum ['active', 'acknowledged', 'resolved'],
-  acknowledgedBy: ObjectId,
-  acknowledgedAt: Date,
-  notes: String,
-  resolvedAt: Date,
-  createdAt: Date
-}
-```
+| Column         | Type      | Description                    |
+| -------------- | --------- | ------------------------------ |
+| id             | Int (PK)  | Auto-increment ID              |
+| userId         | Int (FK)  | Reference to User              |
+| ridePoolId     | Int? (FK) | Reference to RidePool          |
+| location       | JSON?     | { type, coordinates, address } |
+| message        | String?   | Alert message                  |
+| status         | Enum      | ACTIVE, ACKNOWLEDGED, RESOLVED |
+| acknowledgedBy | Int?      | Admin who acknowledged         |
+| acknowledgedAt | DateTime? | Acknowledged time              |
+| notes          | String?   | Resolution notes               |
+| resolvedAt     | DateTime? | Resolution time                |
 
 ---
 
@@ -524,7 +464,7 @@ SOS Emergency:
 ### Current Architecture (Single Server)
 
 - Express.js server
-- MongoDB instance
+- PostgreSQL (Neon DB)
 - In-memory cache (fallback)
 - JWT authentication with Google OAuth
 
@@ -562,13 +502,15 @@ SOS Emergency:
 
 ## ⚠️ Trade-offs Documented
 
-| Aspect         | Decision             | Rationale                                 |
-| -------------- | -------------------- | ----------------------------------------- |
-| Database       | MongoDB vs SQL       | Flexible schema for evolving requirements |
-| Caching        | In-memory vs Redis   | Simplified setup for learning             |
-| Maps           | Mock vs Real API     | Focus on algorithm learning               |
-| Real-time      | Polling vs WebSocket | Simplified implementation                 |
-| Authentication | JWT + Google OAuth   | Stateless, supports social login          |
+| Aspect         | Decision             | Rationale                               |
+| -------------- | -------------------- | --------------------------------------- |
+| Database       | PostgreSQL (Neon)    | Type safety, relations, ACID compliance |
+| ORM            | Prisma               | Type safety, migrations, IDE support    |
+| Caching        | In-memory vs Redis   | Simplified setup for learning           |
+| Maps           | Mock vs Real API     | Focus on algorithm learning             |
+| Real-time      | Polling vs WebSocket | Simplified implementation               |
+| Authentication | JWT + Google OAuth   | Stateless, supports social login        |
+| Deployment     | Neon (serverless)    | Auto-scaling, pay-per-use               |
 
 ---
 
@@ -587,15 +529,17 @@ SOS Emergency:
 
 ```
 backend/
+├── prisma/
+│   └── schema.prisma   # Prisma schema (PostgreSQL models)
 ├── src/
-│   ├── config/           # Configuration (env, db, jwt, google)
-│   ├── constants/       # App constants (roles, etc.)
+│   ├── config/         # Configuration (env, db, jwt, google)
+│   ├── constants/      # App constants (roles, etc.)
 │   ├── controllers/     # Request handlers
+│   ├── database/       # Prisma client connection
 │   ├── dto/             # Data transfer objects
 │   ├── exceptions/      # Custom exceptions
 │   ├── middleware/     # Auth, validation, rate limiting
-│   ├── models/         # MongoDB schemas (Mongoose)
-│   ├── repositories/    # Data access layer
+│   ├── repositories/    # Data access layer (Prisma)
 │   ├── routes/         # Express routes
 │   ├── services/       # Business logic layer
 │   ├── utils/          # Helper functions

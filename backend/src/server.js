@@ -1,6 +1,6 @@
 require('dotenv').config();
 const app = require('./app');
-const config = require('./config/config');
+const { config } = require('./config');
 const { connectDB } = require('./database/connection');
 const { connectRedis } = require('./database/redis');
 const logger = require('./middleware/logger');
@@ -10,12 +10,17 @@ const startServer = async () => {
     await connectDB();
     logger.info('Database connected successfully');
 
-    await connectRedis();
+    try {
+      await connectRedis();
+    } catch (error) {
+      logger.warn('Redis connection failed, continuing without Redis:', error.message);
+    }
 
     app.listen(config.PORT, () => {
       logger.info(`========================================`);
       logger.info(`Server is Running on port ${config.PORT}`);
       logger.info(`Environment: ${config.NODE_ENV}`);
+      logger.info(`Database: PostgreSQL (Neon)`);
       logger.info(`Health Check: http://localhost:${config.PORT}/api/health`);
       logger.info(`API Version: http://localhost:${config.PORT}${config.API_PREFIX}/${config.API_VERSION}`);
       logger.info(`========================================`);

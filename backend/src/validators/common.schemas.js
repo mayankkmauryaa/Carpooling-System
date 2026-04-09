@@ -1,13 +1,24 @@
 const Joi = require('joi');
 
-const objectIdSchema = Joi.object({
-  id: Joi.string()
-    .length(24)
-    .pattern(/^[0-9a-fA-F]{24}$/)
+const idSchema = Joi.object({
+  id: Joi.number()
+    .integer()
+    .positive()
     .required()
     .messages({
-      'string.length': 'Invalid ID format',
-      'string.pattern.base': 'Invalid ID format',
+      'number.base': 'ID must be a number',
+      'number.integer': 'ID must be an integer',
+      'number.positive': 'ID must be positive',
+      'any.required': 'ID is required'
+    })
+});
+
+const paramIdSchema = Joi.object({
+  id: Joi.string()
+    .pattern(/^\d+$/)
+    .required()
+    .messages({
+      'string.pattern.base': 'ID must be a valid number',
       'any.required': 'ID is required'
     })
 });
@@ -58,7 +69,8 @@ const dateRangeSchema = Joi.object({
 });
 
 module.exports = {
-  objectIdSchema,
+  idSchema,
+  paramIdSchema,
   emailSchema,
   passwordSchema,
   paginationSchema,

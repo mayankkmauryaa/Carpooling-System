@@ -1,20 +1,21 @@
-# Carpooling System - A MERN Stack Ride-Sharing Application with Privacy-Focused Features
+# Carpooling System - A Ride-Sharing Application with Privacy-Focused Features
 
-![MERN Stack](https://img.shields.io/badge/MERN-Stack-4A154B?style=for-the-badge&logo=mongodb&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
 ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![Status](https://img.shields.io/badge/Status-In_Development-orange)
 
 ## 📋 Project Overview
 
-This is a full-stack carpooling application built with the MERN stack, designed to connect riders and drivers efficiently while ensuring privacy and convenience.
+This is a full-stack carpooling application built with Node.js + Express + PostgreSQL (Neon), designed to connect riders and drivers efficiently while ensuring privacy and convenience.
 
 ### Architecture (Backend Only - No Frontend Yet)
 
 #### Technology Stack
 
 - Node.js + Express
-- MongoDB + Mongoose
+- PostgreSQL + Prisma ORM (Neon DB)
 - JWT authentication
 - bcryptjs for password hashing
 - Google OAuth 2.0 for authentication
@@ -55,6 +56,7 @@ This is a full-stack carpooling application built with the MERN stack, designed 
 
 2. **Architecture:**
    - Repository pattern with services layer ✓
+   - Prisma ORM for PostgreSQL ✓
    - Custom exceptions ✓
    - Validation middleware (Joi) ✓
    - DTO/Response formatters ✓
@@ -69,9 +71,9 @@ This is a full-stack carpooling application built with the MERN stack, designed 
 ### Evaluation Criteria Addressed
 
 1. ✅ Authentication - JWT + bcrypt security
-2. ✅ Time & Space Complexity - Efficient algorithms with O(log n) geospatial queries
+2. ✅ Time & Space Complexity - Efficient algorithms
 3. ✅ Handling System Failure Cases - Error handling, retry mechanisms
-4. ✅ Object-Oriented Programming - Proper encapsulation, inheritance in models
+4. ✅ Object-Oriented Programming - Proper encapsulation in repositories
 5. ✅ Trade-offs in System - Documented design decisions
 6. ✅ System Monitoring - Logging and error tracking
 7. ✅ Caching - Redis for frequently accessed data
@@ -84,19 +86,21 @@ This is a full-stack carpooling application built with the MERN stack, designed 
 ```
 carpooling-system/
 ├── backend/                 # Node.js REST API ✅ Complete
+│   ├── prisma/
+│   │   └── schema.prisma   # Prisma schema (PostgreSQL models)
 │   ├── src/
 │   │   ├── config/         # Database, JWT, Google OAuth config
 │   │   ├── constants/      # App constants (roles)
 │   │   ├── controllers/    # API handlers
-│   │   ├── dto/           # Response formatters (ApiResponse, PaginatedResponse)
-│   │   ├── exceptions/     # Custom exceptions (NotFound, Conflict, etc.)
+│   │   ├── database/       # Prisma client connection
+│   │   ├── dto/            # Response formatters
+│   │   ├── exceptions/     # Custom exceptions
 │   │   ├── middleware/     # Auth, validation, error handling
-│   │   ├── models/         # MongoDB schemas
-│   │   ├── repositories/   # Data access layer
+│   │   ├── repositories/   # Data access layer (Prisma)
 │   │   ├── routes/         # REST endpoints (v1/)
 │   │   ├── services/       # Business logic layer
 │   │   ├── utils/         # Algorithms & helpers
-│   │   ├── validators/    # Joi validation schemas
+│   │   ├── validators/     # Joi validation schemas
 │   │   ├── app.js          # Express app setup
 │   │   └── server.js      # Entry point
 │   └── package.json
@@ -119,7 +123,7 @@ carpooling-system/
 ### Prerequisites
 
 - Node.js (v14+)
-- MongoDB (local or Atlas)
+- PostgreSQL (Neon DB) or local PostgreSQL
 - npm or yarn
 - Git
 
@@ -137,15 +141,21 @@ carpooling-system/
    ```bash
    cd backend
    cp .env.example .env
-   # Edit .env with your MongoDB URI
+   # Edit .env with your Neon DATABASE_URL
    npm install
-   npm run dev
    ```
 
-3. **Run Tests**
+3. **Initialize Database**
+
    ```bash
-   cd backend
-   node tests/algorithms.js
+   # Push Prisma schema to Neon DB
+   npx prisma db push
+
+   # Generate Prisma client
+   npm run prisma:generate
+
+   # Start server
+   npm run dev
    ```
 
 ---
@@ -155,7 +165,7 @@ carpooling-system/
 | Week | Topic                | Status         | Key Concepts                      |
 | ---- | -------------------- | -------------- | --------------------------------- |
 | 1    | REST API Design      | ✅ Complete    | HTTP methods, RESTful conventions |
-| 2    | MongoDB & Mongoose   | ✅ Complete    | OOPS encapsulation, schemas       |
+| 2    | PostgreSQL & Prisma  | ✅ Complete    | ORM, relations, migrations        |
 | 3    | Geospatial Data      | ✅ Complete    | Location tracking, S2 cells       |
 | 4    | Route Matching       | ✅ Complete    | Algorithm implementation          |
 | 5    | Dispatch Logic       | ✅ Complete    | Matching engine, ETA              |
@@ -170,7 +180,7 @@ carpooling-system/
 ## 📖 Documentation
 
 - [System Architecture](./docs/SYSTEM_ARCHITECTURE.md) - Technical design
-- [Database Schema](./docs/DATABASE_SCHEMA.md) - MongoDB models
+- [Database Schema](./docs/DATABASE_SCHEMA.md) - PostgreSQL/Prisma models
 - [API Endpoints](./docs/API_ENDPOINTS.md) - REST API documentation
 - [API Testing Guide](./docs/API_TESTING.md) - Comprehensive API testing
 - [Postman Collection](./docs/POSTMAN.md) - Pre-configured Postman tests
@@ -187,6 +197,7 @@ This is a learning project. Feel free to fork and enhance!
 ## 📅 Timeline
 
 **Backend Completed:** April 2026  
+**Database:** PostgreSQL (Neon)  
 **Duration:** Ongoing development  
 **Frontend:** To be determined
 

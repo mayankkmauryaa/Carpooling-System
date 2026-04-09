@@ -10,13 +10,13 @@ const {
   getVehiclesQuerySchema
 } = require('../../validators/vehicle.validator');
 
-router.post('/', auth, requireRole('driver'), validate(createVehicleSchema), vehicleController.createVehicle);
+router.post('/', auth, requireRole('DRIVER'), validate(createVehicleSchema), vehicleController.createVehicle);
 router.get('/', auth, validate(getVehiclesQuerySchema, 'query'), vehicleController.getMyVehicles);
-router.get('/all', auth, requireRole('admin'), vehicleController.getAllVehicles);
+router.get('/all', auth, requireRole('ADMIN'), vehicleController.getAllVehicles);
 router.get('/:id', auth, validate(vehicleIdParamSchema, 'params'), vehicleController.getVehicleById);
 router.put('/:id', auth, validate(vehicleIdParamSchema, 'params'), validate(updateVehicleSchema), vehicleController.updateVehicle);
 router.delete('/:id', auth, validate(vehicleIdParamSchema, 'params'), vehicleController.deleteVehicle);
 router.put('/:id/status', auth, validate(vehicleIdParamSchema, 'params'), vehicleController.toggleVehicleStatus);
-router.get('/driver/:driverId', auth, requireRole('admin'), vehicleController.getVehiclesByDriver);
+router.get('/driver/:driverId', auth, requireRole('ADMIN'), vehicleController.getVehiclesByDriver);
 
 module.exports = router;

@@ -2,7 +2,7 @@
 
 ## 🎯 Overview
 
-This document tracks weekly progress and milestones for the carpooling system development using MERN stack.
+This document tracks weekly progress and milestones for the carpooling system development using **Node.js + Express + PostgreSQL (Neon) + Prisma**.
 
 ---
 
@@ -49,7 +49,7 @@ POST   /api/test            → Test endpoint
 
 ---
 
-## 📅 Week 2: Database & OOPS Models
+## 📅 Week 2: Database & Prisma Models
 
 ### Dates
 
@@ -57,45 +57,58 @@ POST   /api/test            → Test endpoint
 
 ### Learning Objectives
 
-- Connect to MongoDB
-- Design Mongoose schemas with OOPS principles
-- Understand encapsulation in data models
+- Connect to PostgreSQL (Neon DB)
+- Design Prisma schemas with relations
+- Understand type safety in data models
 - Implement CRUD operations
 
 ### Tasks
 
-- [ ] Install MongoDB driver and Mongoose
-- [ ] Create database connection config
-- [ ] Design User model (schema)
-- [ ] Design Vehicle model
-- [ ] Implement CRUD operations
-- [ ] Learn: Encapsulation, validation
+- [x] Install Prisma and PostgreSQL dependencies
+- [x] Create database connection config
+- [x] Design User model (schema)
+- [x] Design Vehicle model
+- [x] Implement CRUD operations with repositories
+- [x] Learn: Relations, enums, type safety
 
 ### Console Demo Goal
 
-Perform CRUD operations on User and Vehicle collections
+Perform CRUD operations on User and Vehicle tables
 
 ### Key Concepts
 
-```javascript
-// Encapsulation in Mongoose
-userSchema.methods.toJSON = function () {
-  const obj = this.toObject();
-  delete obj.password; // Hide sensitive data
-  return obj;
-};
+```prisma
+// User Model with Relations
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  firstName String
+  role      Role     @default(RIDER)
 
-// Virtual properties
-userSchema.virtual("fullName").get(function () {
-  return `${this.firstName} ${this.lastName}`;
-});
+  vehicles  Vehicle[]
+}
+
+enum Role {
+  DRIVER
+  RIDER
+  ADMIN
+}
+
+// Vehicle with Foreign Key
+model Vehicle {
+  id        Int   @id @default(autoincrement())
+  driverId  Int
+  model     String
+
+  driver    User  @relation(fields: [driverId], references: [id])
+}
 ```
 
 ### Deliverables
 
-- MongoDB connection
+- PostgreSQL (Neon) connection
 - User and Vehicle models
-- CRUD API endpoints
+- CRUD API endpoints with repositories
 - Console demo with database operations
 
 ---
@@ -510,7 +523,7 @@ app.use((err, req, res, next) => {
 | Week | Topic                | Status     | Notes                                     |
 | ---- | -------------------- | ---------- | ----------------------------------------- |
 | 1    | Node.js & REST API   | ✅ Done    | Backend structure created, Express server |
-| 2    | Database & OOPS      | ✅ Done    | Mongoose models with encapsulation        |
+| 2    | Database & OOPS      | ✅ Done    | Prisma models with PostgreSQL/Neon        |
 | 3    | Supply Service       | ✅ Done    | RidePool model, location tracking         |
 | 4    | Route Matching       | ✅ Done    | Algorithm implemented, tested in console  |
 | 5    | Demand & Dispatch    | ✅ Done    | Ride request handling, matching           |

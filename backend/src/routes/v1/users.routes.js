@@ -17,9 +17,9 @@ router.put('/password', auth, validate(changePasswordSchema), userController.cha
 router.get('/:id', auth, validate(userIdParamSchema, 'params'), userController.getUserById);
 router.get('/:userId/reviews', auth, validate(userReviewsQuerySchema, 'query'), userController.getUserReviews);
 router.get('/', auth, validate(getAllUsersQuerySchema, 'query'), userController.getAllUsers);
-router.get('/drivers', auth, requireRole('admin'), userController.getAllDrivers);
-router.get('/riders', auth, requireRole('admin'), userController.getAllRiders);
-router.put('/:id/status', auth, requireRole('admin'), validate(userIdParamSchema, 'params'), userController.toggleUserStatus);
-router.delete('/:id', auth, requireRole('admin'), validate(userIdParamSchema, 'params'), userController.deleteUser);
+router.get('/drivers', auth, requireRole('ADMIN'), userController.getAllDrivers);
+router.get('/riders', auth, requireRole('ADMIN'), userController.getAllRiders);
+router.put('/:id/status', auth, requireRole('ADMIN'), validate(userIdParamSchema, 'params'), userController.toggleUserStatus);
+router.delete('/:id', auth, requireRole('ADMIN'), validate(userIdParamSchema, 'params'), userController.deleteUser);
 
 module.exports = router;

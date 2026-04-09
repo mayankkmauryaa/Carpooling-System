@@ -67,64 +67,64 @@ Code flow helps understand **system dependencies**, identify bottlenecks, and pl
 │                                              │                            │
 │                                              ▼                            │
 │   ┌──────────────────────────────────────────────────────────────────┐    │
-│   │                         ROUTES LAYER                              │    │
-│   │   /api/v1/auth/*  ──►  /api/v1/rides/*  ──►  /api/v1/trips/*  ──► │
+│   │                         ROUTES LAYER                             │    │
+│   │   /api/v1/auth/*  ──►  /api/v1/rides/*  ──►  /api/v1/trips/*  ──►│    |
 │   └──────────────────────────────────────────────────────────────────┘    │
 │                                              │                            │
 │                                              ▼                            │
-│   ┌──────────────────────────────────────────────────────────────────┐    │
-│   │                      MIDDLEWARE LAYER                              │    │
-│   │   ┌─────────────────┐     ┌─────────────────┐     ┌─────────────┐ │    │
-│   │   │   Auth Check    │────►│   Role Check    │────►│ Validation  │ │    │
-│   │   │  (JWT Verify)   │     │  (if required)  │     │   (Joi)     │ │    │
-│   │   └────────┬────────┘     └────────┬────────┘     └──────┬──────┘ │    │
-│   └───────────┼────────────────────────┼─────────────────────┼─────────┘    │
-│               │                        │                      │               │
-│               │         ┌─────────────┴──────────────────────┘           │
-│               │         │                                                   │
-│               ▼         ▼                                                   │
+│   ┌───────────────────────────────────────────────────────────────────┐   │
+│   │                      MIDDLEWARE LAYER                             │   │
+│   │   ┌─────────────────┐     ┌─────────────────┐     ┌─────────────┐ │   │
+│   │   │   Auth Check    │────►│   Role Check    │────►│ Validation  │ │   │
+│   │   │  (JWT Verify)   │     │  (if required)  │     │   (Joi)     │ │   │
+│   │   └────────┬────────┘     └────────┬────────┘     └──────┬──────┘ │   │
+│   └───────────┼────────────────────────┼─────────────────────┼────────┘   │
+│               │                        │                     │            │
+│               │         ┌──────────────┴─────────────────────┘            │
+│               │         │                                                 │
+│               ▼         ▼                                                 │
 │   ┌─────────────────────────────┐    ┌────────────────────────────┐       │
-│   │     PASS (next())            │    │      FAIL (next(err))        │       │
-│   │     Continue to              │    │      Go to Error Handler     │       │
-│   │     Controller              │    │                              │       │
+│   │     PASS (next())           │    │      FAIL (next(err))      │       │
+│   │     Continue to             │    │      Go to Error Handler   │       │
+│   │     Controller              │    │                            │       │
 │   └─────────────┬───────────────┘    └──────────────┬─────────────┘       │
 │                 │                                   │                     │
 │                 └──────────────────┬────────────────┘                     │
 │                                    ▼                                      │
 │   ┌──────────────────────────────────────────────────────────────────┐    │
 │   │                       CONTROLLER LAYER                           │    │
-│   │   1. Extract Input   2. Validate   3. Call Service   4. Format │    │
+│   │   1. Extract Input   2. Validate   3. Call Service   4. Format   │    │
 │   └──────────────────────────────────────────────────────────────────┘    │
 │                                    │                                      │
 │                                    ▼                                      │
 │   ┌──────────────────────────────────────────────────────────────────┐    │
 │   │                       SERVICE LAYER                              │    │
-│   │   1. Business Logic   2. Data Processing   3. Repository Calls  │    │
+│   │   1. Business Logic   2. Data Processing   3. Repository Calls   │    │
 │   └──────────────────────────────────────────────────────────────────┘    │
 │                                    │                                      │
 │                                    ▼                                      │
 │   ┌──────────────────────────────────────────────────────────────────┐    │
-│   │                     REPOSITORY LAYER                            │    │
-│   │   1. Database Queries   2. Data Mapping   3. Transactions       │    │
+│   │                     REPOSITORY LAYER                             │    │
+│   │   1. Database Queries   2. Data Mapping   3. Transactions        │    │
 │   └──────────────────────────────────────────────────────────────────┘    │
 │                                    │                                      │
 │              ┌─────────────────────┼─────────────────────┐                │
 │              │                     │                     │                │
 │              ▼                     ▼                     ▼                │
-│   ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐           │
-│   │  UTILITIES     │  │    MONGODB      │  │     REDIS       │           │
-│   │ • Distance      │  │  • find()       │  │  • cache()      │           │
-│   │ • Route Matcher│  │  • create()     │  │  • get()        │           │
-│   │ • S2 Cells     │  │  • update()     │  │  • delete()     │           │
-│   │ • ETA Calc     │  │  • aggregate()   │  │                 │           │
-│   └─────────────────┘  └────────┬────────┘  └─────────────────┘           │
+│   ┌─────────────────┐  ┌─────────────────────┐  ┌─────────────────┐           │
+│   │  UTILITIES      │  │  POSTGRESQL (Neon)  │  │     REDIS       │           │
+│   │ • Distance      │  │  • Prisma Client    │  │  • cache()      │           │
+│   │ • Route Matcher │  │  • Repositories     │  │  • get()        │           │
+│   │ • S2 Cells      │  │  • Transactions     │  │  • delete()     │           │
+│   │ • ETA Calc      │  │                     │  │                 │           │
+│   └─────────────────┘  └──────────┬──────────┘  └─────────────────┘           │
 │                                 │                                         │
-│                                 └─────────────────────────────────────────┘│
-│                                              │                              │
-│                                              ▼                              │
+│                                 └─────────────────────────────────────────┤
+│                                              │                            │
+│                                              ▼                            │
 │   ┌──────────────────────────────────────────────────────────────────┐    │
 │   │                       RESPONSE LAYER                             │    │
-│   │   Success: { success: true, data: {...} }                     │    │
+│   │   Success: { success: true, data: {...} }                        │    │
 │   │   Error:   { success: false, error: {...} }                      │    │
 │   └──────────────────────────────────────────────────────────────────┘    │
 │                                                                           │
@@ -176,7 +176,7 @@ flowchart TD
     end
 
     subgraph DATABASE["Database Layer"]
-        S[(MongoDB)]
+        S[(PostgreSQL)]
         T[(Redis Cache)]
     end
 
@@ -200,6 +200,10 @@ flowchart TD
 ## 2.2 File Structure & Dependencies
 
 ```
+backend/
+├── prisma/
+│   └── schema.prisma          # Prisma schema (PostgreSQL models)
+│
 backend/src/
 ├── app.js                    # Express app setup
 ├── server.js                 # Entry point - Server startup
@@ -207,25 +211,17 @@ backend/src/
 ├── config/
 │   ├── index.js             # Config aggregator
 │   ├── app.js               # App configuration
-│   ├── database.js          # MongoDB connection
+│   ├── database.js          # PostgreSQL (Neon) connection
 │   ├── jwt.js               # JWT configuration
 │   ├── google.js            # Google OAuth configuration
 │   ├── redis.js             # Redis configuration
 │   └── rateLimit.js         # Rate limiting configuration
 │
-├── constants/
-│   └── roles.js             # User roles (driver, rider, admin)
+├── database/
+│   └── connection.js        # Prisma client setup
 │
-├── models/                   # MongoDB Schemas
-│   ├── User.js              # User schema (with Google OAuth fields)
-│   ├── Vehicle.js           # Vehicle schema
-│   ├── RidePool.js          # Ride pool schema
-│   ├── RideRequest.js      # Ride request schema
-│   ├── Trip.js             # Trip schema
-│   ├── Message.js          # Message schema
-│   ├── Review.js           # Review schema
-│   ├── SOSAlert.js         # SOS emergency alert schema
-│   └── index.js            # Model exports
+├── constants/
+│   └── roles.js             # User roles (DRIVER, RIDER, ADMIN)
 │
 ├── repositories/             # Data Access Layer (DAL)
 │   ├── base/
@@ -317,71 +313,81 @@ backend/src/
     └── cache.js            # Redis cache service
 ```
 
-┌───────────────────────────────────────────────────────────────────────────┐
-│ COMPLETE REQUEST-RESPONSE FLOW │
-├───────────────────────────────────────────────────────────────────────────┤
-│ │
-│ HTTP REQUEST │
-│ │ │
-│ ▼ │
-│ ┌──────────────────────────────────────────────────────────────────┐ │
-│ │ EXPRESS SERVER │ │
-│ │ ┌─────────────┐ ┌─────────┐ ┌──────────────┐ │ │
-│ │ │JSON Parser │──►│ CORS │──►│Rate Limiter │ │ │
-│ │ └─────────────┘ └─────────┘ └──────┬───────┘ │ │
-│ └──────────────────────────────────────────┼───────────────────────┘ │
-│ │ │
-│ ▼ │
-│ ┌──────────────────────────────────────────────────────────────────┐ │
-│ │ ROUTES LAYER │ │
-│ │ /api/auth/_ ──► /api/rides/_ ──► /api/trips/\* ──► ... │ │
-│ └──────────────────────────────────────────────────────────────────┘ │
-│ │ │
-│ ▼ │
-│ ┌──────────────────────────────────────────────────────────────────┐ │
-│ │ MIDDLEWARE LAYER │ │
-│ │ ┌─────────────────┐ ┌─────────────────┐ │ │
-│ │ │ Auth Check │────►│ Role Check │ │ │
-│ │ │ (JWT Verify) │ │ (if required) │ │ │
-│ │ └────────┬────────┘ └────────┬────────┘ │ │
-│ └───────────┼────────────────────────┼─────────────────────────────┘ │
-│ │ │ │
-│ │ ┌──────────────┴─────────────────┐ │
-│ │ │ │ │
-│ ▼ ▼ ▼ │
-│ ┌─────────────────────────────┐ ┌────────────────────────────┐ │
-│ │ PASS (next()) │ │ FAIL (next(err)) │ │
-│ │ Continue to │ │ Go to Error Handler │ │
-│ │ Controller │ │ │ │
-│ └─────────────┬───────────────┘ └──────────────┬─────────────┘ │
-│ │ │ │
-│ └──────────────────┬────────────────┘ │
-│ ▼ │
-│ ┌──────────────────────────────────────────────────────────────────┐ │
-│ │ CONTROLLER LAYER │ │
-│ │ 1. Extract Input 2. Validate 3. Auth Check 4. Business │ │
-│ └──────────────────────────────────────────────────────────────────┘ │
-│ │ │
-│ ┌─────────────────────┼─────────────────────┐ │
-│ │ │ │ │
-│ ▼ ▼ ▼ │
-│ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ │
-│ │ UTILITIES │ │ MONGODB │ │ REDIS │ │
-│ │ • Distance │ │ • find() │ │ • cache() │ │
-│ │ • Route Matcher │ │ • create() │ │ • get() │ │
-│ │ • S2 Cells │ │ • update() │ │ • delete() │ │
-│ │ • ETA Calc │ │ • delete() │ │ │ │
-│ └─────────────────┘ └────────┬────────┘ └─────────────────┘ │
-│ │ │
-│ └───────────────┬────────────────────────┘│
-│ ▼ │
-│ ┌────────────────────────────────────┐ │
-│ │ RESPONSE │ │
-│ │ Success: { status: "success" } │ │
-│ │ Error: { status: "error" } │ │
-│ └────────────────────────────────────┘ │
-│ │
-└───────────────────────────────────────────────────────────────────────────┘
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STEP 1: HTTP Request                                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   Client sends request to Express Server                                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STEP 2: Express Server Middleware                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   ┌─────────────┐     ┌─────────┐     ┌──────────────┐                      │
+│   │JSON Parser │────►│  CORS   │────►│Rate Limiter  │                       │
+│   └─────────────┘     └─────────┘     └──────┬───────┘                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STEP 3: Routes Layer                                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   /api/auth/* ──► /api/rides/* ──► /api/trips/* ──► ...                     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STEP 4: Middleware Layer                                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   ┌─────────────────┐     ┌─────────────────┐                               │
+│   │   Auth Check    │────►│   Role Check    │                               │
+│   │  (JWT Verify)   │     │ (if required)   │                               │
+│   └────────┬────────┘     └────────┬────────┘                               │
+│                                                                             │
+│   ✅ PASS ──► next() ──► Controller                                         │
+│   ❌ FAIL ──► next(err) ──► Error Handler                                   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STEP 5: Controller Layer                                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   1. Extract Input   2. Validate   3. Auth Check   4. Business Logic        │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+              ┌─────────────────────┼─────────────────────┐
+              │                     │                     │
+              ▼                     ▼                     ▼
+┌─────────────────────┐ ┌─────────────────────────────┐ ┌─────────────────────┐
+│     UTILITIES       │ │   POSTGRESQL (Neon)         │ │       REDIS         │
+├─────────────────────┤ ├─────────────────────────────┤ ├─────────────────────┤
+│ • Distance Calc     │ │ • Prisma Client             │ │ • cache()           │
+│ • Route Matcher     │ │ • Repositories              │ │ • get()             │
+│ • S2 Cells          │ │ • Transactions              │ │ • delete()          │
+│ • ETA Calculator    │ │                             │ │                     │
+└─────────────────────┘ └─────────────────────────────┘ └─────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ STEP 6: Response                                                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   Success: { status: "success", data: {...} }                               │
+│   Error:   { status: "error", message: "..." }                              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
 ````
 
@@ -422,7 +428,7 @@ flowchart TD
     end
 
     subgraph DATABASE["Database Layer"]
-        P[(MongoDB)]
+        P[(PostgreSQL)]
         Q[(Redis Cache)]
     end
 
@@ -445,21 +451,20 @@ flowchart TD
 ## 2.2 File Structure & Dependencies
 
 ```
+backend/
+├── prisma/
+│   └── schema.prisma          # Prisma schema (PostgreSQL models)
+
 backend/src/
 ├── index.js                    # Entry point - Express server setup
 │
 ├── config/
 │   ├── index.js               # Configuration (env variables)
-│   └── db.js                  # MongoDB connection
+│   ├── database.js            # PostgreSQL (Neon) connection
+│   └── ...
 │
-├── models/                    # MongoDB Schemas
-│   ├── User.js               # User schema
-│   ├── Vehicle.js             # Vehicle schema
-│   ├── RidePool.js           # Ride pool schema
-│   ├── Trip.js               # Trip schema
-│   ├── Message.js            # Message schema
-│   ├── Review.js             # Review schema
-│   └── RideRequest.js       # Ride request schema
+├── database/
+│   └── connection.js         # Prisma client setup
 │
 ├── routes/                    # Route definitions
 │   ├── auth.js              # /api/auth/* routes
@@ -493,9 +498,7 @@ backend/src/
     ├── routeMatcher.js      # Route matching algorithm
     ├── s2Cell.js           # S2 cell geohashing
     ├── eta.js              # ETA calculation
-    ├── dispatch.js          # Dispatch engine
-    ├── privacy.js           # Privacy utilities
-    └── cache.js             # Redis cache service
+    └── privacy.js           # Privacy utilities
 ```
 
 ---
@@ -516,22 +519,22 @@ backend/src/middleware/rateLimiter.js (CHECKPOINT 1)
          │
          ▼
 backend/src/controllers/authController.js (register function)
-         │
-         ├──► backend/src/models/User.js
-         │
-         └──► MongoDB Database
+          │
+          ├──► backend/src/repositories/UserRepository.js
+          │
+          └──► PostgreSQL Database (Neon)
 ```
 
 #### Step-by-Step Execution
 
-| Step | Action                        | Checkpoint               | Success     | Failure         |
-| ---- | ----------------------------- | ------------------------ | ----------- | --------------- |
-| 1    | Extract input from `req.body` | Required fields present? | Continue    | 400 Bad Request |
-| 2    | Check existing user           | Email unique?            | Continue    | 409 Conflict    |
-| 3    | Hash password                 | `bcrypt.hash()`          | Continue    | 500 Error       |
-| 4    | Create user                   | `User.create()`          | Continue    | 500 Error       |
-| 5    | Generate JWT                  | `jwt.sign()`             | Continue    | 500 Error       |
-| 6    | Send response                 | `res.json()`             | 201 Created | -               |
+| Step | Action                        | Checkpoint                | Success     | Failure         |
+| ---- | ----------------------------- | ------------------------- | ----------- | --------------- |
+| 1    | Extract input from `req.body` | Required fields present?  | Continue    | 400 Bad Request |
+| 2    | Check existing user           | Email unique?             | Continue    | 409 Conflict    |
+| 3    | Hash password                 | `bcrypt.hash()`           | Continue    | 500 Error       |
+| 4    | Create user                   | `userRepository.create()` | Continue    | 500 Error       |
+| 5    | Generate JWT                  | `jwt.sign()`              | Continue    | 500 Error       |
+| 6    | Send response                 | `res.json()`              | 201 Created | -               |
 
 #### Code Flow Diagram
 
@@ -552,7 +555,7 @@ backend/src/controllers/authController.js (register function)
 │ STEP 2: Check Existing User                                                 │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│   const existingUser = await User.findOne({ email });                       │
+│   const existingUser = await userRepository.findByEmail(email);             │
 │                                                                             │
 │   ❌ User exists ──► 409 Conflict ("Email already registered")              │
 │   ✅ Not exists ──► Continue                                                │
@@ -578,13 +581,13 @@ backend/src/controllers/authController.js (register function)
 │ STEP 4: Create User                                                         │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│   const user = await User.create({                                          │
+│   const user = await userRepository.create({                                │
 │     email,                                                                  │
 │     password: hashedPassword,                                               │
 │     firstName,                                                              │
 │     lastName,                                                               │
 │     phone,                                                                  │
-│     role: role || 'rider',                                                  │
+│     role: role || 'RIDER',                                                  │
 │     rating: 0,                                                              │
 │     isActive: true                                                          │
 │   });                                                                       │
@@ -600,7 +603,7 @@ backend/src/controllers/authController.js (register function)
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │   const token = jwt.sign(                                                   │
-│     { userId: user._id, role: user.role },                                  │
+│     { userId: user.id, role: user.role },                                   │
 │     config.JWT_SECRET,                                                      │
 │     { expiresIn: '7d' }                                                     │
 │   );                                                                        │
@@ -618,7 +621,7 @@ backend/src/controllers/authController.js (register function)
 │   res.status(201).json({                                                    │
 │     status: 'success',                                                      │
 │     data: {                                                                 │
-│       user: { _id, email, firstName, role },                                │
+│       user: { id, email, firstName, role },                                 │
 │       token                                                                 │
 │     }                                                                       │
 │   });                                                                       │
@@ -671,7 +674,7 @@ backend/src/controllers/authController.js (register function)
 │ CHECKPOINT 2: User Exists                                                   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│   const user = await User.findOne({ email });                               │
+│   const user = await userRepository.findByEmail(email);                     │
 │                                                                             │
 │   if (!user)                                                                │
 │     → 401 Unauthorized ("Invalid credentials")                              │
@@ -799,11 +802,11 @@ Handle Google OAuth callback.
 │ CHECKPOINT 3: Find or Create User                                           │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│   let user = await User.findOne({ email });                                 │
+│   let user = await userRepository.findByEmail(email);                       │
 │                                                                             │
 │   if (!user) {                                                              │
 │     // NEW USER: Create Google account                                      │
-│     user = await User.create({                                              │
+│     user = await userRepository.create({                                    │
 │       email,                                                                │
 │       firstName: given_name || 'User',                                      │
 │       lastName: family_name || '',                                          │
@@ -812,11 +815,12 @@ Handle Google OAuth callback.
 │       googleId: payload.sub                                                 │
 │     });                                                                     │
 │   } else {                                                                  │
-│     // EXISTING USER: Link Google if not already linked                     │
+│     // EXISTING USER: Update Google info if not already linked              │
 │     if (!user.googleId) {                                                   │
-│       user.googleId = payload.sub;                                          │
-│       user.isGoogleUser = true;                                             │
-│       await user.save();                                                    │
+│       user = await userRepository.update(user.id, {                         │
+│         googleId: payload.sub,                                              │
+│         isGoogleUser: true                                                  │
+│       });                                                                   │
 │     }                                                                       │
 │   }                                                                         │
 │                                                                             │
@@ -827,7 +831,7 @@ Handle Google OAuth callback.
 │ STEP 4: Generate JWT & Respond                                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│   const token = jwt.sign({ userId: user._id }, config.JWT_SECRET, {         │
+│   const token = jwt.sign({ userId: user.id }, config.JWT_SECRET, {          │
 │     expiresIn: '7d'                                                         │
 │   });                                                                       │
 │                                                                             │
@@ -905,7 +909,7 @@ Google Sign-In for mobile apps (direct token exchange).
 │ STEP 4: Generate JWT & Respond                                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│   const token = jwt.sign({ userId: user._id }, config.JWT_SECRET, {         │
+│   const token = jwt.sign({ userId: user.id }, config.JWT_SECRET, {          │
 │     expiresIn: '7d'                                                         │
 │   });                                                                       │
 │                                                                             │
@@ -1074,7 +1078,7 @@ const auth = async (req, res, next) => {
     // ═══════════════════════════════════════════════════════════
     // CHECKPOINT 3: User Exists
     // ═══════════════════════════════════════════════════════════
-    const user = await User.findById(decoded.userId);
+    const user = await userRepository.findById(decoded.userId);
 
     if (!user) {
       return res.status(401).json({
@@ -1158,10 +1162,10 @@ backend/src/controllers/rideController.js
          └──► backend/src/utils/s2Cell.js
          │
          ▼
-backend/src/models/RidePool.js
-         │
-         ▼
-MongoDB Database
+backend/src/repositories/RideRepository.js
+          │
+          ▼
+PostgreSQL Database (Neon)
 ```
 
 #### Step-by-Step Checkpoints
@@ -1216,14 +1220,14 @@ MongoDB Database
 │   │                           ▼                                     │    │
 │   │   ┌─────────────────────────────────────────────────────┐       │    │
 │   │   │ CHECKPOINT 2: Vehicle Exists?                       │       │    │
-│   │   │ Vehicle.findById(vehicleId)                         │       │    │
+│   │   │ vehicleRepository.findById(vehicleId)               │       │    │
 │   │   │   → 404 Not Found                                   │       │    │
 │   │   └─────────────────────────────────────────────────────┘       │    │
 │   │                           │                                     │    │
 │   │                           ▼                                     │    │
 │   │   ┌─────────────────────────────────────────────────────┐       │    │
 │   │   │ CHECKPOINT 3: Owns Vehicle?                         │       │    │
-│   │   │ if (vehicle.ownerId !== req.user._id)               │       │    │
+│   │   │ if (vehicle.ownerId !== req.user.id)                │       │    │
 │   │   │   → 403 Forbidden                                   │       │    │
 │   │   └─────────────────────────────────────────────────────┘       │    │
 │   │                           │                                     │    │
@@ -1260,7 +1264,7 @@ MongoDB Database
 │   │                           ▼                                     │    │
 │   │   ┌─────────────────────────────────────────────────────┐       │    │
 │   │   │ STEP: Create RidePool Record                        │       │    │
-│   │   │ RidePool.create({ ... })                            │       │    │
+│   │   │ rideRepository.create({ ... })                      │       │    │
 │   │   │   → 500 Internal Server Error (on failure)          │       │    │
 │   │   └─────────────────────────────────────────────────────┘       │    │
 │   │                           │                                     │    │
@@ -1344,10 +1348,10 @@ backend/src/controllers/rideController.js
          │
          ├──► backend/src/utils/dispatch.js
          ├──► backend/src/utils/routeMatcher.js
-         └──► backend/src/utils/distance.js
-         │
-         ▼
-MongoDB (Geospatial Query)
+          └──► backend/src/utils/distance.js
+          │
+          ▼
+PostgreSQL Database (Neon)
 ```
 
 #### Step-by-Step Execution
@@ -1355,8 +1359,8 @@ MongoDB (Geospatial Query)
 | Step | Action            | Description                                          |
 | ---- | ----------------- | ---------------------------------------------------- |
 | 1    | Extract params    | pickupLat, pickupLng, dropLat, dropLng, radius, etc. |
-| 2    | Build query       | MongoDB query with geospatial $near                  |
-| 3    | Execute DB query  | RidePool.find() with pagination                      |
+| 2    | Build query       | Prisma query with WHERE clause                       |
+| 3    | Execute DB query  | rideRepository.findNearby() with pagination          |
 | 4    | Calculate match % | For each ride, calculate route match                 |
 | 5    | Sort by score     | Highest match first                                  |
 | 6    | Return results    | Top 10 (maxResults)                                  |
@@ -1433,10 +1437,10 @@ flowchart TD
     A[Ride Search Request] --> B[Extract Query Params]
 
     B --> C{Include Location?}
-    C -->|Yes| D[Add Geospatial Query<br/>$near with $geometry]
-    C -->|No| E[Skip geospatial]
+    C -->|Yes| D[Add Location Filters<br/>latitude/longitude WHERE clause]
+    C -->|No| E[Skip location filters]
 
-    D --> F[Execute MongoDB Query<br/>Uses 2dsphere index]
+    D --> F[Execute Prisma Query<br/>Uses PostgreSQL geospatial functions]
     E --> F
 
     F --> G[For Each Ride]
@@ -1504,7 +1508,7 @@ flowchart TD
 │                                    ▼                                     │
 │   ┌─────────────────────────────────────────────────────────────────┐    │
 │   │ STEP 1: Find the Ride                                           │    │
-│   │ const ride = await RidePool.findById(req.params.id);            │    │
+│   │ const ride = await rideRepository.findById(req.params.id);      │    │
 │   │                                                                 │    │
 │   │ ❌ 404 Ride not found ─►Stop                                   │    │
 │   │ ✅ Found ──► Continue                                          │    │
@@ -1523,7 +1527,7 @@ flowchart TD
 │   ┌─────────────────────────────────────────────────────────────────┐    │
 │   │ STEP 3: Check Not Already Requested                             │    │
 │   │ const existing = ride.requests.find(r =>                        │    │
-│   │   r.userId === req.user._id &&                                  │    │
+│   │   r.userId === req.user.id &&                                   │    │
 │   │   ['pending', 'approved'].includes(r.status)                    │    │
 │   │ );                                                              │    │
 │   │                                                                 │    │
@@ -1543,7 +1547,7 @@ flowchart TD
 │                                    ▼                                     │
 │   ┌─────────────────────────────────────────────────────────────────┐    │
 │   │ STEP 5: Check Not the Driver                                    │    │
-│   │ if (ride.driverId === req.user._id)                             │    │
+│   │ if (ride.driverId === req.user.id)                              │    │
 │   │                                                                 │    │
 │   │ ❌ 400 "Cannot join your own ride" ──► Stop                    │    │
 │   │ ✅ Not driver ──► Continue                                     │    │
@@ -1560,7 +1564,7 @@ flowchart TD
 │   ┌─────────────────────────────────────────────────────────────────┐    │
 │   │ STEP 7: Create Request                                          │    │
 │   │ ride.requests.push({                                            │    │
-│   │   userId: req.user._id,                                         │    │
+│   │   userId: req.user.id,                                          │    │
 │   │   pickupLocation,                                               │    │
 │   │   dropLocation,                                                 │    │
 │   │   matchPercentage,                                              │    │
@@ -1693,7 +1697,7 @@ stateDiagram-v2
 │                                                                          │
 │   ┌─────────────────────────────────────────────────────────────────┐    │
 │   │ CHECKPOINT 1: Find Trip                                         │    │
-│   │ const trip = await Trip.findById(tripId);                       │    │
+│   │ const trip = await tripRepository.findById(tripId);             │    │
 │   │                                                                 │    │
 │   │ ❌ 404 Trip not found ──► Stop                                  │    │
 │   │ ✅ Found ──► Continue                                           │    │
@@ -1711,8 +1715,8 @@ stateDiagram-v2
 │                                    ▼                                     │
 │   ┌─────────────────────────────────────────────────────────────────┐    │
 │   │ CHECKPOINT 3: Was Participant?                                  │    │
-│   │ const isDriver = trip.driverId === req.user._id;                │    │
-│   │ const isRider = trip.riderIds.includes(req.user._id);           │    │
+│   │ const isDriver = trip.driverId === req.user.id;                 │    │
+│   │ const isRider = trip.riderIds.includes(req.user.id);            │    │
 │   │                                                                 │    │
 │   │ ❌ 403 "You were not part of this trip" ──► Stop                │    │
 │   │ ✅ Is participant ──► Continue                                  │    │
@@ -1721,9 +1725,9 @@ stateDiagram-v2
 │                                    ▼                                     │
 │   ┌─────────────────────────────────────────────────────────────────┐    │
 │   │ CHECKPOINT 4: Not Already Reviewed?                             │    │
-│   │ const existing = await Review.findOne({                         │    │
-│   │   tripId, reviewerId: req.user._id                              │    │
-│   │ });                                                             │    │
+│   │ const existing = await reviewRepository.findByTripAndReviewer(  │    |
+│   │   tripId, req.user.id                                           │    │
+│   │ );                                                              │    │
 │   │                                                                 │    │
 │   │ ❌ 400 "Already reviewed" ──► Stop                              │    │
 │   │ ✅ Not reviewed ──► Continue                                    │    │
@@ -1741,7 +1745,7 @@ stateDiagram-v2
 │                                    ▼                                     │
 │   ┌─────────────────────────────────────────────────────────────────┐    │
 │   │ STEP: Create Review (Initially Invisible)                       │    │
-│   │ const review = await Review.create({                            │    │
+│   │ const review = await reviewRepository.create({                  │    │
 │   │   tripId, reviewerId, revieweeId, type, rating, comment,        │    │
 │   │   isVisible: false                                              │    │
 │   │ });                                                             │    │
@@ -1750,7 +1754,7 @@ stateDiagram-v2
 │                                    ▼                                     │
 │   ┌─────────────────────────────────────────────────────────────────┐    │
 │   │ STEP: Update Reviewee's Rating                                  │    │
-│   │ const allReviews = await Review.find({                          │    │
+│   │ const allReviews = await reviewRepository.findByReviewee(       │    │
 │   │   revieweeId, isVisible: true                                   │    │
 │   │ });                                                             │    │
 │   │ const avgRating = total / count;                                │    │
@@ -1805,7 +1809,7 @@ stateDiagram-v2
 │                                                                          │
 │   STEP 1: Find Target User                                               │
 │   ───────────────────────────────────────────────────────────────────────┤
-│   const targetUser = await User.findById(targetUserId);                  │
+│   const targetUser = await userRepository.findById(targetUserId);        │
 │                                                                          │
 │   ❌ 404 "User not found" ──► Stop                                       │
 │   ✅ Found ──► Continue                                                  │
@@ -1853,7 +1857,7 @@ stateDiagram-v2
 │   STEP 2: Log with HIGH PRIORITY                                         │
 │   ───────────────────────────────────────────────────────────────────────┤
 │   logger.error('SOS ALERT', {                                            │
-│     userId: req.user._id,                                                │
+│     userId: req.user.id,                                                 │
 │     ridePoolId,                                                          │
 │     message,                                                             │
 │     location,                                                            │
@@ -1895,9 +1899,9 @@ const errorHandler = (err, req, res, next) => {
 
   // STEP 2: Identify Error Type
 
-  // Mongoose Validation Error
-  if (err.name === "ValidationError") {
-    const errors = Object.values(err.errors).map((e) => ({
+  // Prisma Validation Error
+  if (err.name === "ValidationError" || err.name === "PrismaClientValidation") {
+    const errors = Object.values(err.errors || {}).map((e) => ({
       field: e.path,
       message: e.message,
     }));
@@ -1908,18 +1912,18 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Mongoose Cast Error (Invalid ObjectId)
-  if (err.name === "CastError") {
-    return res.status(400).json({
+  // Prisma Cast Error (Invalid ID format)
+  if (err.name === "PrismaClientKnownRequestError" && err.code === "P2025") {
+    return res.status(404).json({
       status: "error",
-      message: "Invalid ID format",
+      message: "Record not found",
     });
   }
 
-  // MongoDB Duplicate Key Error
-  if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
-    return res.status(400).json({
+  // PostgreSQL Unique Constraint Violation
+  if (err.code === "23505") {
+    const field = Object.keys(err.meta || {}).target?.[0] || "field";
+    return res.status(409).json({
       status: "error",
       message: `${field} already exists`,
     });

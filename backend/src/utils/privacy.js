@@ -59,7 +59,7 @@ class PrivacyService {
   
   static sanitizeUserData(user) {
     return {
-      _id: user._id,
+      id: user.id,
       firstName: user.firstName,
       lastName: user.isProfileBlurred ? null : user.lastName,
       rating: user.rating,
