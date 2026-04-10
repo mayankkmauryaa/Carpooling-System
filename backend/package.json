@@ -7,7 +7,18 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push"
+    "prisma:push": "prisma db push",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "docker:dev": "docker compose -f docker-compose.dev.yml up -d",
+    "docker:dev:down": "docker compose -f docker-compose.dev.yml down",
+    "docker:dev:logs": "docker compose -f docker-compose.dev.yml logs -f",
+    "docker:dev:shell": "docker compose -f docker-compose.dev.yml exec backend sh",
+    "docker:prod": "docker compose up -d --build",
+    "docker:prod:down": "docker compose down",
+    "docker:prod:logs": "docker compose logs -f",
+    "docker:prisma": "docker compose -f docker-compose.dev.yml exec backend npx prisma",
+    "docker:build": "docker compose build"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

@@ -39,6 +39,15 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+app.get('/api/v1/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'API is running successfully',
+    database: 'PostgreSQL',
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get('/api/stats', async (req, res, next) => {
   try {
     const [totalUsers, totalDrivers, totalRiders, activeDrivers, totalRides, activeRides, completedTrips, totalVehicles] = await Promise.all([

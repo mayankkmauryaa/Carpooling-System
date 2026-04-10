@@ -1,0 +1,72 @@
+# ============================================
+# Docker Ignore - Exclude unnecessary files
+# ============================================
+
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+Dockerfile.*
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+
+# Documentation
+docs
+README.md
+*.md
+
+# Development
+.env
+.env.*
+.env.local
+.env.development
+.env.test
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Testing
+tests
+coverage
+.nyc_output
+*.test.js
+*.spec.js
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Misc
+*.bak
+*.tmp
+*.temp
+*.old
+*.orig
+routes.html
+
+# Prisma (generated at build time)
+# Uncomment if you want to skip Prisma in build
+# prisma/migrations
+# prisma/*.sql

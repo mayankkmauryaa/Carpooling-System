@@ -1,0 +1,125 @@
+# ============================================
+# Carpooling System - Development Docker Compose
+# Includes local PostgreSQL and Redis
+# ============================================
+
+services:
+  # ==========================================
+  # Backend API Service (Development)
+  # ==========================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: carpooling-backend-dev
+    restart: "no"
+    ports:
+      - "${PORT:-3000}:3000"
+      - "9229:9229"  # Node.js debug port
+    environment:
+      # Server
+      NODE_ENV: development
+      PORT: 3000
+      APP_NAME: Carpooling System (Dev)
+      
+      # Database (Local PostgreSQL)
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-carpooling}?sslmode=disable
+      
+      # JWT
+      JWT_SECRET: ${JWT_SECRET:-dev_secret_change_in_production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_URL: redis://redis:6379
+      
+      # Cache
+      CACHE_TTL: ${CACHE_TTL:-300}
+      CACHE_USER_TTL: ${CACHE_USER_TTL:-600}
+      CACHE_RIDE_TTL: ${CACHE_RIDE_TTL:-300}
+      CACHE_SEARCH_TTL: ${CACHE_SEARCH_TTL:-60}
+      
+      # Rate Limiting
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
+      
+      # CORS
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      
+      # Google OAuth (for local testing)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:3000/api/v1/auth/google/callback}
+    volumes:
+      - ./src:/app/src:ro
+      - ./prisma:/app/prisma:ro
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - carpooling-dev-network
+
+  # ==========================================
+  # PostgreSQL Service (Local)
+  # ==========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: carpooling-postgres-dev
+    restart: "no"
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-carpooling}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres-data-dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-carpooling}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - carpooling-dev-network
+
+  # ==========================================
+  # Redis Service (Local)
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: carpooling-redis-dev
+    restart: "no"
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --appendonly yes --save 60 1
+    volumes:
+      - redis-data-dev:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - carpooling-dev-network
+
+# ==========================================
+# Networks
+# ==========================================
+networks:
+  carpooling-dev-network:
+    driver: bridge
+
+# ==========================================
+# Volumes
+# ==========================================
+volumes:
+  postgres-data-dev:
+    driver: local
+  redis-data-dev:
+    driver: local
