@@ -48,8 +48,8 @@ exports.deleteVehicle = async (req, res, next) => {
 
 exports.getAllVehicles = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, isActive, search, model, color } = req.query;
-    const result = await vehicleService.getAllVehicles({ page, limit, isActive, search, model, color });
+    const { page = 1, limit = 20, isActive, search, brand, model, color } = req.query;
+    const result = await vehicleService.getAllVehicles({ page, limit, isActive, search, brand, model, color });
     res.json(PaginatedResponse.format(result));
   } catch (error) {
     next(error);

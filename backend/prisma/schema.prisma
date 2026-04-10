@@ -45,6 +45,7 @@ model User {
 model Vehicle {
   id                  Int       @id @default(autoincrement())
   driverId            Int
+  brand               String
   model               String
   licensePlate        String    @unique
   color               String
@@ -59,6 +60,7 @@ model Vehicle {
   ridePools           RidePool[]
 
   @@index([driverId])
+  @@index([brand])
 }
 
 model RidePool {

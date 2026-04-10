@@ -102,14 +102,16 @@ class VehicleRepository {
   }
 
   async getAllWithFilters(options = {}) {
-    const { page = 1, limit = 20, isActive, search, model, color } = options;
+    const { page = 1, limit = 20, isActive, search, brand, model, color } = options;
     
     const query = {};
     if (isActive !== undefined) query.isActive = isActive;
+    if (brand) query.brand = { contains: brand, mode: 'insensitive' };
     if (model) query.model = { contains: model, mode: 'insensitive' };
     if (color) query.color = { contains: color, mode: 'insensitive' };
     if (search) {
       query.OR = [
+        { brand: { contains: search, mode: 'insensitive' } },
         { model: { contains: search, mode: 'insensitive' } },
         { licensePlate: { contains: search, mode: 'insensitive' } }
       ];

@@ -2,6 +2,14 @@ const Joi = require('joi');
 const { paramIdSchema, paginationSchema, preferencesSchema } = require('./common.schemas');
 
 const createVehicleSchema = Joi.object({
+  brand: Joi.string()
+    .trim()
+    .max(50)
+    .required()
+    .messages({
+      'string.max': 'Brand name too long',
+      'any.required': 'Car brand is required'
+    }),
   model: Joi.string()
     .trim()
     .max(100)
@@ -44,6 +52,7 @@ const createVehicleSchema = Joi.object({
 });
 
 const updateVehicleSchema = Joi.object({
+  brand: Joi.string().trim().max(50),
   model: Joi.string().trim().max(100),
   color: Joi.string().trim(),
   preferences: Joi.object({
@@ -60,6 +69,7 @@ const vehicleIdParamSchema = paramIdSchema;
 const getVehiclesQuerySchema = paginationSchema.append({
   isActive: Joi.boolean(),
   search: Joi.string().trim(),
+  brand: Joi.string().trim(),
   model: Joi.string().trim(),
   color: Joi.string().trim()
 });
