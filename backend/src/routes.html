@@ -8,23 +8,30 @@
       body {
         font-family: Arial, sans-serif;
         margin: 20px;
-        background: #f5f5f5;
+        background: #1a1a2e;
+        color: #eee;
       }
       h1 {
-        color: #333;
+        color: #00d9ff;
       }
       h2 {
-        color: #666;
+        color: #00d9ff;
         margin-top: 30px;
+        border-bottom: 2px solid #00d9ff;
+        padding-bottom: 10px;
       }
       .route-section {
-        background: white;
+        background: #16213e;
         padding: 15px;
         margin: 10px 0;
-        border-radius: 5px;
+        border-radius: 8px;
+        border-left: 4px solid #00d9ff;
+      }
+      .route-section.new {
+        border-left-color: #49cc90;
       }
       a {
-        color: #0066cc;
+        color: #00d9ff;
         text-decoration: none;
       }
       a:hover {
@@ -36,6 +43,7 @@
         border-radius: 3px;
         margin-right: 10px;
         font-weight: bold;
+        font-size: 12px;
       }
       .get {
         background: #61affe;
@@ -53,15 +61,39 @@
         background: #f93e3e;
         color: white;
       }
+      .patch {
+        background: #50e3c2;
+        color: white;
+      }
       .query {
-        color: #999;
+        color: #888;
         font-size: 12px;
+      }
+      .section-desc {
+        color: #888;
+        font-size: 14px;
+        margin-bottom: 15px;
+      }
+      .badge {
+        display: inline-block;
+        background: #49cc90;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 10px;
+        margin-left: 10px;
+      }
+      .websocket {
+        background: #f0ad4e;
+        color: white;
       }
     </style>
   </head>
   <body>
     <h1>🚗 Carpooling System API</h1>
-    <p>All available routes for the backend API:</p>
+    <p class="section-desc">
+      All available routes for the backend API - Updated April 2026
+    </p>
 
     <h2>🔐 Authentication</h2>
     <div class="route-section">
@@ -105,336 +137,610 @@
 
     <h2>👤 Users</h2>
     <div class="route-section">
-      <a href="/api/users/profile"
-        ><span class="method get">GET</span> /api/users/profile</a
+      <a href="/api/v1/users/profile"
+        ><span class="method get">GET</span> /api/v1/users/profile</a
       >
       - Get profile<br /><br />
-      <a href="/api/users/profile"
-        ><span class="method put">PUT</span> /api/users/profile</a
+      <a href="/api/v1/users/profile"
+        ><span class="method put">PUT</span> /api/v1/users/profile</a
       >
       - Update profile<br /><br />
-      <a href="/api/users/password"
-        ><span class="method put">PUT</span> /api/users/password</a
+      <a href="/api/v1/users/password"
+        ><span class="method put">PUT</span> /api/v1/users/password</a
       >
       - Change password<br /><br />
-      <a href="/api/users"><span class="method get">GET</span> /api/users</a>
+      <a href="/api/v1/users"
+        ><span class="method get">GET</span> /api/v1/users</a
+      >
       <span class="query"
         >?page=1&limit=20&role=driver&search=name&isActive=true</span
       ><br /><br />
-      <a href="/api/users/drivers"
-        ><span class="method get">GET</span> /api/users/drivers</a
+      <a href="/api/v1/users/drivers"
+        ><span class="method get">GET</span> /api/v1/users/drivers</a
       >
       <span class="query">?page=1&limit=20&isActive=true</span><br /><br />
-      <a href="/api/users/riders"
-        ><span class="method get">GET</span> /api/users/riders</a
+      <a href="/api/v1/users/riders"
+        ><span class="method get">GET</span> /api/v1/users/riders</a
       >
       <span class="query">?page=1&limit=20</span><br /><br />
-      <a href="/api/users/:id"
-        ><span class="method get">GET</span> /api/users/:id</a
+      <a href="/api/v1/users/:id"
+        ><span class="method get">GET</span> /api/v1/users/:id</a
       >
       - Get user by ID<br /><br />
-      <a href="/api/users/:id/status"
-        ><span class="method put">PUT</span> /api/users/:id/status</a
-      >
-      - Toggle user status (admin)<br /><br />
-      <a href="/api/users/:id"
-        ><span class="method delete">DELETE</span> /api/users/:id</a
-      >
-      - Delete user (admin)<br /><br />
-      <a href="/api/users/:userId/reviews"
-        ><span class="method get">GET</span> /api/users/:userId/reviews</a
+      <a href="/api/v1/users/:userId/reviews"
+        ><span class="method get">GET</span> /api/v1/users/:userId/reviews</a
       >
       - Get user reviews
     </div>
 
     <h2>🚗 Vehicles</h2>
     <div class="route-section">
-      <a href="/api/vehicles"
-        ><span class="method get">GET</span> /api/vehicles</a
+      <a href="/api/v1/vehicles"
+        ><span class="method get">GET</span> /api/v1/vehicles</a
       >
       - Get my vehicles<br /><br />
-      <a href="/api/vehicles"
-        ><span class="method post">POST</span> /api/vehicles</a
+      <a href="/api/v1/vehicles"
+        ><span class="method post">POST</span> /api/v1/vehicles</a
       >
       - Add vehicle (driver)<br /><br />
-      <a href="/api/vehicles/all"
-        ><span class="method get">GET</span> /api/vehicles/all</a
+      <a href="/api/v1/vehicles/all"
+        ><span class="method get">GET</span> /api/v1/vehicles/all</a
       >
       <span class="query">?page=1&limit=20&isActive=true</span><br /><br />
-      <a href="/api/vehicles/:id"
-        ><span class="method get">GET</span> /api/vehicles/:id</a
+      <a href="/api/v1/vehicles/:id"
+        ><span class="method get">GET</span> /api/v1/vehicles/:id</a
       >
       - Get vehicle<br /><br />
-      <a href="/api/vehicles/:id"
-        ><span class="method put">PUT</span> /api/vehicles/:id</a
+      <a href="/api/v1/vehicles/:id"
+        ><span class="method put">PUT</span> /api/v1/vehicles/:id</a
       >
       - Update vehicle<br /><br />
-      <a href="/api/vehicles/:id"
-        ><span class="method delete">DELETE</span> /api/vehicles/:id</a
+      <a href="/api/v1/vehicles/:id"
+        ><span class="method delete">DELETE</span> /api/v1/vehicles/:id</a
       >
       - Delete vehicle<br /><br />
-      <a href="/api/vehicles/:id/status"
-        ><span class="method put">PUT</span> /api/vehicles/:id/status</a
+      <a href="/api/v1/vehicles/:id/status"
+        ><span class="method put">PUT</span> /api/v1/vehicles/:id/status</a
       >
       - Toggle status<br /><br />
-      <a href="/api/vehicles/driver/:driverId"
-        ><span class="method get">GET</span> /api/vehicles/driver/:driverId</a
+      <a href="/api/v1/vehicles/driver/:driverId"
+        ><span class="method get">GET</span>
+        /api/v1/vehicles/driver/:driverId</a
       >
       - Get by driver
     </div>
 
     <h2>🚙 Rides</h2>
     <div class="route-section">
-      <a href="/api/rides"><span class="method get">GET</span> /api/rides</a> -
-      Get my rides<br /><br />
-      <a href="/api/rides"><span class="method post">POST</span> /api/rides</a>
+      <a href="/api/v1/rides"
+        ><span class="method get">GET</span> /api/v1/rides</a
+      >
+      - Get my rides<br /><br />
+      <a href="/api/v1/rides"
+        ><span class="method post">POST</span> /api/v1/rides</a
+      >
       - Create ride (driver)<br /><br />
-      <a href="/api/rides/search"
-        ><span class="method get">GET</span> /api/rides/search</a
+      <a href="/api/v1/rides/search"
+        ><span class="method get">GET</span> /api/v1/rides/search</a
       >
       <span class="query"
         >?pickupLat=37.7749&pickupLng=-122.4194&dropLat=37.4028&dropLng=-122.0869&radius=15&availableSeats=2</span
       ><br /><br />
-      <a href="/api/rides/recommendations"
-        ><span class="method get">GET</span> /api/rides/recommendations</a
+      <a href="/api/v1/rides/recommendations"
+        ><span class="method get">GET</span> /api/v1/rides/recommendations</a
       >
       - Get recommendations<br /><br />
-      <a href="/api/rides/all"
-        ><span class="method get">GET</span> /api/rides/all</a
+      <a href="/api/v1/rides/all"
+        ><span class="method get">GET</span> /api/v1/rides/all</a
       >
       <span class="query">?page=1&limit=20&status=active</span><br /><br />
-      <a href="/api/rides/:id"
-        ><span class="method get">GET</span> /api/rides/:id</a
+      <a href="/api/v1/rides/:id"
+        ><span class="method get">GET</span> /api/v1/rides/:id</a
       >
       - Get ride details<br /><br />
-      <a href="/api/rides/:id"
-        ><span class="method put">PUT</span> /api/rides/:id</a
+      <a href="/api/v1/rides/:id"
+        ><span class="method put">PUT</span> /api/v1/rides/:id</a
       >
       - Update ride<br /><br />
-      <a href="/api/rides/:id"
-        ><span class="method delete">DELETE</span> /api/rides/:id</a
+      <a href="/api/v1/rides/:id"
+        ><span class="method delete">DELETE</span> /api/v1/rides/:id</a
       >
       - Cancel ride<br /><br />
-      <a href="/api/rides/:id/requests"
-        ><span class="method get">GET</span> /api/rides/:id/requests</a
+      <a href="/api/v1/rides/:id/requests"
+        ><span class="method get">GET</span> /api/v1/rides/:id/requests</a
       >
       - Get requests<br /><br />
-      <a href="/api/rides/:id/requests/:riderId"
-        ><span class="method put">PUT</span> /api/rides/:id/requests/:riderId</a
+      <a href="/api/v1/rides/:id/requests/:riderId"
+        ><span class="method put">PUT</span>
+        /api/v1/rides/:id/requests/:riderId</a
       >
       <span class="query">?action=approve|reject</span><br /><br />
-      <a href="/api/rides/:id/join"
-        ><span class="method post">POST</span> /api/rides/:id/join</a
+      <a href="/api/v1/rides/:id/join"
+        ><span class="method post">POST</span> /api/v1/rides/:id/join</a
       >
       - Request to join<br /><br />
-      <a href="/api/rides/my-requests"
-        ><span class="method get">GET</span> /api/rides/my-requests</a
+      <a href="/api/v1/rides/my-requests"
+        ><span class="method get">GET</span> /api/v1/rides/my-requests</a
       >
       - My requests<br /><br />
-      <a href="/api/rides/:id/join"
-        ><span class="method delete">DELETE</span> /api/rides/:id/join</a
+      <a href="/api/v1/rides/:id/join"
+        ><span class="method delete">DELETE</span> /api/v1/rides/:id/join</a
       >
       - Cancel join request<br /><br />
-      <a href="/api/rides/date/:date"
-        ><span class="method get">GET</span> /api/rides/date/:date</a
+      <a href="/api/v1/rides/date/:date"
+        ><span class="method get">GET</span> /api/v1/rides/date/:date</a
       >
       <span class="query">?page=1</span><br /><br />
-      <a href="/api/rides/upcoming"
-        ><span class="method get">GET</span> /api/rides/upcoming</a
+      <a href="/api/v1/rides/upcoming"
+        ><span class="method get">GET</span> /api/v1/rides/upcoming</a
       >
       - Upcoming rides<br /><br />
-      <a href="/api/rides/nearby"
-        ><span class="method get">GET</span> /api/rides/nearby</a
+      <a href="/api/v1/rides/nearby"
+        ><span class="method get">GET</span> /api/v1/rides/nearby</a
       >
       <span class="query">?lat=37.7749&lng=-122.4194&radius=10</span>
     </div>
 
     <h2>📍 Trips</h2>
     <div class="route-section">
-      <a href="/api/trips"><span class="method get">GET</span> /api/trips</a> -
-      Get my trips<br /><br />
-      <a href="/api/trips/all"
-        ><span class="method get">GET</span> /api/trips/all</a
+      <a href="/api/v1/trips"
+        ><span class="method get">GET</span> /api/v1/trips</a
+      >
+      - Get my trips<br /><br />
+      <a href="/api/v1/trips/all"
+        ><span class="method get">GET</span> /api/v1/trips/all</a
       >
       <span class="query">?page=1&limit=20&status=completed</span><br /><br />
-      <a href="/api/trips/:id"
-        ><span class="method get">GET</span> /api/trips/:id</a
+      <a href="/api/v1/trips/:id"
+        ><span class="method get">GET</span> /api/v1/trips/:id</a
       >
       - Get trip details<br /><br />
-      <a href="/api/trips/:id/start"
-        ><span class="method post">POST</span> /api/trips/:id/start</a
+      <a href="/api/v1/trips/:id/start"
+        ><span class="method post">POST</span> /api/v1/trips/:id/start</a
       >
       - Start trip (driver)<br /><br />
-      <a href="/api/trips/:id/complete"
-        ><span class="method post">POST</span> /api/trips/:id/complete</a
+      <a href="/api/v1/trips/:id/complete"
+        ><span class="method post">POST</span> /api/v1/trips/:id/complete</a
       >
       - Complete trip (driver)<br /><br />
-      <a href="/api/trips/:id/cancel"
-        ><span class="method post">POST</span> /api/trips/:id/cancel</a
+      <a href="/api/v1/trips/:id/cancel"
+        ><span class="method post">POST</span> /api/v1/trips/:id/cancel</a
       >
       - Cancel trip<br /><br />
-      <a href="/api/trips/driver/:driverId"
-        ><span class="method get">GET</span> /api/trips/driver/:driverId</a
+      <a href="/api/v1/trips/driver/:driverId"
+        ><span class="method get">GET</span> /api/v1/trips/driver/:driverId</a
       >
       - Trips by driver<br /><br />
-      <a href="/api/trips/rider/:riderId"
-        ><span class="method get">GET</span> /api/trips/rider/:riderId</a
+      <a href="/api/v1/trips/rider/:riderId"
+        ><span class="method get">GET</span> /api/v1/trips/rider/:riderId</a
       >
       - Trips by rider<br /><br />
-      <a href="/api/trips/ridepool/:ridePoolId"
-        ><span class="method get">GET</span> /api/trips/ridepool/:ridePoolId</a
+      <a href="/api/v1/trips/ridepool/:ridePoolId"
+        ><span class="method get">GET</span>
+        /api/v1/trips/ridepool/:ridePoolId</a
       >
       - Trip by ride pool<br /><br />
-      <a href="/api/trips/date/:date"
-        ><span class="method get">GET</span> /api/trips/date/:date</a
+      <a href="/api/v1/trips/date/:date"
+        ><span class="method get">GET</span> /api/v1/trips/date/:date</a
       >
       - Trips by date<br /><br />
-      <a href="/api/trips/status/:status"
-        ><span class="method get">GET</span> /api/trips/status/:status</a
+      <a href="/api/v1/trips/status/:status"
+        ><span class="method get">GET</span> /api/v1/trips/status/:status</a
       >
       - Trips by status<br /><br />
-      <a href="/api/trips/upcoming"
-        ><span class="method get">GET</span> /api/trips/upcoming</a
+      <a href="/api/v1/trips/upcoming"
+        ><span class="method get">GET</span> /api/v1/trips/upcoming</a
       >
       - Upcoming trips<br /><br />
-      <a href="/api/trips/stats"
-        ><span class="method get">GET</span> /api/trips/stats</a
+      <a href="/api/v1/trips/stats"
+        ><span class="method get">GET</span> /api/v1/trips/stats</a
       >
       - Trip statistics
     </div>
 
     <h2>🔒 Privacy</h2>
     <div class="route-section">
-      <a href="/api/privacy/call/initiate"
-        ><span class="method post">POST</span> /api/privacy/call/initiate</a
+      <a href="/api/v1/privacy/call/initiate"
+        ><span class="method post">POST</span> /api/v1/privacy/call/initiate</a
       >
       - Initiate masked call<br /><br />
-      <a href="/api/privacy/call/end"
-        ><span class="method post">POST</span> /api/privacy/call/end</a
+      <a href="/api/v1/privacy/call/end"
+        ><span class="method post">POST</span> /api/v1/privacy/call/end</a
       >
       - End call<br /><br />
-      <a href="/api/privacy/message/send"
-        ><span class="method post">POST</span> /api/privacy/message/send</a
+      <a href="/api/v1/privacy/message/send"
+        ><span class="method post">POST</span> /api/v1/privacy/message/send</a
       >
       - Send in-app message<br /><br />
-      <a href="/api/privacy/message/conversation/:userId"
+      <a href="/api/v1/privacy/message/conversation/:userId"
         ><span class="method get">GET</span>
-        /api/privacy/message/conversation/:userId</a
+        /api/v1/privacy/message/conversation/:userId</a
       ><br /><br />
-      <a href="/api/privacy/masked-phone/:userId"
+      <a href="/api/v1/privacy/masked-phone/:userId"
         ><span class="method get">GET</span>
-        /api/privacy/masked-phone/:userId</a
+        /api/v1/privacy/masked-phone/:userId</a
       >
       - Get masked phone<br /><br />
-      <a href="/api/privacy/sos/alert"
-        ><span class="method post">POST</span> /api/privacy/sos/alert</a
+      <a href="/api/v1/privacy/sos/alert"
+        ><span class="method post">POST</span> /api/v1/privacy/sos/alert</a
       >
       - Send SOS alert<br /><br />
-      <a href="/api/privacy/sos/history"
-        ><span class="method get">GET</span> /api/privacy/sos/history</a
+      <a href="/api/v1/privacy/sos/history"
+        ><span class="method get">GET</span> /api/v1/privacy/sos/history</a
       >
       - SOS history<br /><br />
-      <a href="/api/privacy/settings"
-        ><span class="method get">GET</span> /api/privacy/settings</a
+      <a href="/api/v1/privacy/settings"
+        ><span class="method get">GET</span> /api/v1/privacy/settings</a
       >
       - Get privacy settings<br /><br />
-      <a href="/api/privacy/settings"
-        ><span class="method put">PUT</span> /api/privacy/settings</a
+      <a href="/api/v1/privacy/settings"
+        ><span class="method put">PUT</span> /api/v1/privacy/settings</a
       >
       - Update settings<br /><br />
-      <a href="/api/privacy/profile-visibility"
-        ><span class="method get">GET</span> /api/privacy/profile-visibility</a
+      <a href="/api/v1/privacy/profile-visibility"
+        ><span class="method get">GET</span>
+        /api/v1/privacy/profile-visibility</a
       >
       - Get visibility<br /><br />
-      <a href="/api/privacy/profile-visibility"
-        ><span class="method put">PUT</span> /api/privacy/profile-visibility</a
+      <a href="/api/v1/privacy/profile-visibility"
+        ><span class="method put">PUT</span>
+        /api/v1/privacy/profile-visibility</a
       >
       - Update visibility
     </div>
 
     <h2>⭐ Reviews</h2>
     <div class="route-section">
-      <a href="/api/reviews"
-        ><span class="method post">POST</span> /api/reviews</a
+      <a href="/api/v1/reviews"
+        ><span class="method post">POST</span> /api/v1/reviews</a
       >
       - Create review<br /><br />
-      <a href="/api/reviews/user/:userId"
-        ><span class="method get">GET</span> /api/reviews/user/:userId</a
+      <a href="/api/v1/reviews/user/:userId"
+        ><span class="method get">GET</span> /api/v1/reviews/user/:userId</a
       >
       <span class="query">?page=1&limit=20</span><br /><br />
-      <a href="/api/reviews/trip/:tripId"
-        ><span class="method get">GET</span> /api/reviews/trip/:tripId</a
+      <a href="/api/v1/reviews/trip/:tripId"
+        ><span class="method get">GET</span> /api/v1/reviews/trip/:tripId</a
       >
       - Trip reviews<br /><br />
-      <a href="/api/reviews/all"
-        ><span class="method get">GET</span> /api/reviews/all</a
+      <a href="/api/v1/reviews/all"
+        ><span class="method get">GET</span> /api/v1/reviews/all</a
       >
       <span class="query">?page=1&limit=20&type=driver-to-rider</span
       ><br /><br />
-      <a href="/api/reviews/my-reviews"
-        ><span class="method get">GET</span> /api/reviews/my-reviews</a
+      <a href="/api/v1/reviews/my-reviews"
+        ><span class="method get">GET</span> /api/v1/reviews/my-reviews</a
       >
       - My reviews<br /><br />
-      <a href="/api/reviews/:id"
-        ><span class="method get">GET</span> /api/reviews/:id</a
+      <a href="/api/v1/reviews/:id"
+        ><span class="method get">GET</span> /api/v1/reviews/:id</a
       >
       - Get review<br /><br />
-      <a href="/api/reviews/:id"
-        ><span class="method delete">DELETE</span> /api/reviews/:id</a
+      <a href="/api/v1/reviews/:id"
+        ><span class="method delete">DELETE</span> /api/v1/reviews/:id</a
       >
       - Delete review<br /><br />
-      <a href="/api/reviews/stats/user/:userId"
-        ><span class="method get">GET</span> /api/reviews/stats/user/:userId</a
+      <a href="/api/v1/reviews/stats/user/:userId"
+        ><span class="method get">GET</span>
+        /api/v1/reviews/stats/user/:userId</a
       >
       - Review stats
     </div>
 
     <h2>💬 Messages</h2>
     <div class="route-section">
-      <a href="/api/messages"
-        ><span class="method get">GET</span> /api/messages</a
+      <a href="/api/v1/messages"
+        ><span class="method get">GET</span> /api/v1/messages</a
       >
       <span class="query">?userId=xxx&page=1</span><br /><br />
-      <a href="/api/messages"
-        ><span class="method post">POST</span> /api/messages</a
+      <a href="/api/v1/messages"
+        ><span class="method post">POST</span> /api/v1/messages</a
       >
       - Send message<br /><br />
-      <a href="/api/messages/conversations"
-        ><span class="method get">GET</span> /api/messages/conversations</a
+      <a href="/api/v1/messages/conversations"
+        ><span class="method get">GET</span> /api/v1/messages/conversations</a
       >
       - All conversations<br /><br />
-      <a href="/api/messages/unread-count"
-        ><span class="method get">GET</span> /api/messages/unread-count</a
+      <a href="/api/v1/messages/unread-count"
+        ><span class="method get">GET</span> /api/v1/messages/unread-count</a
       >
       - Unread count<br /><br />
-      <a href="/api/messages/conversation/:userId"
+      <a href="/api/v1/messages/conversation/:userId"
         ><span class="method get">GET</span>
-        /api/messages/conversation/:userId</a
+        /api/v1/messages/conversation/:userId</a
       >
       <span class="query">?page=1</span><br /><br />
-      <a href="/api/messages/read"
-        ><span class="method put">PUT</span> /api/messages/read</a
+      <a href="/api/v1/messages/read"
+        ><span class="method put">PUT</span> /api/v1/messages/read</a
       >
       - Mark as read<br /><br />
-      <a href="/api/messages/read/:userId"
-        ><span class="method put">PUT</span> /api/messages/read/:userId</a
+      <a href="/api/v1/messages/read/:userId"
+        ><span class="method put">PUT</span> /api/v1/messages/read/:userId</a
       >
       - Mark conversation read<br /><br />
-      <a href="/api/messages/:messageId"
-        ><span class="method delete">DELETE</span> /api/messages/:messageId</a
+      <a href="/api/v1/messages/:messageId"
+        ><span class="method delete">DELETE</span>
+        /api/v1/messages/:messageId</a
       >
       - Delete message<br /><br />
-      <a href="/api/messages/conversation/:userId"
+      <a href="/api/v1/messages/conversation/:userId"
         ><span class="method delete">DELETE</span>
-        /api/messages/conversation/:userId</a
+        /api/v1/messages/conversation/:userId</a
       >
       - Delete conversation
+    </div>
+
+    <h2>📤 Uploads <span class="badge">NEW</span></h2>
+    <div class="route-section new">
+      <p class="section-desc">Cloudinary file upload endpoints</p>
+      <a href="/api/v1/uploads/file"
+        ><span class="method post">POST</span> /api/v1/uploads/file</a
+      >
+      - Upload single file<br /><br />
+      <a href="/api/v1/uploads/files"
+        ><span class="method post">POST</span> /api/v1/uploads/files</a
+      >
+      - Upload multiple files (up to 10)<br /><br />
+      <a href="/api/v1/uploads/profile"
+        ><span class="method post">POST</span> /api/v1/uploads/profile</a
+      >
+      - Upload profile image<br /><br />
+      <a href="/api/v1/uploads/vehicle/:vehicleId/image"
+        ><span class="method post">POST</span>
+        /api/v1/uploads/vehicle/:vehicleId/image</a
+      >
+      - Upload vehicle image<br /><br />
+      <a href="/api/v1/uploads/vehicle/:vehicleId/images"
+        ><span class="method post">POST</span>
+        /api/v1/uploads/vehicle/:vehicleId/images</a
+      >
+      - Upload vehicle images<br /><br />
+      <a href="/api/v1/uploads/driver/document"
+        ><span class="method post">POST</span>
+        /api/v1/uploads/driver/document</a
+      >
+      - Upload driver document<br /><br />
+      <a href="/api/v1/uploads/:publicId"
+        ><span class="method delete">DELETE</span> /api/v1/uploads/:publicId</a
+      >
+      - Delete file<br /><br />
+      <a href="/api/v1/uploads/metadata/:publicId"
+        ><span class="method get">GET</span>
+        /api/v1/uploads/metadata/:publicId</a
+      >
+      - Get file metadata<br /><br />
+      <a href="/api/v1/uploads/optimize/:publicId"
+        ><span class="method get">GET</span>
+        /api/v1/uploads/optimize/:publicId</a
+      >
+      - Get optimized image URL<br /><br />
+      <a href="/api/v1/uploads/thumbnail/:publicId"
+        ><span class="method get">GET</span>
+        /api/v1/uploads/thumbnail/:publicId</a
+      >
+      - Get thumbnail URL
+    </div>
+
+    <h2>💳 Payments <span class="badge">NEW</span></h2>
+    <div class="route-section new">
+      <p class="section-desc">Razorpay payment integration endpoints</p>
+      <a href="/api/v1/payments/order"
+        ><span class="method post">POST</span> /api/v1/payments/order</a
+      >
+      - Create payment order<br /><br />
+      <a href="/api/v1/payments/verify"
+        ><span class="method post">POST</span> /api/v1/payments/verify</a
+      >
+      - Verify payment signature<br /><br />
+      <a href="/api/v1/payments/capture"
+        ><span class="method post">POST</span> /api/v1/payments/capture</a
+      >
+      - Capture payment<br /><br />
+      <a href="/api/v1/payments/refund"
+        ><span class="method post">POST</span> /api/v1/payments/refund</a
+      >
+      - Initiate refund<br /><br />
+      <a href="/api/v1/payments/payment/:paymentId"
+        ><span class="method get">GET</span>
+        /api/v1/payments/payment/:paymentId</a
+      >
+      - Get payment details<br /><br />
+      <a href="/api/v1/payments/customer"
+        ><span class="method post">POST</span> /api/v1/payments/customer</a
+      >
+      - Create customer<br /><br />
+      <a href="/api/v1/payments/customer/:customerId"
+        ><span class="method get">GET</span>
+        /api/v1/payments/customer/:customerId</a
+      >
+      - Get customer<br /><br />
+      <a href="/api/v1/payments/subscription"
+        ><span class="method post">POST</span> /api/v1/payments/subscription</a
+      >
+      - Create subscription<br /><br />
+      <a href="/api/v1/payments/subscription/:subscriptionId"
+        ><span class="method delete">DELETE</span>
+        /api/v1/payments/subscription/:subscriptionId</a
+      >
+      - Cancel subscription<br /><br />
+      <a href="/api/v1/payments/wallet/recharge"
+        ><span class="method post">POST</span>
+        /api/v1/payments/wallet/recharge</a
+      >
+      - Recharge wallet<br /><br />
+      <a href="/api/v1/payments/wallet/debit"
+        ><span class="method post">POST</span> /api/v1/payments/wallet/debit</a
+      >
+      - Debit wallet<br /><br />
+      <a href="/api/v1/payments/wallet/balance"
+        ><span class="method get">GET</span> /api/v1/payments/wallet/balance</a
+      >
+      - Get wallet balance<br /><br />
+      <a href="/api/v1/payments/wallet/transactions"
+        ><span class="method get">GET</span>
+        /api/v1/payments/wallet/transactions</a
+      >
+      - Wallet transaction history<br /><br />
+      <a href="/api/v1/payments/payout"
+        ><span class="method post">POST</span> /api/v1/payments/payout</a
+      >
+      - Create driver payout <span class="query">(admin)</span><br /><br />
+      <a href="/api/v1/payments/transfer"
+        ><span class="method post">POST</span> /api/v1/payments/transfer</a
+      >
+      - Create transfer <span class="query">(admin)</span><br /><br />
+      <a href="/api/v1/payments/webhook"
+        ><span class="method post">POST</span> /api/v1/payments/webhook</a
+      >
+      - Razorpay webhook
+    </div>
+
+    <h2>👨‍💼 Admin <span class="badge">NEW</span></h2>
+    <div class="route-section new">
+      <p class="section-desc">Admin dashboard and management endpoints</p>
+      <a href="/api/v1/admin/dashboard"
+        ><span class="method get">GET</span> /api/v1/admin/dashboard</a
+      >
+      - Dashboard statistics<br /><br />
+      <a href="/api/v1/admin/analytics/users"
+        ><span class="method get">GET</span> /api/v1/admin/analytics/users</a
+      >
+      - User analytics <span class="query">?period=30d</span><br /><br />
+      <a href="/api/v1/admin/analytics/rides"
+        ><span class="method get">GET</span> /api/v1/admin/analytics/rides</a
+      >
+      - Ride analytics<br /><br />
+      <a href="/api/v1/admin/analytics/revenue"
+        ><span class="method get">GET</span> /api/v1/admin/analytics/revenue</a
+      >
+      - Revenue analytics<br /><br />
+      <a href="/api/v1/admin/analytics/popular-routes"
+        ><span class="method get">GET</span>
+        /api/v1/admin/analytics/popular-routes</a
+      >
+      - Popular routes<br /><br />
+      <a href="/api/v1/admin/analytics/peak-hours"
+        ><span class="method get">GET</span>
+        /api/v1/admin/analytics/peak-hours</a
+      >
+      - Peak hours<br /><br />
+      <a href="/api/v1/admin/users"
+        ><span class="method get">GET</span> /api/v1/admin/users</a
+      >
+      - List all users<br /><br />
+      <a href="/api/v1/admin/users/:userId"
+        ><span class="method get">GET</span> /api/v1/admin/users/:userId</a
+      >
+      - Get user details<br /><br />
+      <a href="/api/v1/admin/users/:userId/status"
+        ><span class="method put">PUT</span>
+        /api/v1/admin/users/:userId/status</a
+      >
+      - Update user status<br /><br />
+      <a href="/api/v1/admin/users/:userId/suspend"
+        ><span class="method post">POST</span>
+        /api/v1/admin/users/:userId/suspend</a
+      >
+      - Suspend user<br /><br />
+      <a href="/api/v1/admin/users/:userId/unsuspend"
+        ><span class="method post">POST</span>
+        /api/v1/admin/users/:userId/unsuspend</a
+      >
+      - Unsuspend user<br /><br />
+      <a href="/api/v1/admin/users/:userId"
+        ><span class="method delete">DELETE</span>
+        /api/v1/admin/users/:userId</a
+      >
+      - Delete user<br /><br />
+      <a href="/api/v1/admin/vehicles"
+        ><span class="method get">GET</span> /api/v1/admin/vehicles</a
+      >
+      - List all vehicles<br /><br />
+      <a href="/api/v1/admin/vehicles/:vehicleId"
+        ><span class="method get">GET</span>
+        /api/v1/admin/vehicles/:vehicleId</a
+      >
+      - Get vehicle details<br /><br />
+      <a href="/api/v1/admin/vehicles/:vehicleId/verification"
+        ><span class="method put">PUT</span>
+        /api/v1/admin/vehicles/:vehicleId/verification</a
+      >
+      - Update verification<br /><br />
+      <a href="/api/v1/admin/rides"
+        ><span class="method get">GET</span> /api/v1/admin/rides</a
+      >
+      - List all rides<br /><br />
+      <a href="/api/v1/admin/rides/:rideId"
+        ><span class="method get">GET</span> /api/v1/admin/rides/:rideId</a
+      >
+      - Get ride details<br /><br />
+      <a href="/api/v1/admin/rides/:rideId/cancel"
+        ><span class="method post">POST</span>
+        /api/v1/admin/rides/:rideId/cancel</a
+      >
+      - Cancel ride<br /><br />
+      <a href="/api/v1/admin/trips"
+        ><span class="method get">GET</span> /api/v1/admin/trips</a
+      >
+      - List all trips<br /><br />
+      <a href="/api/v1/admin/trips/:tripId"
+        ><span class="method get">GET</span> /api/v1/admin/trips/:tripId</a
+      >
+      - Get trip details<br /><br />
+      <a href="/api/v1/admin/reviews"
+        ><span class="method get">GET</span> /api/v1/admin/reviews</a
+      >
+      - List all reviews<br /><br />
+      <a href="/api/v1/admin/reviews/:reviewId"
+        ><span class="method delete">DELETE</span>
+        /api/v1/admin/reviews/:reviewId</a
+      >
+      - Delete review<br /><br />
+      <a href="/api/v1/admin/sos"
+        ><span class="method get">GET</span> /api/v1/admin/sos</a
+      >
+      - List SOS alerts<br /><br />
+      <a href="/api/v1/admin/sos/:alertId/status"
+        ><span class="method put">PUT</span>
+        /api/v1/admin/sos/:alertId/status</a
+      >
+      - Update alert status<br /><br />
+      <a href="/api/v1/admin/messages"
+        ><span class="method get">GET</span> /api/v1/admin/messages</a
+      >
+      - List messages (moderation)
+    </div>
+
+    <h2>
+      🔌 WebSocket <span class="badge">NEW</span>
+      <span class="method websocket">WS</span>
+    </h2>
+    <div class="route-section new">
+      <p class="section-desc">Socket.IO real-time communication namespaces</p>
+      <strong>/rides</strong> - Driver location updates, ride status<br />
+      <span class="query"
+        >joinRide, leaveRide, updateLocation, updateRideStatus, requestETA</span
+      ><br /><br />
+      <strong>/users</strong> - Online status, driver availability<br />
+      <span class="query"
+        >goOnline, goOffline, getOnlineDrivers, sendToUser</span
+      ><br /><br />
+      <strong>/chat</strong> - Real-time messaging<br />
+      <span class="query"
+        >joinConversation, sendMessage, typing, stopTyping</span
+      ><br /><br />
+      <strong>/notifications</strong> - Push notifications<br />
+      <span class="query">subscribe, unsubscribe, markAsRead</span>
     </div>
 
     <h2>🌐 System</h2>
     <div class="route-section">
       <a href="/api/health"><span class="method get">GET</span> /api/health</a>
       - Health check<br /><br />
+      <a href="/api/v1/health"
+        ><span class="method get">GET</span> /api/v1/health</a
+      >
+      - API version health<br /><br />
       <a href="/api/stats"><span class="method get">GET</span> /api/stats</a> -
       System statistics
     </div>
@@ -443,6 +749,10 @@
     <p>
       <strong>Note:</strong> Most endpoints require authentication. Add header:
       <code>Authorization: Bearer &lt;token&gt;</code>
+    </p>
+    <p>
+      <strong>Updated:</strong> April 10, 2026 | Backend Complete - All 12
+      Features
     </p>
   </body>
 </html>

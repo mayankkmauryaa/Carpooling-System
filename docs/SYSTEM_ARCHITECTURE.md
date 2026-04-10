@@ -1,6 +1,6 @@
 # System Architecture - Carpooling System
 
-## 📐 Architecture Overview
+## Architecture Overview
 
 The system follows a **Service-Oriented Architecture (SOA)** similar to Uber's design, implemented with **Node.js + Express + PostgreSQL (Neon)**.
 
@@ -17,8 +17,8 @@ The system follows a **Service-Oriented Architecture (SOA)** similar to Uber's d
                                                       ┌────────▼────────┐
                                                       │   API Gateway   │
                                                       │   (Express.js)  │
-                                                      └────────┬────────┘
-                                                               │
+                                                      └──────────┬──────┘
+                                                                 │
                                         ┌────────────────────────┼─────────────────────────┐
                                         │                        │                         │
                                 ┌───────▼───────┐    ┌───────────▼───────────┐    ┌────────▼────────┐
@@ -39,7 +39,7 @@ The system follows a **Service-Oriented Architecture (SOA)** similar to Uber's d
                                          ┌──────────────────────┼─────────────────────┐
                                          │                      │                     │
                                     ┌────▼────────┐       ┌──────▼──────┐       ┌────────────┐
-                                    │ PostgreSQL   │       │    Redis    │       │ Analytics  │
+                                    │ PostgreSQL  │       │    Redis    │       │ Analytics  │
                                     │ (Neon DB)   │       │    Cache    │       │  Pipeline  │
                                     └─────────────┘       └─────────────┘       └────────────┘
 ```
@@ -91,7 +91,7 @@ The system follows a **Service-Oriented Architecture (SOA)** similar to Uber's d
 
 ---
 
-## 🔄 API Architecture
+## API Architecture
 
 ### RESTful Endpoints Structure
 
@@ -203,7 +203,7 @@ The system follows a **Service-Oriented Architecture (SOA)** similar to Uber's d
 
 ---
 
-## 📦 Core Services
+## Core Services
 
 ### 1. Authentication Service
 
@@ -292,7 +292,7 @@ The system follows a **Service-Oriented Architecture (SOA)** similar to Uber's d
 
 ---
 
-## 🗄️ Database Design
+## Database Design
 
 ### Primary Database: PostgreSQL (Neon DB)
 
@@ -396,7 +396,7 @@ The system follows a **Service-Oriented Architecture (SOA)** similar to Uber's d
 
 ---
 
-## 🔄 API Gateway Design
+## API Gateway Design
 
 ### Middleware Stack
 
@@ -414,7 +414,7 @@ Request → CORS → Rate Limit → Auth → Validation → Controller → Respo
 
 ---
 
-## 🔒 Security Architecture
+## Security Architecture
 
 ### Authentication Flow
 
@@ -459,7 +459,7 @@ SOS Emergency:
 
 ---
 
-## 📊 Scalability Design
+## Scalability Design
 
 ### Current Architecture (Single Server)
 
@@ -477,7 +477,7 @@ SOS Emergency:
 
 ---
 
-## 🔍 Monitoring & Logging
+## Monitoring & Logging
 
 ### Logging Strategy
 
@@ -500,57 +500,203 @@ SOS Emergency:
 
 ---
 
-## ⚠️ Trade-offs Documented
+## Trade-offs Documented
 
-| Aspect         | Decision             | Rationale                               |
-| -------------- | -------------------- | --------------------------------------- |
-| Database       | PostgreSQL (Neon)    | Type safety, relations, ACID compliance |
-| ORM            | Prisma               | Type safety, migrations, IDE support    |
-| Caching        | In-memory vs Redis   | Simplified setup for learning           |
-| Maps           | Mock vs Real API     | Focus on algorithm learning             |
-| Real-time      | Polling vs WebSocket | Simplified implementation               |
-| Authentication | JWT + Google OAuth   | Stateless, supports social login        |
-| Deployment     | Neon (serverless)    | Auto-scaling, pay-per-use               |
+| Aspect         | Decision           | Rationale                               |
+| -------------- | ------------------ | --------------------------------------- |
+| Database       | PostgreSQL (Neon)  | Type safety, relations, ACID compliance |
+| ORM            | Prisma             | Type safety, migrations, IDE support    |
+| Caching        | In-memory vs Redis | Simplified setup for learning           |
+| Maps           | Mock vs Real API   | Focus on algorithm learning             |
+| Real-time      | Socket.IO          | Full-duplex, multiple namespaces        |
+| Authentication | JWT + Google OAuth | Stateless, supports social login        |
+| Deployment     | Neon (serverless)  | Auto-scaling, pay-per-use               |
+| Payments       | Razorpay           | India-focused, easy integration         |
+| File Storage   | Cloudinary         | CDN, optimization, easy API             |
+| Email          | Nodemailer + Gmail | Free, reliable for development          |
+| Container      | Docker + Compose   | Reproducible, production-ready          |
+| Testing        | Jest               | Fast, comprehensive coverage            |
 
 ---
 
-## 🧪 Testing Strategy
+## Testing Strategy
 
 | Test Type         | Coverage                           |
 | ----------------- | ---------------------------------- |
-| Unit Tests        | Individual functions, algorithms   |
+| Unit Tests        | Utilities, middleware, services    |
 | Integration Tests | API endpoints, database operations |
 | Manual Testing    | User flows, API testing            |
 | Load Testing      | Performance under load             |
 
 ---
 
-## 🛠️ Project Structure
+## Project Structure
 
 ```
 backend/
 ├── prisma/
-│   └── schema.prisma   # Prisma schema (PostgreSQL models)
+│   └── schema.prisma      # Prisma schema (PostgreSQL models)
 ├── src/
-│   ├── config/         # Configuration (env, db, jwt, google)
-│   ├── constants/      # App constants (roles, etc.)
-│   ├── controllers/     # Request handlers
-│   ├── database/       # Prisma client connection
-│   ├── dto/             # Data transfer objects
-│   ├── exceptions/      # Custom exceptions
-│   ├── middleware/     # Auth, validation, rate limiting
-│   ├── repositories/    # Data access layer (Prisma)
-│   ├── routes/         # Express routes
-│   ├── services/       # Business logic layer
-│   ├── utils/          # Helper functions
-│   ├── validators/     # Joi validation schemas
-│   └── app.js          # Express app setup
-│
-├── tests/              # Unit tests
-├── .env.example       # Environment template
+│   ├── config/            # Configuration (env, db, jwt, google)
+│   ├── constants/          # App constants (roles, statuses)
+│   ├── controllers/        # Request handlers
+│   ├── database/          # Prisma client connection
+│   ├── dto/               # Data transfer objects
+│   ├── exceptions/        # Custom exceptions
+│   ├── middleware/
+│   │   ├── auth.js        # JWT authentication
+│   │   ├── errorHandler.js
+│   │   ├── rateLimiter.js
+│   │   ├── security/      # Sanitization, helmet, cors
+│   │   └── upload/       # Multer configuration
+│   ├── repositories/       # Data access layer (Prisma)
+│   ├── routes/v1/
+│   │   ├── admin.routes.js
+│   │   ├── payments.routes.js
+│   │   └── uploads.routes.js
+│   ├── services/
+│   │   ├── adminService.js
+│   │   ├── emailService.js
+│   │   ├── paymentService.js
+│   │   └── uploadService.js
+│   ├── socket/             # Socket.IO
+│   ├── utils/             # Helper functions
+│   ├── validators/        # Joi validation schemas
+│   ├── app.js             # Express app setup
+│   └── server.js          # Entry point
+├── tests/                 # Jest unit tests
+├── Dockerfile             # Production Docker
+├── Dockerfile.dev         # Development Docker
+├── docker-compose.yml     # Production compose
+├── docker-compose.dev.yml # Development compose
+├── Makefile              # Docker commands
 └── package.json
 ```
 
 ---
 
-_Architecture designed for learning purposes with scalability in mind._
+## Implementation Status
+
+| Component      | Status | Notes                      |
+| -------------- | ------ | -------------------------- |
+| Backend API    | 100%   | All endpoints complete     |
+| Database       | 100%   | PostgreSQL/Prisma          |
+| Authentication | 100%   | JWT + Google OAuth         |
+| Real-time      | 100%   | Socket.IO complete         |
+| File Upload    | 100%   | Cloudinary integrated      |
+| Email          | 100%   | All templates complete     |
+| Admin Panel    | 100%   | Full dashboard + analytics |
+| Payments       | 100%   | Razorpay integrated        |
+| Testing        | 100%   | Comprehensive unit tests   |
+| Docker         | 100%   | Production-ready           |
+| Documentation  | 100%   | All docs updated           |
+| Frontend       | 0%     | React app pending          |
+
+---
+
+## New Services Added
+
+### 7. Payment Service
+
+**Responsibility:** Handle fare calculation and payments
+
+```javascript
+// Features:
+- Razorpay integration
+- Order creation and capture
+- Refund handling (full/partial)
+- Customer management
+- Subscriptions
+- Wallet system (recharge/debit)
+- Driver payouts (80% split)
+- Webhook handling
+```
+
+### 8. File Upload Service
+
+**Responsibility:** Handle file uploads and storage
+
+```javascript
+// Features:
+- Cloudinary integration
+- Multiple file type support
+- Image optimization
+- User profile uploads
+- Vehicle document uploads
+- Secure file deletion
+```
+
+### 9. Admin Service
+
+**Responsibility:** Admin dashboard and management
+
+```javascript
+// Features:
+- Dashboard statistics
+- User management
+- Vehicle verification
+- Ride management
+- Review moderation
+- SOS alert management
+- Analytics (users, rides, revenue)
+- Popular routes analysis
+- Peak hours detection
+```
+
+### 10. Real-time Service
+
+**Responsibility:** Handle real-time communication
+
+```javascript
+// Features:
+- Socket.IO integration
+- Multiple namespaces (/rides, /users, /chat, /notifications)
+- Driver location tracking
+- Chat messaging
+- Typing indicators
+- Online status
+- Notifications
+```
+
+---
+
+## Security Architecture
+
+### Input Sanitization
+
+```
+SQL Injection Protection:
+- Blocks: SELECT, INSERT, DROP, UNION, ALTER, etc.
+- Pattern matching for dangerous SQL keywords
+
+XSS Protection:
+- Removes script tags, event handlers
+- Escapes HTML entities
+
+NoSQL Injection Protection:
+- Blocks: $where, $ne, $gt, $regex, etc.
+
+Prototype Pollution Protection:
+- Blocks: __proto__, constructor, prototype
+
+HTTP Parameter Pollution:
+- HPP middleware for duplicate params
+```
+
+---
+
+## Real-time Architecture
+
+### Socket.IO Namespaces
+
+```
+/rides - Driver location updates, ride status, ETA
+/users - Online status, driver availability
+/chat - Conversations, messages, typing indicators
+/notifications - Push notifications
+```
+
+---
+
+_Architecture updated: April 10, 2026_
+_All new services documented: Admin, Payments, Uploads, Real-time, Email, Security_

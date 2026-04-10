@@ -1,12 +1,12 @@
 # API Endpoints - Carpooling System
 
-## 📋 Overview
+## Overview
 
 Complete REST API documentation for all carpooling system endpoints.
 
 ---
 
-## 🏷️ Authentication Endpoints
+## Authentication Endpoints
 
 ### POST /api/v1/auth/register
 
@@ -222,7 +222,7 @@ Link Google account to existing logged-in user.
 
 ---
 
-## 👤 User Endpoints
+## User Endpoints
 
 ### GET /api/v1/users/profile
 
@@ -311,7 +311,7 @@ Change password.
 
 ---
 
-## 🚗 Vehicle Endpoints
+## Vehicle Endpoints
 
 ### POST /api/v1/vehicles
 
@@ -450,7 +450,7 @@ Toggle vehicle status.
 
 ---
 
-## 🚙 Ride Pool Endpoints (Drivers)
+## Ride Pool Endpoints (Drivers)
 
 ### POST /api/rides
 
@@ -666,7 +666,7 @@ Approve or reject a join request.
 
 ---
 
-## 🔍 Ride Search Endpoints (Riders)
+## Ride Search Endpoints (Riders)
 
 ### GET /api/rides/search
 
@@ -817,7 +817,7 @@ Cancel join request.
 
 ---
 
-## 🔒 Privacy Endpoints
+## Privacy Endpoints
 
 ### POST /api/privacy/call/initiate
 
@@ -926,7 +926,7 @@ Get masked phone number for a user.
 
 ---
 
-## 📊 Trip Endpoints
+## Trip Endpoints
 
 ### GET /api/trips
 
@@ -1030,7 +1030,7 @@ Complete a trip (Driver only).
 
 ---
 
-## ⭐ Review Endpoints
+## Review Endpoints
 
 ### POST /api/reviews
 
@@ -1082,7 +1082,7 @@ Get reviews for a user.
 
 ---
 
-## 📬 Message Endpoints
+## Message Endpoints
 
 ### GET /api/messages
 
@@ -1134,7 +1134,7 @@ Get all conversations.
 
 ---
 
-## ⚙️ Utility Endpoints
+## Utility Endpoints
 
 ### GET /api/health
 
@@ -1174,7 +1174,7 @@ Get system statistics (Admin only).
 
 ---
 
-## 📝 Error Responses
+## Error Responses
 
 ### 400 - Bad Request
 
@@ -1256,7 +1256,7 @@ Get system statistics (Admin only).
 
 ---
 
-## 📊 Pagination Response Format
+## Pagination Response Format
 
 All list endpoints return paginated results:
 
@@ -1275,7 +1275,7 @@ All list endpoints return paginated results:
 
 ---
 
-## 🔐 Pagination Parameters
+## Pagination Parameters
 
 Query parameters for paginated endpoints:
 
@@ -1286,4 +1286,261 @@ Query parameters for paginated endpoints:
 
 ---
 
+## Upload Endpoints
+
+File upload endpoints using Cloudinary.
+
+### POST /api/v1/uploads/file
+
+Upload single file.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Body:** `multipart/form-data`
+
+- `file`: File to upload
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "url": "https://res.cloudinary.com/...",
+    "publicId": "carpooling/uploads/abc123",
+    "format": "jpg",
+    "width": 800,
+    "height": 600,
+    "bytes": 102400
+  }
+}
+```
+
+### POST /api/v1/uploads/files
+
+Upload multiple files (up to 10).
+
+### POST /api/v1/uploads/profile
+
+Upload profile image.
+
+### POST /api/v1/uploads/vehicle/:vehicleId/image
+
+Upload single vehicle image.
+
+### POST /api/v1/uploads/vehicle/:vehicleId/images
+
+Upload multiple vehicle images.
+
+### POST /api/v1/uploads/driver/document
+
+Upload driver document (license, etc.).
+
+### DELETE /api/v1/uploads/:publicId
+
+Delete uploaded file.
+
+### GET /api/v1/uploads/metadata/:publicId
+
+Get file metadata.
+
+### GET /api/v1/uploads/optimize/:publicId
+
+Get optimized image URL.
+
+### GET /api/v1/uploads/thumbnail/:publicId
+
+Get thumbnail URL.
+
+---
+
+## Payment Endpoints
+
+Razorpay payment integration.
+
+### POST /api/v1/payments/order
+
+Create payment order.
+
+### POST /api/v1/payments/verify
+
+Verify payment signature.
+
+### POST /api/v1/payments/capture
+
+Capture authorized payment.
+
+### POST /api/v1/payments/refund
+
+Initiate refund.
+
+### GET /api/v1/payments/payment/:paymentId
+
+Get payment details.
+
+### POST /api/v1/payments/customer
+
+Create Razorpay customer.
+
+### GET /api/v1/payments/customer/:customerId
+
+Get customer details.
+
+### POST /api/v1/payments/subscription
+
+Create subscription.
+
+### DELETE /api/v1/payments/subscription/:subscriptionId
+
+Cancel subscription.
+
+### POST /api/v1/payments/wallet/recharge
+
+Recharge wallet.
+
+### POST /api/v1/payments/wallet/debit
+
+Debit wallet.
+
+### GET /api/v1/payments/wallet/balance
+
+Get wallet balance.
+
+### GET /api/v1/payments/wallet/transactions
+
+Get wallet transaction history.
+
+### POST /api/v1/payments/payout
+
+Create driver payout (Admin only).
+
+### POST /api/v1/payments/transfer
+
+Create transfer (Admin only).
+
+### POST /api/v1/payments/webhook
+
+Razorpay webhook endpoint.
+
+---
+
+## Admin Endpoints
+
+Admin dashboard and management endpoints.
+
+### GET /api/v1/admin/dashboard
+
+Get dashboard statistics.
+
+### GET /api/v1/admin/analytics/users
+
+Get user analytics.
+
+### GET /api/v1/admin/analytics/rides
+
+Get ride analytics.
+
+### GET /api/v1/admin/analytics/revenue
+
+Get revenue analytics.
+
+### GET /api/v1/admin/analytics/popular-routes
+
+Get popular routes.
+
+### GET /api/v1/admin/analytics/peak-hours
+
+Get peak hours analysis.
+
+### User Management
+
+| Method | Endpoint                         | Description        |
+| ------ | -------------------------------- | ------------------ |
+| GET    | `/admin/users`                   | List all users     |
+| GET    | `/admin/users/:userId`           | Get user details   |
+| PUT    | `/admin/users/:userId/status`    | Update user status |
+| POST   | `/admin/users/:userId/suspend`   | Suspend user       |
+| POST   | `/admin/users/:userId/unsuspend` | Unsuspend user     |
+| DELETE | `/admin/users/:userId`           | Delete user        |
+
+### Vehicle Management
+
+| Method | Endpoint                                  | Description                |
+| ------ | ----------------------------------------- | -------------------------- |
+| GET    | `/admin/vehicles`                         | List all vehicles          |
+| GET    | `/admin/vehicles/:vehicleId`              | Get vehicle details        |
+| PUT    | `/admin/vehicles/:vehicleId/verification` | Update verification status |
+
+### Ride Management
+
+| Method | Endpoint                      | Description      |
+| ------ | ----------------------------- | ---------------- |
+| GET    | `/admin/rides`                | List all rides   |
+| GET    | `/admin/rides/:rideId`        | Get ride details |
+| POST   | `/admin/rides/:rideId/cancel` | Cancel ride      |
+
+### SOS Management
+
+| Method | Endpoint                     | Description         |
+| ------ | ---------------------------- | ------------------- |
+| GET    | `/admin/sos`                 | List SOS alerts     |
+| PUT    | `/admin/sos/:alertId/status` | Update alert status |
+
+---
+
+## WebSocket Namespaces
+
+Real-time communication using Socket.IO.
+
+### /rides Namespace
+
+**Events (Client → Server):**
+
+| Event              | Payload                              | Description            |
+| ------------------ | ------------------------------------ | ---------------------- |
+| `joinRide`         | `rideId`                             | Join ride room         |
+| `leaveRide`        | `rideId`                             | Leave ride room        |
+| `updateLocation`   | `{rideId, lat, lng, heading, speed}` | Update driver location |
+| `updateRideStatus` | `{rideId, status, eta, distance}`    | Update ride status     |
+
+**Events (Server → Client):**
+
+| Event                   | Payload                                | Description      |
+| ----------------------- | -------------------------------------- | ---------------- |
+| `userJoined`            | `{userId, timestamp}`                  | User joined ride |
+| `userLeft`              | `{userId, timestamp}`                  | User left ride   |
+| `driverLocationUpdated` | `{driverId, lat, lng, heading, speed}` | Location update  |
+| `rideStatusChanged`     | `{rideId, status, eta, distance}`      | Status changed   |
+
+### /chat Namespace
+
+**Events (Client → Server):**
+
+| Event              | Payload                           | Description       |
+| ------------------ | --------------------------------- | ----------------- |
+| `joinConversation` | `conversationId`                  | Join conversation |
+| `sendMessage`      | `{conversationId, message, type}` | Send message      |
+| `typing`           | `conversationId`                  | User typing       |
+
+**Events (Server → Client):**
+
+| Event        | Payload                              | Description |
+| ------------ | ------------------------------------ | ----------- |
+| `newMessage` | `{id, conversationId, message, ...}` | New message |
+| `userTyping` | `{userId, conversationId}`           | User typing |
+
+---
+
+## Upload File Types
+
+| Type      | Formats                                   | Max Size |
+| --------- | ----------------------------------------- | -------- |
+| Images    | jpg, jpeg, png, gif, webp, bmp, svg       | 10 MB    |
+| Documents | pdf, doc, docx, xls, xlsx, ppt, pptx, txt | 10 MB    |
+| Video     | mp4, webm, mov, avi, mkv                  | 100 MB   |
+| Audio     | mp3, wav, ogg, m4a, aac, flac             | 20 MB    |
+
+---
+
 _API endpoints designed following RESTful conventions with proper HTTP status codes._
+_Last Updated: April 10, 2026_
