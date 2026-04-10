@@ -23,6 +23,7 @@ model User {
   googleId        String?   @unique
   isGoogleUser    Boolean   @default(false)
   emailVerified   Boolean   @default(false)
+  razorpayAccountId String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -36,6 +37,8 @@ model User {
   reviewsReceived Review[]  @relation("ReviewsReceived")
   sosAlerts       SOSAlert[]
   rideRequests    RideRequest[]
+  bookings        Booking[]
+  payouts         Payout[]
 
   @@index([email])
   @@index([role])
@@ -86,6 +89,7 @@ model RidePool {
   messages        Message[]
   rideRequests    RideRequest[]
   sosAlerts       SOSAlert[]
+  bookings        Booking[]
 
   @@index([pickupLocation])
   @@index([dropLocation])
@@ -114,6 +118,7 @@ model Trip {
   driver          User      @relation("DriverTrips", fields: [driverId], references: [id])
   riders          User[]    @relation("RiderTrips")
   reviews         Review[]
+  payouts         Payout[]
 
   @@index([ridePoolId])
   @@index([driverId])
@@ -205,6 +210,38 @@ model RideRequest {
   @@index([status])
 }
 
+model SagaLog {
+  id            Int       @id @default(autoincrement())
+  sagaType      String
+  status        SagaStatus @default(PENDING)
+  currentStep   Int       @default(0)
+  totalSteps    Int
+  errorMessage  String?
+  context       Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  completedAt   DateTime?
+
+  stepLogs      SagaStepLog[]
+
+  @@index([sagaType])
+  @@index([status])
+}
+
+model SagaStepLog {
+  id          Int       @id @default(autoincrement())
+  sagaId     Int
+  stepName   String
+  status     String
+  result     String?
+  error      String?
+  executedAt DateTime  @default(now())
+
+  saga       SagaLog   @relation(fields: [sagaId], references: [id])
+
+  @@index([sagaId])
+}
+
 enum Role {
   DRIVER
   RIDER
@@ -239,5 +276,72 @@ enum RequestStatus {
   PENDING
   APPROVED
   REJECTED
+  CANCELLED
+}
+
+enum SagaStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  COMPENSATING
+  ROLLED_BACK
+}
+
+model Booking {
+  id              Int       @id @default(autoincrement())
+  ridePoolId      Int
+  riderId         Int
+  rideRequestId   Int?
+  status          BookingStatus @default(PENDING)
+  pickupLocation  Json?
+  dropLocation    Json?
+  totalAmount     Float     @default(0)
+  paymentOrderId  String?
+  confirmedAt     DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  ridePool        RidePool  @relation(fields: [ridePoolId], references: [id])
+  rider           User      @relation(fields: [riderId], references: [id])
+
+  @@index([ridePoolId])
+  @@index([riderId])
+  @@index([status])
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model Payout {
+  id                Int       @id @default(autoincrement())
+  driverId          Int
+  tripId            Int
+  amount            Float
+  platformFee       Float     @default(0)
+  razorpayPayoutId  String?
+  status            PayoutStatus @default(PENDING)
+  processedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  driver            User      @relation(fields: [driverId], references: [id])
+  trip              Trip      @relation(fields: [tripId], references: [id])
+
+  @@index([driverId])
+  @@index([tripId])
+  @@index([status])
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
   CANCELLED
 }
