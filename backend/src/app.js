@@ -2,12 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
-const hpp = require('hpp');
-const path = require('path');
 const appConfig = require('./config/app');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 const logger = require('./middleware/logger');
 const { globalLimiter } = require('./middleware/rateLimiter');
+const { sanitizeRequest, httpParameterPollution } = require('./middleware/security');
 const v1Routes = require('./routes/v1');
 const { prisma } = require('./database/connection');
 
@@ -18,7 +17,8 @@ app.use(cors());
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(hpp());
+app.use(httpParameterPollution);
+app.use(sanitizeRequest);
 
 app.use(globalLimiter.middleware());
 

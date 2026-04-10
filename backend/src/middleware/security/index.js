@@ -1,9 +1,19 @@
 const helmet = require('./helmet');
 const cors = require('./cors');
-const sanitizer = require('./sanitizer');
+const { 
+  sanitizeRequest, 
+  sanitizeString, 
+  sanitizeObject,
+  sanitizeValue,
+  httpParameterPollution 
+} = require('./sanitizer');
 
 module.exports = {
   helmet,
   cors,
-  sanitizer
+  sanitizeRequest,
+  sanitizeString,
+  sanitizeObject,
+  sanitizeValue,
+  httpParameterPollution
 };
