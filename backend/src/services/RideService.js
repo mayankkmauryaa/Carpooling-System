@@ -3,6 +3,7 @@ const { rideRepository, vehicleRepository, userRepository, rideRequestRepository
 const { NotFoundException, ForbiddenException, ConflictException, BadRequestException } = require('../exceptions');
 const { ROLES } = require('../constants/roles');
 const { generateS2CellId, calculateDistance, calculateRouteMatchPercentage, filterByPreferences } = require('../utils/helpers');
+const mapsService = require('./mapsService');
 const logger = require('../middleware/logger');
 
 class RideService extends BaseService {
@@ -136,7 +137,7 @@ class RideService extends BaseService {
     let rides = await this.repository.findAll(query, {
       include: {
         driver: { select: { firstName: true, lastName: true, rating: true, totalReviews: true, profilePicture: true, isProfileBlurred: true } },
-        vehicle: { select: { model: true, color: true, licensePlate: true } }
+        vehicle: { select: { brand: true, model: true, color: true, licensePlate: true } }
       }
     });
 
@@ -144,7 +145,7 @@ class RideService extends BaseService {
       const riderPickup = [parseFloat(pickupLng), parseFloat(pickupLat)];
       const riderDrop = [parseFloat(dropLng), parseFloat(dropLat)];
 
-      rides = rides.map(ride => {
+      rides = await Promise.all(rides.map(async ride => {
         const driverPickup = ride.pickupLocation.coordinates;
         const driverDrop = ride.dropLocation.coordinates;
         
@@ -152,8 +153,46 @@ class RideService extends BaseService {
           driverPickup, driverDrop, riderPickup, riderDrop
         );
 
-        return { ...ride, matchPercentage };
-      });
+        let distanceInfo = null;
+        let etaInfo = null;
+
+        try {
+          const distanceResult = await mapsService.getDistanceAndDuration(
+            { lat: parseFloat(pickupLat), lng: parseFloat(pickupLng) },
+            { lat: driverPickup[1], lng: driverPickup[0] }
+          );
+          distanceInfo = {
+            distanceToPickup: distanceResult.distance.value / 1000,
+            distanceToPickupText: distanceResult.distance.text
+          };
+
+          const etaResult = await mapsService.getDirections(
+            { lat: parseFloat(pickupLat), lng: parseFloat(pickupLng) },
+            { lat: parseFloat(dropLat), lng: parseFloat(dropLng) }
+          );
+          etaInfo = {
+            totalDistance: etaResult.distance.value / 1000,
+            totalDistanceText: etaResult.distance.text,
+            estimatedDuration: etaResult.duration.value,
+            estimatedDurationText: etaResult.duration.text,
+            estimatedDurationInTraffic: etaResult.durationInTraffic ? etaResult.durationInTraffic.value : null,
+            routePolyline: etaResult.overviewPath
+          };
+        } catch (error) {
+          logger.warn('Google Maps API failed, using fallback', { error: error.message });
+        }
+
+        return { 
+          ...ride, 
+          matchPercentage,
+          distanceToPickup: distanceInfo?.distanceToPickup || 0,
+          distanceToPickupText: distanceInfo?.distanceToPickupText || 'N/A',
+          totalDistance: etaInfo?.totalDistance || 0,
+          totalDistanceText: etaInfo?.totalDistanceText || 'N/A',
+          estimatedDuration: etaInfo?.estimatedDuration || 0,
+          estimatedDurationText: etaInfo?.estimatedDurationText || 'N/A'
+        };
+      }));
 
       rides = rides.filter(ride => ride.matchPercentage >= 30);
 
