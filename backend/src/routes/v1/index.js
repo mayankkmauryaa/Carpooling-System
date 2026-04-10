@@ -12,6 +12,7 @@ const reviewsRoutes = require('./reviews.routes');
 const privacyRoutes = require('./privacy.routes');
 const uploadsRoutes = require('./uploads.routes');
 const adminRoutes = require('./admin.routes');
+const paymentsRoutes = require('./payments.routes');
 
 router.use('/auth', authLimiter.middleware(), authRoutes);
 router.use('/users', usersRoutes);
@@ -23,5 +24,6 @@ router.use('/reviews', reviewsRoutes);
 router.use('/privacy', privacyRoutes);
 router.use('/uploads', uploadsRoutes);
 router.use('/admin', adminRoutes);
+router.use('/payments', paymentsRoutes);
 
 module.exports = router;
