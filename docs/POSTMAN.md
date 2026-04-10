@@ -1,61 +1,63 @@
-# Carpooling System API - Postman Collection
+# Carpooling System API - Postman Collection (v2)
+
+> **Updated for PostgreSQL + Prisma ORM Architecture**
 
 ## How to Import
 
 1. Open Postman
 2. Click "Import" button
-3. Select this JSON file
+3. Select this JSON file or copy content below
 4. Collection will be imported with all endpoints
 
 ---
 
-## API Versions
+## API Base URL
 
-| Version                  | Base URL                       | Status              |
-| ------------------------ | ------------------------------ | ------------------- |
-| **API v1 (Recommended)** | `http://localhost:3000/api/v1` | Current             |
-| **Legacy API**           | `http://localhost:3000/api`    | Backward Compatible |
+| Environment | Base URL                         |
+| ----------- | -------------------------------- |
+| Local       | `http://localhost:3000/api/v1`   |
+| Production  | `https://your-domain.com/api/v1` |
 
 ---
 
 ## Postman Variables
 
-Create the following variables in your Postman collection:
+Create these variables in your Postman collection:
 
-| Variable     | Initial Value                | Description              |
-| ------------ | ---------------------------- | ------------------------ |
-| `baseUrl`    | http://localhost:3000/api    | Legacy API Base URL      |
-| `baseUrlV1`  | http://localhost:3000/api/v1 | New API v1 Base URL      |
-| `token`      | (empty)                      | JWT token from login     |
-| `userId`     | (empty)                      | Current user ID          |
-| `ridePoolId` | (empty)                      | Ride pool ID for testing |
-| `tripId`     | (empty)                      | Trip ID for testing      |
-| `vehicleId`  | (empty)                      | Vehicle ID for testing   |
+| Variable       | Initial Value                | Description          |
+| -------------- | ---------------------------- | -------------------- |
+| `baseUrl`      | http://localhost:3000/api/v1 | API Base URL         |
+| `token`        | (empty)                      | JWT token from login |
+| `refreshToken` | (empty)                      | Refresh token        |
+| `userId`       | (empty)                      | Current user ID      |
+| `driverId`     | (empty)                      | Driver user ID       |
+| `riderId`      | (empty)                      | Rider user ID        |
+| `vehicleId`    | (empty)                      | Vehicle ID           |
+| `ridePoolId`   | (empty)                      | Ride pool ID         |
+| `tripId`       | (empty)                      | Trip ID              |
+| `messageId`    | (empty)                      | Message ID           |
 
 ---
 
-## Authentication Token
+## Authentication
 
 Most endpoints require `Authorization: Bearer {{token}}` header.
-Use the login response to set the `token` variable.
 
 ---
 
 # =============================================================================
 
-# LEGACY API (/api/)
+# AUTHENTICATION (/auth/)
 
 # =============================================================================
 
-## 🔐 LEGACY AUTHENTICATION
-
-### 1. Register User (Legacy)
+## 1. Register User
 
 ```
 POST {{baseUrl}}/auth/register
 ```
 
-**Body (JSON):**
+**Body:**
 
 ```json
 {
@@ -68,13 +70,34 @@ POST {{baseUrl}}/auth/register
 }
 ```
 
-### 2. Login (Legacy)
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "message": "User registered successfully",
+  "data": {
+    "user": {
+      "id": 1,
+      "email": "user@example.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "role": "RIDER"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+---
+
+## 2. Login
 
 ```
 POST {{baseUrl}}/auth/login
 ```
 
-**Body (JSON):**
+**Body:**
 
 ```json
 {
@@ -83,7 +106,27 @@ POST {{baseUrl}}/auth/login
 }
 ```
 
-### 3. Get Current User (Legacy)
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": 1,
+      "email": "user@example.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "role": "RIDER"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+---
+
+## 3. Get Current User
 
 ```
 GET {{baseUrl}}/auth/me
@@ -91,7 +134,31 @@ GET {{baseUrl}}/auth/me
 
 **Headers:** `Authorization: Bearer {{token}}`
 
-### 4. Verify Token (Legacy)
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": 1,
+      "email": "user@example.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "phone": "+1234567890",
+      "role": "RIDER",
+      "rating": 0,
+      "totalReviews": 0,
+      "isProfileBlurred": true,
+      "isActive": true
+    }
+  }
+}
+```
+
+---
+
+## 4. Verify Token
 
 ```
 GET {{baseUrl}}/auth/verify
@@ -99,7 +166,21 @@ GET {{baseUrl}}/auth/verify
 
 **Headers:** `Authorization: Bearer {{token}}`
 
-### 5. Refresh Token (Legacy)
+**Response (200):**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "valid": true,
+    "userId": 1
+  }
+}
+```
+
+---
+
+## 5. Refresh Token
 
 ```
 POST {{baseUrl}}/auth/refresh
@@ -107,7 +188,20 @@ POST {{baseUrl}}/auth/refresh
 
 **Headers:** `Authorization: Bearer {{token}}`
 
-### 6. Logout (Legacy)
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+---
+
+## 6. Logout
 
 ```
 POST {{baseUrl}}/auth/logout
@@ -115,961 +209,44 @@ POST {{baseUrl}}/auth/logout
 
 **Headers:** `Authorization: Bearer {{token}}`
 
----
-
-## 👤 LEGACY USERS
-
-### 7. Get My Profile (Legacy)
-
-```
-GET {{baseUrl}}/users/profile
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 8. Update Profile (Legacy)
-
-```
-PUT {{baseUrl}}/users/profile
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+**Response (200):**
 
 ```json
 {
-  "firstName": "John",
-  "lastName": "Doe",
-  "phone": "+1234567890",
-  "profilePicture": "https://example.com/photo.jpg",
-  "isProfileBlurred": true
-}
-```
-
-### 9. Change Password (Legacy)
-
-```
-PUT {{baseUrl}}/users/password
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "currentPassword": "password123",
-  "newPassword": "newpassword123"
-}
-```
-
-### 10. Get User by ID (Legacy)
-
-```
-GET {{baseUrl}}/users/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 11. Get User Reviews (Legacy)
-
-```
-GET {{baseUrl}}/users/:userId/reviews
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 12. Get All Users (Legacy)
-
-```
-GET {{baseUrl}}/users?page=1&limit=20&role=driver&search=john&isActive=true
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 13. Get All Drivers (Legacy - Admin)
-
-```
-GET {{baseUrl}}/users/drivers?page=1&limit=20&isActive=true&search=john
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 14. Get All Riders (Legacy - Admin)
-
-```
-GET {{baseUrl}}/users/riders?page=1&limit=20&isActive=true&search=john
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 15. Toggle User Status (Legacy - Admin)
-
-```
-PUT {{baseUrl}}/users/:id/status
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 16. Delete User (Legacy - Admin)
-
-```
-DELETE {{baseUrl}}/users/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
----
-
-## 🚗 LEGACY VEHICLES
-
-### 17. Create Vehicle (Legacy - Driver Only)
-
-```
-POST {{baseUrl}}/vehicles
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "model": "Toyota Camry",
-  "licensePlate": "ABC-1234",
-  "color": "Silver",
-  "capacity": 4,
-  "preferences": {
-    "smoking": false,
-    "pets": false,
-    "music": true
-  },
-  "registrationExpiry": "2027-12-31"
-}
-```
-
-### 18. Get My Vehicles (Legacy)
-
-```
-GET {{baseUrl}}/vehicles
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 19. Get All Vehicles (Legacy - Admin)
-
-```
-GET {{baseUrl}}/vehicles/all?page=1&limit=20&isActive=true&model=Camry&color=Silver
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 20. Get Vehicle by ID (Legacy)
-
-```
-GET {{baseUrl}}/vehicles/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 21. Update Vehicle (Legacy)
-
-```
-PUT {{baseUrl}}/vehicles/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "model": "Toyota Camry",
-  "color": "Black",
-  "capacity": 4
-}
-```
-
-### 22. Delete Vehicle (Legacy)
-
-```
-DELETE {{baseUrl}}/vehicles/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 23. Toggle Vehicle Status (Legacy)
-
-```
-PUT {{baseUrl}}/vehicles/:id/status
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 24. Get Vehicles by Driver (Legacy - Admin)
-
-```
-GET {{baseUrl}}/vehicles/driver/:driverId?page=1&limit=20
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
----
-
-## 🚙 LEGACY RIDES (RidePool)
-
-### 25. Create Ride (Legacy - Driver Only)
-
-```
-POST {{baseUrl}}/rides
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "vehicleId": "VEHICLE_ID_HERE",
-  "pickupLocation": {
-    "coordinates": [-122.4194, 37.7749],
-    "address": "San Francisco, CA"
-  },
-  "dropLocation": {
-    "coordinates": [-122.0869, 37.4028],
-    "address": "Palo Alto, CA"
-  },
-  "departureTime": "2026-04-15T09:00:00Z",
-  "availableSeats": 3,
-  "pricePerSeat": 25,
-  "preferences": {
-    "smoking": false,
-    "pets": false,
-    "femaleOnly": false,
-    "music": true
-  }
-}
-```
-
-### 26. Get My Rides (Legacy)
-
-```
-GET {{baseUrl}}/rides?status=active&page=1&limit=10
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 27. Search Rides (Legacy)
-
-```
-GET {{baseUrl}}/rides/search?pickupLat=37.7749&pickupLng=-122.4194&dropLat=37.4028&dropLng=-122.0869&radius=15&departureDate=2026-04-15&availableSeats=2
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 28. Get Recommendations (Legacy)
-
-```
-GET {{baseUrl}}/rides/recommendations
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 29. Get All Rides (Legacy - Admin)
-
-```
-GET {{baseUrl}}/rides/all?page=1&limit=20&status=active&minSeats=2&maxPrice=30
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 30. Get Ride by ID (Legacy)
-
-```
-GET {{baseUrl}}/rides/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 31. Update Ride (Legacy)
-
-```
-PUT {{baseUrl}}/rides/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "availableSeats": 2,
-  "pricePerSeat": 20
-}
-```
-
-### 32. Cancel Ride (Legacy)
-
-```
-DELETE {{baseUrl}}/rides/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 33. Get Ride Requests (Legacy - Driver)
-
-```
-GET {{baseUrl}}/rides/:id/requests
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 34. Respond to Request (Legacy - Driver)
-
-```
-PUT {{baseUrl}}/rides/:id/requests/:riderId?action=approve
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "action": "approve",
-  "reason": "Welcome aboard!"
-}
-```
-
-### 35. Request to Join Ride (Legacy)
-
-```
-POST {{baseUrl}}/rides/:id/join
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "pickupLocation": {
-    "coordinates": [-122.4194, 37.7749],
-    "address": "San Francisco, CA"
-  },
-  "dropLocation": {
-    "coordinates": [-122.0869, 37.4028],
-    "address": "Palo Alto, CA"
-  }
-}
-```
-
-### 36. Get My Requests (Legacy)
-
-```
-GET {{baseUrl}}/rides/my-requests
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 37. Cancel Join Request (Legacy)
-
-```
-DELETE {{baseUrl}}/rides/:id/join
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 38. Update Ride Status (Legacy - Admin)
-
-```
-PUT {{baseUrl}}/rides/:id/status
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "status": "completed"
-}
-```
-
-### 39. Get Rides by Driver (Legacy - Admin)
-
-```
-GET {{baseUrl}}/rides/driver/:driverId?page=1&limit=20&status=active
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 40. Get Rides by Date (Legacy)
-
-```
-GET {{baseUrl}}/rides/date/2026-04-15?page=1&limit=20
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 41. Get Upcoming Rides (Legacy)
-
-```
-GET {{baseUrl}}/rides/upcoming?page=1&limit=20
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 42. Get Nearby Rides (Legacy)
-
-```
-GET {{baseUrl}}/rides/nearby?lat=37.7749&lng=-122.4194&radius=10
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
----
-
-## 📍 LEGACY TRIPS
-
-### 43. Get My Trips (Legacy)
-
-```
-GET {{baseUrl}}/trips?status=completed&page=1&limit=10
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 44. Get All Trips (Legacy - Admin)
-
-```
-GET {{baseUrl}}/trips/all?page=1&limit=20&status=completed&startDate=2026-01-01&endDate=2026-04-30
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 45. Get Trip by ID (Legacy)
-
-```
-GET {{baseUrl}}/trips/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 46. Start Trip (Legacy - Driver)
-
-```
-POST {{baseUrl}}/trips/:id/start
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 47. Complete Trip (Legacy - Driver)
-
-```
-POST {{baseUrl}}/trips/:id/complete
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "actualDistance": 45.5,
-  "actualDuration": 50,
-  "endLocation": {
-    "coordinates": [-122.0869, 37.4028],
-    "address": "Palo Alto, CA"
-  }
-}
-```
-
-### 48. Cancel Trip (Legacy)
-
-```
-POST {{baseUrl}}/trips/:id/cancel
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 49. Get Trips by Driver (Legacy - Admin)
-
-```
-GET {{baseUrl}}/trips/driver/:driverId?page=1&limit=20&status=completed
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 50. Get Trips by Rider (Legacy - Admin)
-
-```
-GET {{baseUrl}}/trips/rider/:riderId?page=1&limit=20&status=completed
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 51. Get Trip by RidePool (Legacy)
-
-```
-GET {{baseUrl}}/trips/ridepool/:ridePoolId
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 52. Get Trips by Date (Legacy)
-
-```
-GET {{baseUrl}}/trips/date/2026-04-15?page=1&limit=20
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 53. Get Trips by Status (Legacy)
-
-```
-GET {{baseUrl}}/trips/status/completed?page=1&limit=20
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 54. Get Upcoming Trips (Legacy)
-
-```
-GET {{baseUrl}}/trips/upcoming?page=1&limit=20
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 55. Get Trip Stats (Legacy - Admin)
-
-```
-GET {{baseUrl}}/trips/stats
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
----
-
-## 🔒 LEGACY PRIVACY
-
-### 56. Initiate Call (Legacy)
-
-```
-POST {{baseUrl}}/privacy/call/initiate
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "targetUserId": "USER_ID_HERE"
-}
-```
-
-### 57. End Call (Legacy)
-
-```
-POST {{baseUrl}}/privacy/call/end
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "callId": "CALL_ID_HERE"
-}
-```
-
-### 58. Send In-App Message (Legacy)
-
-```
-POST {{baseUrl}}/privacy/message/send
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "receiverId": "USER_ID_HERE",
-  "ridePoolId": "RIDE_POOL_ID_HERE",
-  "content": "Hello! Are you still available for the ride?"
-}
-```
-
-### 59. Get Conversation (Legacy)
-
-```
-GET {{baseUrl}}/privacy/message/conversation/:userId?page=1&limit=50
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 60. Get Masked Phone (Legacy)
-
-```
-GET {{baseUrl}}/privacy/masked-phone/:userId
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 61. Send SOS Alert (Legacy)
-
-```
-POST {{baseUrl}}/privacy/sos/alert
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "ridePoolId": "RIDE_POOL_ID_HERE",
-  "message": "Emergency! Something wrong.",
-  "location": {
-    "coordinates": [-122.4194, 37.7749],
-    "address": "San Francisco, CA"
-  }
-}
-```
-
-### 62. Get SOS History (Legacy)
-
-```
-GET {{baseUrl}}/privacy/sos/history
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 63. Get Privacy Settings (Legacy)
-
-```
-GET {{baseUrl}}/privacy/settings
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 64. Update Privacy Settings (Legacy)
-
-```
-PUT {{baseUrl}}/privacy/settings
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "isProfileBlurred": true
-}
-```
-
-### 65. Get Profile Visibility (Legacy)
-
-```
-GET {{baseUrl}}/privacy/profile-visibility
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 66. Update Profile Visibility (Legacy)
-
-```
-PUT {{baseUrl}}/privacy/profile-visibility
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "isProfileBlurred": true
+  "success": true,
+  "message": "Logged out successfully"
 }
 ```
 
 ---
 
-## ⭐ LEGACY REVIEWS
-
-### 67. Create Review (Legacy)
+## 7. Google Sign-In (Web - Redirect)
 
 ```
-POST {{baseUrl}}/reviews
+GET {{baseUrl}}/auth/google
 ```
 
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+**Description:** Redirects to Google OAuth consent screen.
 
-```json
-{
-  "tripId": "TRIP_ID_HERE",
-  "revieweeId": "USER_ID_HERE",
-  "type": "rider-to-driver",
-  "rating": 5,
-  "comment": "Great ride! Very friendly driver."
-}
-```
-
-### 68. Get User Reviews (Legacy)
-
-```
-GET {{baseUrl}}/reviews/user/:userId?page=1&limit=20
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 69. Get Trip Reviews (Legacy)
-
-```
-GET {{baseUrl}}/reviews/trip/:tripId
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 70. Get All Reviews (Legacy - Admin)
-
-```
-GET {{baseUrl}}/reviews/all?page=1&limit=20&type=driver-to-rider&minRating=3&maxRating=5
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 71. Get My Reviews (Legacy)
-
-```
-GET {{baseUrl}}/reviews/my-reviews?page=1&limit=20
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 72. Get Review by ID (Legacy)
-
-```
-GET {{baseUrl}}/reviews/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 73. Delete Review (Legacy)
-
-```
-DELETE {{baseUrl}}/reviews/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 74. Get User Review Stats (Legacy)
-
-```
-GET {{baseUrl}}/reviews/stats/user/:userId
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
+**Response:** 302 Redirect to Google
 
 ---
 
-## 💬 LEGACY MESSAGES
-
-### 75. Get Messages (Legacy)
+## 8. Google OAuth Callback (Web)
 
 ```
-GET {{baseUrl}}/messages?userId=USER_ID_HERE&ridePoolId=RIDE_POOL_ID_HERE&page=1&limit=50
+GET {{baseUrl}}/auth/google/callback?code=AUTH_CODE
 ```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 76. Get Conversations (Legacy)
-
-```
-GET {{baseUrl}}/messages/conversations
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 77. Get Unread Count (Legacy)
-
-```
-GET {{baseUrl}}/messages/unread-count
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 78. Get Conversation by User (Legacy)
-
-```
-GET {{baseUrl}}/messages/conversation/:userId?page=1&limit=50
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 79. Send New Message (Legacy)
-
-```
-POST {{baseUrl}}/messages
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "receiverId": "USER_ID_HERE",
-  "ridePoolId": "RIDE_POOL_ID_HERE",
-  "content": "Hi! Is the ride still available?"
-}
-```
-
-### 80. Mark Messages as Read (Legacy)
-
-```
-PUT {{baseUrl}}/messages/read
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "userId": "USER_ID_HERE"
-}
-```
-
-### 81. Mark Conversation as Read (Legacy)
-
-```
-PUT {{baseUrl}}/messages/read/:userId
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 82. Delete Message (Legacy)
-
-```
-DELETE {{baseUrl}}/messages/:messageId
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 83. Delete Conversation (Legacy)
-
-```
-DELETE {{baseUrl}}/messages/conversation/:userId
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
----
-
-## 🌐 LEGACY SYSTEM
-
-### 84. Health Check (Legacy)
-
-```
-GET {{baseUrl}}/health
-```
-
-### 85. System Stats (Legacy - Admin)
-
-```
-GET {{baseUrl}}/stats
-```
-
----
-
-# =============================================================================
-
-# NEW API v1 (/api/v1/) - RECOMMENDED
-
-# =============================================================================
-
-## 🔐 API v1 AUTHENTICATION
-
-### 1. Register User
-
-```
-POST {{baseUrlV1}}/auth/register
-```
-
-**Body (JSON):**
-
-```json
-{
-  "email": "user@example.com",
-  "password": "password123",
-  "firstName": "John",
-  "lastName": "Doe",
-  "phone": "+1234567890",
-  "role": "rider"
-}
-```
-
-### 2. Login
-
-```
-POST {{baseUrlV1}}/auth/login
-```
-
-**Body (JSON):**
-
-```json
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-
-### 3. Get Current User
-
-```
-GET {{baseUrlV1}}/auth/me
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 4. Verify Token
-
-```
-GET {{baseUrlV1}}/auth/verify
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 5. Refresh Token
-
-```
-POST {{baseUrlV1}}/auth/refresh
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 6. Logout
-
-```
-POST {{baseUrlV1}}/auth/logout
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 7. Google Sign-In (Web - Redirect)
-
-```
-GET {{baseUrlV1}}/auth/google
-```
-
-**Description:** Redirects to Google OAuth consent screen. After user consent, Google redirects to callback URL with authorization code.
-
-**Response:** Redirects to `https://accounts.google.com/o/oauth2/v2/auth?...`
-
-### 8. Google OAuth Callback (Web)
-
-```
-GET {{baseUrlV1}}/auth/google/callback?code=AUTHORIZATION_CODE
-```
-
-**Description:** Handles Google OAuth callback, exchanges code for tokens, and returns user data.
 
 **Response (200 - Existing user):**
 
 ```json
 {
   "success": true,
+  "message": "Logged in with Google",
   "data": {
     "user": {
-      "_id": "user_id",
+      "id": 1,
       "email": "user@gmail.com",
       "firstName": "John",
       "lastName": "Doe",
@@ -1077,7 +254,7 @@ GET {{baseUrlV1}}/auth/google/callback?code=AUTHORIZATION_CODE
       "isGoogleUser": true,
       "emailVerified": true
     },
-    "token": "jwt_token_here",
+    "token": "eyJhbGciOiJIUzI1NiIs...",
     "isNewUser": false
   }
 }
@@ -1088,66 +265,48 @@ GET {{baseUrlV1}}/auth/google/callback?code=AUTHORIZATION_CODE
 ```json
 {
   "success": true,
+  "message": "Account created with Google",
   "data": {
     "user": { ... },
-    "token": "jwt_token_here",
+    "token": "eyJhbGciOiJIUzI1NiIs...",
     "isNewUser": true
   }
 }
 ```
 
-### 9. Google Sign-In (Mobile/Frontend)
+---
+
+## 9. Google Sign-In (Mobile)
 
 ```
-POST {{baseUrlV1}}/auth/google/mobile
+POST {{baseUrl}}/auth/google/mobile
 ```
 
-**Description:** For mobile apps or frontend that already has Google ID token.
-
-**Body (JSON):**
+**Body:**
 
 ```json
 {
-  "idToken": "google_id_token_from_google_sign_in"
+  "idToken": "google_id_token_here"
 }
 ```
 
-**Response (200/201):**
+**Response:** Same as Google OAuth Callback
 
-```json
-{
-  "success": true,
-  "data": {
-    "user": {
-      "_id": "user_id",
-      "email": "user@gmail.com",
-      "firstName": "John",
-      "lastName": "Doe",
-      "profilePicture": "https://...",
-      "isGoogleUser": true,
-      "emailVerified": true
-    },
-    "token": "jwt_token_here",
-    "isNewUser": true
-  }
-}
-```
+---
 
-### 10. Link Google Account (Existing User)
+## 10. Link Google Account
 
 ```
-POST {{baseUrlV1}}/auth/google/link
+POST {{baseUrl}}/auth/google/link
 ```
-
-**Description:** Links Google account to an already logged-in user.
 
 **Headers:** `Authorization: Bearer {{token}}`
 
-**Body (JSON):**
+**Body:**
 
 ```json
 {
-  "idToken": "google_id_token_from_google_sign_in"
+  "idToken": "google_id_token_here"
 }
 ```
 
@@ -1156,6 +315,7 @@ POST {{baseUrlV1}}/auth/google/link
 ```json
 {
   "success": true,
+  "message": "Google account linked successfully",
   "data": {
     "user": { ... },
     "message": "Google account linked successfully"
@@ -1165,119 +325,164 @@ POST {{baseUrlV1}}/auth/google/link
 
 ---
 
-## 👤 API v1 USERS
+# =============================================================================
 
-### 7. Get My Profile
+# USERS (/users/)
 
-```
-GET {{baseUrlV1}}/users/profile
-```
+# =============================================================================
 
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 8. Update Profile
+## 11. Get My Profile
 
 ```
-PUT {{baseUrlV1}}/users/profile
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "firstName": "John",
-  "lastName": "Doe",
-  "phone": "+1234567890",
-  "profilePicture": "https://example.com/photo.jpg",
-  "isProfileBlurred": true
-}
-```
-
-### 9. Change Password
-
-```
-PUT {{baseUrlV1}}/users/password
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "currentPassword": "password123",
-  "newPassword": "newpassword123"
-}
-```
-
-### 10. Get User by ID
-
-```
-GET {{baseUrlV1}}/users/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 11. Get User Reviews
-
-```
-GET {{baseUrlV1}}/users/:userId/reviews
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 12. Get All Users
-
-```
-GET {{baseUrlV1}}/users?page=1&limit=20&role=driver&search=john&isActive=true
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 13. Get All Drivers (Admin)
-
-```
-GET {{baseUrlV1}}/users/drivers?page=1&limit=20&isActive=true&search=john
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 14. Get All Riders (Admin)
-
-```
-GET {{baseUrlV1}}/users/riders?page=1&limit=20&isActive=true&search=john
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 15. Toggle User Status (Admin)
-
-```
-PUT {{baseUrlV1}}/users/:id/status
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 16. Delete User (Admin)
-
-```
-DELETE {{baseUrlV1}}/users/:id
+GET {{baseUrl}}/users/profile
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
 
 ---
 
-## 🚗 API v1 VEHICLES
-
-### 17. Create Vehicle (Driver Only)
+## 12. Update Profile
 
 ```
-POST {{baseUrlV1}}/vehicles
+PUT {{baseUrl}}/users/profile
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+
+**Body:**
+
+```json
+{
+  "firstName": "John",
+  "lastName": "Smith",
+  "phone": "+1987654321",
+  "profilePicture": "https://example.com/new-photo.jpg",
+  "isProfileBlurred": false
+}
+```
+
+---
+
+## 13. Change Password
+
+```
+PUT {{baseUrl}}/users/password
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Body:**
+
+```json
+{
+  "currentPassword": "oldpassword123",
+  "newPassword": "newpassword123"
+}
+```
+
+---
+
+## 14. Get User by ID
+
+```
+GET {{baseUrl}}/users/:id
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 15. Get User Reviews
+
+```
+GET {{baseUrl}}/users/:userId/reviews?page=1&limit=20
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 16. Get All Users (Admin)
+
+```
+GET {{baseUrl}}/users?page=1&limit=20&role=driver&search=john&isActive=true
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Query Parameters:**
+
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 20)
+- `role` - Filter by role (DRIVER, RIDER, ADMIN)
+- `search` - Search by name or email
+- `isActive` - Filter by active status (true/false)
+
+---
+
+## 17. Get All Drivers (Admin)
+
+```
+GET {{baseUrl}}/users/drivers?page=1&limit=20&isActive=true&search=john
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 18. Get All Riders (Admin)
+
+```
+GET {{baseUrl}}/users/riders?page=1&limit=20&isActive=true&search=jane
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 19. Toggle User Status (Admin)
+
+```
+PUT {{baseUrl}}/users/:id/status
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Body:**
+
+```json
+{
+  "isActive": false
+}
+```
+
+---
+
+## 20. Delete User (Admin)
+
+```
+DELETE {{baseUrl}}/users/:id
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+# =============================================================================
+
+# VEHICLES (/vehicles/)
+
+# =============================================================================
+
+## 21. Create Vehicle (Driver Only)
+
+```
+POST {{baseUrl}}/vehicles
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Body:**
 
 ```json
 {
@@ -1294,87 +499,135 @@ POST {{baseUrlV1}}/vehicles
 }
 ```
 
-### 18. Get My Vehicles
-
-```
-GET {{baseUrlV1}}/vehicles
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 19. Get All Vehicles (Admin)
-
-```
-GET {{baseUrlV1}}/vehicles/all?page=1&limit=20&isActive=true&model=Camry&color=Silver
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 20. Get Vehicle by ID
-
-```
-GET {{baseUrlV1}}/vehicles/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 21. Update Vehicle
-
-```
-PUT {{baseUrlV1}}/vehicles/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+**Response (201):**
 
 ```json
 {
-  "model": "Toyota Camry",
-  "color": "Black",
-  "capacity": 4
+  "success": true,
+  "message": "Vehicle created successfully",
+  "data": {
+    "vehicle": {
+      "id": 1,
+      "driverId": 1,
+      "model": "Toyota Camry",
+      "licensePlate": "ABC-1234",
+      "color": "Silver",
+      "capacity": 4,
+      "isActive": true
+    }
+  }
 }
 ```
 
-### 22. Delete Vehicle
+---
+
+## 22. Get My Vehicles
 
 ```
-DELETE {{baseUrlV1}}/vehicles/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 23. Toggle Vehicle Status
-
-```
-PUT {{baseUrlV1}}/vehicles/:id/status
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 24. Get Vehicles by Driver (Admin)
-
-```
-GET {{baseUrlV1}}/vehicles/driver/:driverId?page=1&limit=20
+GET {{baseUrl}}/vehicles?page=1&limit=10&isActive=true
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
 
 ---
 
-## 🚙 API v1 RIDES (RidePool)
-
-### 25. Create Ride (Driver Only)
+## 23. Get All Vehicles (Admin)
 
 ```
-POST {{baseUrlV1}}/rides
+GET {{baseUrl}}/vehicles/all?page=1&limit=20&isActive=true&model=Camry&color=Silver
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+
+---
+
+## 24. Get Vehicle by ID
+
+```
+GET {{baseUrl}}/vehicles/:id
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 25. Update Vehicle
+
+```
+PUT {{baseUrl}}/vehicles/:id
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Body:**
 
 ```json
 {
-  "vehicleId": "VEHICLE_ID_HERE",
+  "model": "Honda Accord",
+  "color": "Black",
+  "capacity": 5
+}
+```
+
+---
+
+## 26. Delete Vehicle
+
+```
+DELETE {{baseUrl}}/vehicles/:id
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 27. Toggle Vehicle Status
+
+```
+PUT {{baseUrl}}/vehicles/:id/status
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Body:**
+
+```json
+{
+  "isActive": false
+}
+```
+
+---
+
+## 28. Get Vehicles by Driver (Admin)
+
+```
+GET {{baseUrl}}/vehicles/driver/:driverId?page=1&limit=20
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+# =============================================================================
+
+# RIDES (/rides/)
+
+# =============================================================================
+
+## 29. Create Ride (Driver Only)
+
+```
+POST {{baseUrl}}/rides
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Body:**
+
+```json
+{
+  "vehicleId": 1,
   "pickupLocation": {
     "coordinates": [-122.4194, 37.7749],
     "address": "San Francisco, CA"
@@ -1385,7 +638,7 @@ POST {{baseUrlV1}}/rides
   },
   "departureTime": "2026-04-15T09:00:00Z",
   "availableSeats": 3,
-  "pricePerSeat": 25,
+  "pricePerSeat": 25.0,
   "preferences": {
     "smoking": false,
     "pets": false,
@@ -1395,86 +648,146 @@ POST {{baseUrlV1}}/rides
 }
 ```
 
-### 26. Get My Rides
+**Response (201):**
 
-```
-GET {{baseUrlV1}}/rides?status=active&page=1&limit=10
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 27. Search Rides
-
-```
-GET {{baseUrlV1}}/rides/search?pickupLat=37.7749&pickupLng=-122.4194&dropLat=37.4028&dropLng=-122.0869&radius=15&departureDate=2026-04-15&availableSeats=2
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 28. Get Recommendations
-
-```
-GET {{baseUrlV1}}/rides/recommendations
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 29. Get All Rides (Admin)
-
-```
-GET {{baseUrlV1}}/rides/all?page=1&limit=20&status=active&minSeats=2&maxPrice=30
+```json
+{
+  "success": true,
+  "message": "Ride created successfully",
+  "data": {
+    "ride": {
+      "id": 1,
+      "driverId": 1,
+      "vehicleId": 1,
+      "pickupLocation": { ... },
+      "dropLocation": { ... },
+      "departureTime": "2026-04-15T09:00:00Z",
+      "availableSeats": 3,
+      "pricePerSeat": 25.00,
+      "status": "ACTIVE",
+      "bookedSeats": 0
+    }
+  }
+}
 ```
 
-**Headers:** `Authorization: Bearer {{token}}`
+---
 
-### 30. Get Ride by ID
+## 30. Get My Rides
 
 ```
-GET {{baseUrlV1}}/rides/:id
+GET {{baseUrl}}/rides?status=active&page=1&limit=10
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
 
-### 31. Update Ride
+**Query Parameters:**
+
+- `status` - ACTIVE, COMPLETED, CANCELLED
+- `page` - Page number
+- `limit` - Items per page
+
+---
+
+## 31. Search Rides
 
 ```
-PUT {{baseUrlV1}}/rides/:id
+GET {{baseUrl}}/rides/search?pickupLat=37.7749&pickupLng=-122.4194&dropLat=37.4028&dropLng=-122.0869&radius=15&departureDate=2026-04-15&availableSeats=2
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+
+**Query Parameters:**
+
+- `pickupLat` - Pickup latitude
+- `pickupLng` - Pickup longitude
+- `dropLat` - Drop latitude
+- `dropLng` - Drop longitude
+- `radius` - Search radius in km (default: 10)
+- `departureDate` - Filter by date (YYYY-MM-DD)
+- `availableSeats` - Minimum available seats
+
+---
+
+## 32. Get Recommendations
+
+```
+GET {{baseUrl}}/rides/recommendations
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 33. Get All Rides (Admin)
+
+```
+GET {{baseUrl}}/rides/all?page=1&limit=20&status=active&minSeats=2&maxPrice=30
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 34. Get Ride by ID
+
+```
+GET {{baseUrl}}/rides/:id
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 35. Update Ride
+
+```
+PUT {{baseUrl}}/rides/:id
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Body:**
 
 ```json
 {
   "availableSeats": 2,
-  "pricePerSeat": 20
+  "pricePerSeat": 20.0,
+  "departureTime": "2026-04-15T10:00:00Z"
 }
 ```
 
-### 32. Cancel Ride
+---
+
+## 36. Cancel Ride
 
 ```
-DELETE {{baseUrlV1}}/rides/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 33. Get Ride Requests (Driver)
-
-```
-GET {{baseUrlV1}}/rides/:id/requests
+DELETE {{baseUrl}}/rides/:id
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
 
-### 34. Respond to Request (Driver)
+---
+
+## 37. Get Ride Requests (Driver)
 
 ```
-PUT {{baseUrlV1}}/rides/:id/requests/:riderId?action=approve
+GET {{baseUrl}}/rides/:id/requests
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+
+---
+
+## 38. Respond to Request (Driver)
+
+```
+PUT {{baseUrl}}/rides/:id/requests/:riderId?action=approve
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Body:**
 
 ```json
 {
@@ -1483,14 +796,21 @@ PUT {{baseUrlV1}}/rides/:id/requests/:riderId?action=approve
 }
 ```
 
-### 35. Request to Join Ride
+**Query Parameters:**
+
+- `action` - approve, reject
+
+---
+
+## 39. Request to Join Ride
 
 ```
-POST {{baseUrlV1}}/rides/:id/join
+POST {{baseUrl}}/rides/:id/join
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+
+**Body:**
 
 ```json
 {
@@ -1505,30 +825,37 @@ POST {{baseUrlV1}}/rides/:id/join
 }
 ```
 
-### 36. Get My Requests
+---
+
+## 40. Get My Requests
 
 ```
-GET {{baseUrlV1}}/rides/my-requests
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 37. Cancel Join Request
-
-```
-DELETE {{baseUrlV1}}/rides/:id/join
+GET {{baseUrl}}/rides/my-requests
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
 
-### 38. Update Ride Status (Admin)
+---
+
+## 41. Cancel Join Request
 
 ```
-PUT {{baseUrlV1}}/rides/:id/status
+DELETE {{baseUrl}}/rides/:id/join
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+
+---
+
+## 42. Update Ride Status (Admin)
+
+```
+PUT {{baseUrl}}/rides/:id/status
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Body:**
 
 ```json
 {
@@ -1536,82 +863,119 @@ PUT {{baseUrlV1}}/rides/:id/status
 }
 ```
 
-### 39. Get Rides by Driver (Admin)
+---
+
+## 43. Get Rides by Driver (Admin)
 
 ```
-GET {{baseUrlV1}}/rides/driver/:driverId?page=1&limit=20&status=active
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 40. Get Rides by Date
-
-```
-GET {{baseUrlV1}}/rides/date/2026-04-15?page=1&limit=20
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 41. Get Upcoming Rides
-
-```
-GET {{baseUrlV1}}/rides/upcoming?page=1&limit=20
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 42. Get Nearby Rides
-
-```
-GET {{baseUrlV1}}/rides/nearby?lat=37.7749&lng=-122.4194&radius=10
+GET {{baseUrl}}/rides/driver/:driverId?page=1&limit=20&status=active
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
 
 ---
 
-## 📍 API v1 TRIPS
-
-### 43. Get My Trips
+## 44. Get Rides by Date
 
 ```
-GET {{baseUrlV1}}/trips?status=completed&page=1&limit=10
+GET {{baseUrl}}/rides/date/2026-04-15?page=1&limit=20
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
 
-### 44. Get All Trips (Admin)
+---
+
+## 45. Get Upcoming Rides
 
 ```
-GET {{baseUrlV1}}/trips/all?page=1&limit=20&status=completed&startDate=2026-01-01&endDate=2026-04-30
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 45. Get Trip by ID
-
-```
-GET {{baseUrlV1}}/trips/:id
+GET {{baseUrl}}/rides/upcoming?page=1&limit=20
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
 
-### 46. Start Trip (Driver)
+---
+
+## 46. Get Nearby Rides
 
 ```
-POST {{baseUrlV1}}/trips/:id/start
+GET {{baseUrl}}/rides/nearby?lat=37.7749&lng=-122.4194&radius=10
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+# =============================================================================
+
+# TRIPS (/trips/)
+
+# =============================================================================
+
+## 47. Get My Trips
+
+```
+GET {{baseUrl}}/trips?status=completed&page=1&limit=10
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
 
-### 47. Complete Trip (Driver)
+---
+
+## 48. Get All Trips (Admin)
 
 ```
-POST {{baseUrlV1}}/trips/:id/complete
+GET {{baseUrl}}/trips/all?page=1&limit=20&status=completed&startDate=2026-01-01&endDate=2026-04-30
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+
+---
+
+## 49. Get Trip by ID
+
+```
+GET {{baseUrl}}/trips/:id
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 50. Start Trip (Driver)
+
+```
+POST {{baseUrl}}/trips/:id/start
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Trip started successfully",
+  "data": {
+    "trip": {
+      "id": 1,
+      "status": "IN_PROGRESS",
+      "startTime": "2026-04-15T09:00:00Z"
+    }
+  }
+}
+```
+
+---
+
+## 51. Complete Trip (Driver)
+
+```
+POST {{baseUrl}}/trips/:id/complete
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Body:**
 
 ```json
 {
@@ -1624,150 +988,190 @@ POST {{baseUrlV1}}/trips/:id/complete
 }
 ```
 
-### 48. Cancel Trip
+---
+
+## 52. Cancel Trip
 
 ```
-POST {{baseUrlV1}}/trips/:id/cancel
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 49. Get Trips by Driver (Admin)
-
-```
-GET {{baseUrlV1}}/trips/driver/:driverId?page=1&limit=20&status=completed
+POST {{baseUrl}}/trips/:id/cancel
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
 
-### 50. Get Trips by Rider (Admin)
+**Body:**
 
-```
-GET {{baseUrlV1}}/trips/rider/:riderId?page=1&limit=20&status=completed
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 51. Get Trip by RidePool
-
-```
-GET {{baseUrlV1}}/trips/ridepool/:ridePoolId
+```json
+{
+  "reason": "Vehicle breakdown"
+}
 ```
 
-**Headers:** `Authorization: Bearer {{token}}`
+---
 
-### 52. Get Trips by Date
-
-```
-GET {{baseUrlV1}}/trips/date/2026-04-15?page=1&limit=20
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 53. Get Trips by Status
+## 53. Get Trips by Driver (Admin)
 
 ```
-GET {{baseUrlV1}}/trips/status/completed?page=1&limit=20
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 54. Get Upcoming Trips
-
-```
-GET {{baseUrlV1}}/trips/upcoming?page=1&limit=20
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 55. Get Trip Stats (Admin)
-
-```
-GET {{baseUrlV1}}/trips/stats
+GET {{baseUrl}}/trips/driver/:driverId?page=1&limit=20&status=completed
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
 
 ---
 
-## 🔒 API v1 PRIVACY
-
-### 56. Initiate Call
+## 54. Get Trips by Rider (Admin)
 
 ```
-POST {{baseUrlV1}}/privacy/call/initiate
+GET {{baseUrl}}/trips/rider/:riderId?page=1&limit=20&status=completed
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+
+---
+
+## 55. Get Trip by RidePool
+
+```
+GET {{baseUrl}}/trips/ridepool/:ridePoolId
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 56. Get Trips by Date
+
+```
+GET {{baseUrl}}/trips/date/2026-04-15?page=1&limit=20
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 57. Get Trips by Status
+
+```
+GET {{baseUrl}}/trips/status/completed?page=1&limit=20
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 58. Get Upcoming Trips
+
+```
+GET {{baseUrl}}/trips/upcoming?page=1&limit=20
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 59. Get Trip Stats (Admin)
+
+```
+GET {{baseUrl}}/trips/stats
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Response (200):**
 
 ```json
 {
-  "targetUserId": "USER_ID_HERE"
+  "success": true,
+  "data": {
+    "totalTrips": 150,
+    "completedTrips": 120,
+    "cancelledTrips": 10,
+    "inProgressTrips": 5,
+    "totalRevenue": 4500.0,
+    "averageTripDistance": 25.5,
+    "averageTripDuration": 35
+  }
 }
 ```
 
-### 57. End Call
+---
+
+# =============================================================================
+
+# PRIVACY (/privacy/)
+
+# =============================================================================
+
+## 60. Initiate Call
 
 ```
-POST {{baseUrlV1}}/privacy/call/end
+POST {{baseUrl}}/privacy/call/initiate
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+
+**Body:**
 
 ```json
 {
-  "callId": "CALL_ID_HERE"
+  "targetUserId": 2
 }
 ```
 
-### 58. Send In-App Message
+---
+
+## 61. End Call
 
 ```
-POST {{baseUrlV1}}/privacy/message/send
+POST {{baseUrl}}/privacy/call/end
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+
+**Body:**
 
 ```json
 {
-  "receiverId": "USER_ID_HERE",
-  "ridePoolId": "RIDE_POOL_ID_HERE",
-  "content": "Hello! Are you still available for the ride?"
+  "callId": "call_abc123"
 }
 ```
 
-### 59. Get Conversation
+---
+
+## 62. Get Masked Phone
 
 ```
-GET {{baseUrlV1}}/privacy/message/conversation/:userId?page=1&limit=50
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 60. Get Masked Phone
-
-```
-GET {{baseUrlV1}}/privacy/masked-phone/:userId
+GET {{baseUrl}}/privacy/masked-phone/:userId
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
 
-### 61. Send SOS Alert
-
-```
-POST {{baseUrlV1}}/privacy/sos/alert
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+**Response (200):**
 
 ```json
 {
-  "ridePoolId": "RIDE_POOL_ID_HERE",
-  "message": "Emergency! Something wrong.",
+  "success": true,
+  "data": {
+    "maskedPhone": "+1***-***-4567"
+  }
+}
+```
+
+---
+
+## 63. Send SOS Alert
+
+```
+POST {{baseUrl}}/privacy/sos/alert
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Body:**
+
+```json
+{
+  "ridePoolId": 1,
+  "message": "Emergency! Need help.",
   "location": {
     "coordinates": [-122.4194, 37.7749],
     "address": "San Francisco, CA"
@@ -1775,53 +1179,53 @@ POST {{baseUrlV1}}/privacy/sos/alert
 }
 ```
 
-### 62. Get SOS History
-
-```
-GET {{baseUrlV1}}/privacy/sos/history
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 63. Get Privacy Settings
-
-```
-GET {{baseUrlV1}}/privacy/settings
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 64. Update Privacy Settings
-
-```
-PUT {{baseUrlV1}}/privacy/settings
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+**Response (201):**
 
 ```json
 {
-  "isProfileBlurred": true
+  "success": true,
+  "message": "SOS alert sent successfully",
+  "data": {
+    "sosAlert": {
+      "id": 1,
+      "status": "ACTIVE",
+      "createdAt": "2026-04-15T09:00:00Z"
+    }
+  }
 }
 ```
 
-### 65. Get Profile Visibility
+---
+
+## 64. Get SOS History
 
 ```
-GET {{baseUrlV1}}/privacy/profile-visibility
+GET {{baseUrl}}/privacy/sos/history
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 65. Get Privacy Settings
+
+```
+GET {{baseUrl}}/privacy/settings
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
 
-### 66. Update Profile Visibility
+---
+
+## 66. Update Privacy Settings
 
 ```
-PUT {{baseUrlV1}}/privacy/profile-visibility
+PUT {{baseUrl}}/privacy/settings
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+
+**Body:**
 
 ```json
 {
@@ -1831,240 +1235,431 @@ PUT {{baseUrlV1}}/privacy/profile-visibility
 
 ---
 
-## ⭐ API v1 REVIEWS
-
-### 67. Create Review
+## 67. Get Profile Visibility
 
 ```
-POST {{baseUrlV1}}/reviews
+GET {{baseUrl}}/privacy/profile-visibility
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
+
+---
+
+# =============================================================================
+
+# REVIEWS (/reviews/)
+
+# =============================================================================
+
+## 68. Create Review
+
+```
+POST {{baseUrl}}/reviews
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Body:**
 
 ```json
 {
-  "tripId": "TRIP_ID_HERE",
-  "revieweeId": "USER_ID_HERE",
-  "type": "rider-to-driver",
+  "tripId": 1,
+  "revieweeId": 2,
+  "type": "RIDER_TO_DRIVER",
   "rating": 5,
   "comment": "Great ride! Very friendly driver."
 }
 ```
 
-### 68. Get User Reviews
+**Response (201):**
 
-```
-GET {{baseUrlV1}}/reviews/user/:userId?page=1&limit=20
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 69. Get Trip Reviews
-
-```
-GET {{baseUrlV1}}/reviews/trip/:tripId
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 70. Get All Reviews (Admin)
-
-```
-GET {{baseUrlV1}}/reviews/all?page=1&limit=20&type=driver-to-rider&minRating=3&maxRating=5
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 71. Get My Reviews
-
-```
-GET {{baseUrlV1}}/reviews/my-reviews?page=1&limit=20
+```json
+{
+  "success": true,
+  "message": "Review created successfully",
+  "data": {
+    "review": {
+      "id": 1,
+      "tripId": 1,
+      "reviewerId": 1,
+      "revieweeId": 2,
+      "type": "RIDER_TO_DRIVER",
+      "rating": 5,
+      "comment": "Great ride! Very friendly driver.",
+      "isVisible": false,
+      "createdAt": "2026-04-15T10:00:00Z"
+    }
+  }
+}
 ```
 
-**Headers:** `Authorization: Bearer {{token}}`
+---
 
-### 72. Get Review by ID
-
-```
-GET {{baseUrlV1}}/reviews/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 73. Delete Review
+## 69. Get User Reviews
 
 ```
-DELETE {{baseUrlV1}}/reviews/:id
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 74. Get User Review Stats
-
-```
-GET {{baseUrlV1}}/reviews/stats/user/:userId
+GET {{baseUrl}}/reviews/user/:userId?page=1&limit=20
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
 
 ---
 
-## 💬 API v1 MESSAGES
-
-### 75. Get Messages
+## 70. Get Trip Reviews
 
 ```
-GET {{baseUrlV1}}/messages?userId=USER_ID_HERE&ridePoolId=RIDE_POOL_ID_HERE&page=1&limit=50
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 76. Get Conversations
-
-```
-GET {{baseUrlV1}}/messages/conversations
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 77. Get Unread Count
-
-```
-GET {{baseUrlV1}}/messages/unread-count
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 78. Get Conversation by User
-
-```
-GET {{baseUrlV1}}/messages/conversation/:userId?page=1&limit=50
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 79. Send New Message
-
-```
-POST {{baseUrlV1}}/messages
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "receiverId": "USER_ID_HERE",
-  "ridePoolId": "RIDE_POOL_ID_HERE",
-  "content": "Hi! Is the ride still available?"
-}
-```
-
-### 80. Mark Messages as Read
-
-```
-PUT {{baseUrlV1}}/messages/read
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-**Body (JSON):**
-
-```json
-{
-  "userId": "USER_ID_HERE"
-}
-```
-
-### 81. Mark Conversation as Read
-
-```
-PUT {{baseUrlV1}}/messages/read/:userId
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 82. Delete Message
-
-```
-DELETE {{baseUrlV1}}/messages/:messageId
-```
-
-**Headers:** `Authorization: Bearer {{token}}`
-
-### 83. Delete Conversation
-
-```
-DELETE {{baseUrlV1}}/messages/conversation/:userId
+GET {{baseUrl}}/reviews/trip/:tripId
 ```
 
 **Headers:** `Authorization: Bearer {{token}}`
 
 ---
 
-## 🌐 API v1 SYSTEM
-
-### 84. Health Check
+## 71. Get All Reviews (Admin)
 
 ```
-GET {{baseUrlV1}}/health
+GET {{baseUrl}}/reviews/all?page=1&limit=20&type=DRIVER_TO_RIDER&minRating=3&maxRating=5
 ```
 
-### 85. System Stats (Admin)
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 72. Get My Reviews
 
 ```
-GET {{baseUrlV1}}/stats
+GET {{baseUrl}}/reviews/my-reviews?page=1&limit=20
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 73. Get Review by ID
+
+```
+GET {{baseUrl}}/reviews/:id
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 74. Delete Review
+
+```
+DELETE {{baseUrl}}/reviews/:id
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 75. Get User Review Stats
+
+```
+GET {{baseUrl}}/reviews/stats/user/:userId
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "averageRating": 4.5,
+    "totalReviews": 25,
+    "fiveStars": 15,
+    "fourStars": 5,
+    "threeStars": 3,
+    "twoStars": 1,
+    "oneStar": 1
+  }
+}
 ```
 
 ---
 
 # =============================================================================
 
-# TESTING FLOW
+# MESSAGES (/messages/)
+
+# =============================================================================
+
+## 76. Get Messages
+
+```
+GET {{baseUrl}}/messages?userId=2&ridePoolId=1&page=1&limit=50
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 77. Get Conversations
+
+```
+GET {{baseUrl}}/messages/conversations
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 78. Get Unread Count
+
+```
+GET {{baseUrl}}/messages/unread-count
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "unreadCount": 5
+  }
+}
+```
+
+---
+
+## 79. Get Conversation by User
+
+```
+GET {{baseUrl}}/messages/conversation/:userId?page=1&limit=50
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 80. Send Message
+
+```
+POST {{baseUrl}}/messages
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Body:**
+
+```json
+{
+  "receiverId": 2,
+  "ridePoolId": 1,
+  "content": "Hi! Is the ride still available?"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "message": "Message sent successfully",
+  "data": {
+    "message": {
+      "id": 1,
+      "senderId": 1,
+      "receiverId": 2,
+      "ridePoolId": 1,
+      "content": "Hi! Is the ride still available?",
+      "isRead": false,
+      "createdAt": "2026-04-15T09:00:00Z"
+    }
+  }
+}
+```
+
+---
+
+## 81. Mark Messages as Read
+
+```
+PUT {{baseUrl}}/messages/read
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Body:**
+
+```json
+{
+  "userId": 2
+}
+```
+
+---
+
+## 82. Mark Conversation as Read
+
+```
+PUT {{baseUrl}}/messages/read/:userId
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 83. Delete Message
+
+```
+DELETE {{baseUrl}}/messages/:messageId
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+## 84. Delete Conversation
+
+```
+DELETE {{baseUrl}}/messages/conversation/:userId
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+---
+
+# =============================================================================
+
+# SYSTEM ENDPOINTS
+
+# =============================================================================
+
+## 85. Health Check
+
+```
+GET {{baseUrl}}/health
+```
+
+**Response (200):**
+
+```json
+{
+  "status": "success",
+  "message": "API is running",
+  "data": {
+    "timestamp": "2026-04-15T09:00:00Z",
+    "uptime": 3600
+  }
+}
+```
+
+---
+
+## 86. System Stats (Admin)
+
+```
+GET {{baseUrl}}/stats
+```
+
+**Headers:** `Authorization: Bearer {{token}}`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "users": {
+      "total": 100,
+      "drivers": 30,
+      "riders": 70
+    },
+    "vehicles": {
+      "total": 45
+    },
+    "rides": {
+      "total": 200,
+      "active": 50,
+      "completed": 150
+    },
+    "trips": {
+      "total": 180,
+      "inProgress": 5
+    }
+  }
+}
+```
+
+---
+
+# =============================================================================
+
+# TESTING WORKFLOW
 
 # =============================================================================
 
 ## Recommended Testing Order
 
-### Phase 1: Authentication
+1. **Register Users** (endpoints 1, 1)
+   - Register a driver
+   - Register a rider
 
-1. **Register** → `POST {{baseUrlV1}}/auth/register`
-2. **Login** → `POST {{baseUrlV1}}/auth/login` → Save token
-3. **Get Profile** → `GET {{baseUrlV1}}/users/profile`
+2. **Login** (endpoints 2, 2)
+   - Login as driver → save token
+   - Login as rider → save token
 
-### Phase 2: Vehicles & Rides
+3. **Create Vehicle** (endpoint 21)
+   - Use driver token
 
-4. **Create Vehicle** → `POST {{baseUrlV1}}/vehicles` (as driver)
-5. **Create Ride** → `POST {{baseUrlV1}}/rides`
-6. **Search Rides** → `GET {{baseUrlV1}}/rides/search`
+4. **Create Ride** (endpoint 29)
+   - Use driver token
 
-### Phase 3: Trip Lifecycle
+5. **Join Ride** (endpoint 39)
+   - Use rider token
 
-7. **Request to Join** → `POST {{baseUrlV1}}/rides/:id/join`
-8. **Get My Trips** → `GET {{baseUrlV1}}/trips`
-9. **Start Trip** → `POST {{baseUrlV1}}/trips/:id/start`
-10. **Complete Trip** → `POST {{baseUrlV1}}/trips/:id/complete`
+6. **Respond to Request** (endpoint 38)
+   - Use driver token
 
-### Phase 4: Communication
+7. **Start/Complete Trip** (endpoints 50, 51)
+   - Use driver token
 
-11. **Send Message** → `POST {{baseUrlV1}}/messages`
-12. **Get Conversations** → `GET {{baseUrlV1}}/messages/conversations`
+8. **Send Message** (endpoint 80)
+   - Use either token
 
-### Phase 5: Reviews
+9. **Create Review** (endpoint 68)
+   - Use rider token
 
-13. **Create Review** → `POST {{baseUrlV1}}/reviews`
-
----
-
-## API Versioning Strategy
-
-| Aspect       | Legacy     | API v1      |
-| ------------ | ---------- | ----------- |
-| Base URL     | `/api/`    | `/api/v1/`  |
-| Status       | Compatible | Recommended |
-| New Features | No         | Yes         |
-| Deprecation  | Future     | Current     |
+10. **Test Privacy Features** (endpoints 60-67)
+    - Test SOS, masked phone, etc.
 
 ---
 
-_Generated for Carpooling System API Testing - April 2026_
+# =============================================================================
+
+# ERROR RESPONSES
+
+# =============================================================================
+
+## Standard Error Format
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human readable message",
+    "details": {}
+  }
+}
+```
+
+## Common Error Codes
+
+| Code               | HTTP Status | Description              |
+| ------------------ | ----------- | ------------------------ |
+| `VALIDATION_ERROR` | 400         | Invalid input data       |
+| `UNAUTHORIZED`     | 401         | Invalid or expired token |
+| `FORBIDDEN`        | 403         | Insufficient permissions |
+| `NOT_FOUND`        | 404         | Resource not found       |
+| `CONFLICT`         | 409         | Resource already exists  |
+| `RATE_LIMITED`     | 429         | Too many requests        |
+| `SERVER_ERROR`     | 500         | Internal server error    |
