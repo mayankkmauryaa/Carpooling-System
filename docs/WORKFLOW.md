@@ -111,13 +111,13 @@ Code flow helps understand **system dependencies**, identify bottlenecks, and pl
 │              ┌─────────────────────┼─────────────────────┐                │
 │              │                     │                     │                │
 │              ▼                     ▼                     ▼                │
-│   ┌─────────────────┐  ┌─────────────────────┐  ┌─────────────────┐           │
-│   │  UTILITIES      │  │  POSTGRESQL (Neon)  │  │     REDIS       │           │
-│   │ • Distance      │  │  • Prisma Client    │  │  • cache()      │           │
-│   │ • Route Matcher │  │  • Repositories     │  │  • get()        │           │
-│   │ • S2 Cells      │  │  • Transactions     │  │  • delete()     │           │
-│   │ • ETA Calc      │  │                     │  │                 │           │
-│   └─────────────────┘  └──────────┬──────────┘  └─────────────────┘           │
+│   ┌─────────────────┐  ┌─────────────────────┐  ┌─────────────────┐       │
+│   │  UTILITIES      │  │  POSTGRESQL (Neon)  │  │     REDIS       │       │
+│   │ • Distance      │  │  • Prisma Client    │  │  • cache()      │       │
+│   │ • Route Matcher │  │  • Repositories     │  │  • get()        │       │
+│   │ • S2 Cells      │  │  • Transactions     │  │  • delete()     │       │
+│   │ • ETA Calc      │  │                     │  │                 │       │
+│   └─────────────────┘  └──────────┬──────────┘  └─────────────────┘       │
 │                                 │                                         │
 │                                 └─────────────────────────────────────────┤
 │                                              │                            │
