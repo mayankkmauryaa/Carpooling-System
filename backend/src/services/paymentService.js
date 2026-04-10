@@ -1,8 +1,12 @@
 const Razorpay = require('razorpay');
 const { prisma } = require('../database/connection');
 const crypto = require('crypto');
+const { circuitBreakerRegistry } = require('../middleware/circuitBreaker');
+const CircuitBreakerConfig = require('../config/circuitBreaker');
 
 let razorpay = null;
+
+const razorpayBreaker = circuitBreakerRegistry.register('razorpay', CircuitBreakerConfig.getServiceConfig('razorpay'));
 
 function getRazorpayInstance() {
   if (razorpay) return razorpay;
@@ -15,13 +19,15 @@ function getRazorpayInstance() {
   return razorpay;
 }
 
+async function executeWithCircuitBreaker(operation) {
+  return razorpayBreaker.execute(operation);
+}
+
 function generateReceiptId() {
   return `RCP_${Date.now()}_${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 }
 
 async function createOrder(amount, currency = 'INR', options = {}) {
-  const razorpayInstance = getRazorpayInstance();
-
   const receipt = options.receipt || generateReceiptId();
 
   const orderOptions = {
@@ -37,7 +43,10 @@ async function createOrder(amount, currency = 'INR', options = {}) {
   if (options.userId) orderOptions.notes.userId = options.userId.toString();
 
   try {
-    const order = await razorpayInstance.orders.create(orderOptions);
+    const order = await executeWithCircuitBreaker(async () => {
+      const razorpayInstance = getRazorpayInstance();
+      return razorpayInstance.orders.create(orderOptions);
+    });
 
     await prisma.payment.create({
       data: {
@@ -61,14 +70,15 @@ async function createOrder(amount, currency = 'INR', options = {}) {
       status: order.status
     };
   } catch (error) {
+    if (error.message.includes('Circuit breaker')) {
+      throw new Error('Payment service temporarily unavailable. Please try again later.');
+    }
     console.error('Razorpay order creation error:', error);
     throw error;
   }
 }
 
 async function createSubscription(customerId, planId, options = {}) {
-  const razorpayInstance = getRazorpayInstance();
-
   const subscriptionOptions = {
     plan_id: planId,
     customer_id: customerId,
@@ -80,7 +90,10 @@ async function createSubscription(customerId, planId, options = {}) {
   };
 
   try {
-    const subscription = await razorpayInstance.subscriptions.create(subscriptionOptions);
+    const subscription = await executeWithCircuitBreaker(async () => {
+      const razorpayInstance = getRazorpayInstance();
+      return razorpayInstance.subscriptions.create(subscriptionOptions);
+    });
 
     return {
       subscriptionId: subscription.id,
@@ -90,30 +103,35 @@ async function createSubscription(customerId, planId, options = {}) {
       customerId: subscription.customer_id
     };
   } catch (error) {
+    if (error.message.includes('Circuit breaker')) {
+      throw new Error('Payment service temporarily unavailable. Please try again later.');
+    }
     console.error('Razorpay subscription error:', error);
     throw error;
   }
 }
 
 async function cancelSubscription(subscriptionId) {
-  const razorpayInstance = getRazorpayInstance();
-
   try {
-    const subscription = await razorpayInstance.subscriptions.cancel(subscriptionId);
+    const subscription = await executeWithCircuitBreaker(async () => {
+      const razorpayInstance = getRazorpayInstance();
+      return razorpayInstance.subscriptions.cancel(subscriptionId);
+    });
     return {
       subscriptionId: subscription.id,
       status: subscription.status,
       cancelledAt: subscription.cancelled_at
     };
   } catch (error) {
+    if (error.message.includes('Circuit breaker')) {
+      throw new Error('Payment service temporarily unavailable. Please try again later.');
+    }
     console.error('Razorpay cancel subscription error:', error);
     throw error;
   }
 }
 
 async function createCustomer(email, name, options = {}) {
-  const razorpayInstance = getRazorpayInstance();
-
   const customerOptions = {
     name,
     email,
@@ -124,7 +142,10 @@ async function createCustomer(email, name, options = {}) {
   };
 
   try {
-    const customer = await razorpayInstance.customers.create(customerOptions);
+    const customer = await executeWithCircuitBreaker(async () => {
+      const razorpayInstance = getRazorpayInstance();
+      return razorpayInstance.customers.create(customerOptions);
+    });
 
     await prisma.razorpayCustomer.create({
       data: {
@@ -142,16 +163,20 @@ async function createCustomer(email, name, options = {}) {
       name: customer.name
     };
   } catch (error) {
+    if (error.message.includes('Circuit breaker')) {
+      throw new Error('Payment service temporarily unavailable. Please try again later.');
+    }
     console.error('Razorpay customer creation error:', error);
     throw error;
   }
 }
 
 async function getCustomer(customerId) {
-  const razorpayInstance = getRazorpayInstance();
-
   try {
-    const customer = await razorpayInstance.customers.fetch(customerId);
+    const customer = await executeWithCircuitBreaker(async () => {
+      const razorpayInstance = getRazorpayInstance();
+      return razorpayInstance.customers.fetch(customerId);
+    });
     return {
       customerId: customer.id,
       email: customer.email,
@@ -166,10 +191,11 @@ async function getCustomer(customerId) {
 }
 
 async function addCustomerAddress(customerId, address) {
-  const razorpayInstance = getRazorpayInstance();
-
   try {
-    const customer = await razorpayInstance.customers.fetch(customerId);
+    const customer = await executeWithCircuitBreaker(async () => {
+      const razorpayInstance = getRazorpayInstance();
+      return razorpayInstance.customers.fetch(customerId);
+    });
     const existingAddresses = customer.notes?.addresses || [];
 
     const newAddress = {
@@ -183,24 +209,31 @@ async function addCustomerAddress(customerId, address) {
       country: address.country || 'IN'
     };
 
-    await razorpayInstance.customers.edit(customerId, {
-      notes: {
-        addresses: [...existingAddresses, newAddress]
-      }
+    await executeWithCircuitBreaker(async () => {
+      const razorpayInstance = getRazorpayInstance();
+      return razorpayInstance.customers.edit(customerId, {
+        notes: {
+          addresses: [...existingAddresses, newAddress]
+        }
+      });
     });
 
     return { success: true, address: newAddress };
   } catch (error) {
+    if (error.message.includes('Circuit breaker')) {
+      throw new Error('Payment service temporarily unavailable. Please try again later.');
+    }
     console.error('Razorpay add address error:', error);
     throw error;
   }
 }
 
 async function fetchPayment(paymentId) {
-  const razorpayInstance = getRazorpayInstance();
-
   try {
-    const payment = await razorpayInstance.payments.fetch(paymentId);
+    const payment = await executeWithCircuitBreaker(async () => {
+      const razorpayInstance = getRazorpayInstance();
+      return razorpayInstance.payments.fetch(paymentId);
+    });
     return {
       paymentId: payment.id,
       amount: payment.amount / 100,
@@ -214,21 +247,25 @@ async function fetchPayment(paymentId) {
       createdAt: payment.created_at
     };
   } catch (error) {
+    if (error.message.includes('Circuit breaker')) {
+      throw new Error('Payment service temporarily unavailable. Please try again later.');
+    }
     console.error('Razorpay fetch payment error:', error);
     throw error;
   }
 }
 
 async function capturePayment(paymentId, amount, options = {}) {
-  const razorpayInstance = getRazorpayInstance();
-
   try {
-    const payment = await razorpayInstance.payments.capture(
-      paymentId,
-      Math.round(amount * 100),
-      options.currency || 'INR',
-      { notes: options.notes }
-    );
+    const payment = await executeWithCircuitBreaker(async () => {
+      const razorpayInstance = getRazorpayInstance();
+      return razorpayInstance.payments.capture(
+        paymentId,
+        Math.round(amount * 100),
+        options.currency || 'INR',
+        { notes: options.notes }
+      );
+    });
 
     await prisma.payment.updateMany({
       where: { razorpayPaymentId: paymentId },
@@ -245,14 +282,15 @@ async function capturePayment(paymentId, amount, options = {}) {
       status: payment.status
     };
   } catch (error) {
+    if (error.message.includes('Circuit breaker')) {
+      throw new Error('Payment service temporarily unavailable. Please try again later.');
+    }
     console.error('Razorpay capture payment error:', error);
     throw error;
   }
 }
 
 async function refundPayment(paymentId, amount, options = {}) {
-  const razorpayInstance = getRazorpayInstance();
-
   try {
     const refundOptions = {
       amount: Math.round((amount || 0) * 100),
@@ -260,7 +298,10 @@ async function refundPayment(paymentId, amount, options = {}) {
       notes: options.notes || {}
     };
 
-    const refund = await razorpayInstance.payments.refund(paymentId, refundOptions);
+    const refund = await executeWithCircuitBreaker(async () => {
+      const razorpayInstance = getRazorpayInstance();
+      return razorpayInstance.payments.refund(paymentId, refundOptions);
+    });
 
     await prisma.refund.create({
       data: {
@@ -290,16 +331,20 @@ async function refundPayment(paymentId, amount, options = {}) {
       speed: refund.speed
     };
   } catch (error) {
+    if (error.message.includes('Circuit breaker')) {
+      throw new Error('Payment service temporarily unavailable. Please try again later.');
+    }
     console.error('Razorpay refund error:', error);
     throw error;
   }
 }
 
 async function getRefund(refundId) {
-  const razorpayInstance = getRazorpayInstance();
-
   try {
-    const refund = await razorpayInstance.refunds.fetch(refundId);
+    const refund = await executeWithCircuitBreaker(async () => {
+      const razorpayInstance = getRazorpayInstance();
+      return razorpayInstance.refunds.fetch(refundId);
+    });
     return {
       refundId: refund.id,
       paymentId: refund.payment_id,
@@ -309,6 +354,9 @@ async function getRefund(refundId) {
       createdAt: refund.created_at
     };
   } catch (error) {
+    if (error.message.includes('Circuit breaker')) {
+      throw new Error('Payment service temporarily unavailable. Please try again later.');
+    }
     console.error('Razorpay fetch refund error:', error);
     throw error;
   }
@@ -333,11 +381,12 @@ async function verifyWebhookSignature(body, signature) {
 }
 
 async function createTransfer(orderId, transfers) {
-  const razorpayInstance = getRazorpayInstance();
-
   try {
-    const transfer = await razorpayInstance.orders.edit(orderId, {
-      transfers
+    const transfer = await executeWithCircuitBreaker(async () => {
+      const razorpayInstance = getRazorpayInstance();
+      return razorpayInstance.orders.edit(orderId, {
+        transfers
+      });
     });
 
     return {
@@ -345,14 +394,15 @@ async function createTransfer(orderId, transfers) {
       transfers: transfer.transfers
     };
   } catch (error) {
+    if (error.message.includes('Circuit breaker')) {
+      throw new Error('Payment service temporarily unavailable. Please try again later.');
+    }
     console.error('Razorpay transfer error:', error);
     throw error;
   }
 }
 
 async function createAccount(accountDetails) {
-  const razorpayInstance = getRazorpayInstance();
-
   const accountData = {
     email: accountDetails.email,
     phone: accountDetails.phone,
@@ -388,7 +438,10 @@ async function createAccount(accountDetails) {
   };
 
   try {
-    const account = await razorpayInstance.accounts.create(accountData);
+    const account = await executeWithCircuitBreaker(async () => {
+      const razorpayInstance = getRazorpayInstance();
+      return razorpayInstance.accounts.create(accountData);
+    });
 
     return {
       accountId: account.id,
@@ -396,14 +449,15 @@ async function createAccount(accountDetails) {
       status: account.status
     };
   } catch (error) {
+    if (error.message.includes('Circuit breaker')) {
+      throw new Error('Payment service temporarily unavailable. Please try again later.');
+    }
     console.error('Razorpay create account error:', error);
     throw error;
   }
 }
 
 async function createPayout(accountId, options = {}) {
-  const razorpayInstance = getRazorpayInstance();
-
   const payoutOptions = {
     account_number: process.env.RAZORPAY_ACCOUNT_NUMBER,
     to_account: accountId,
@@ -416,7 +470,10 @@ async function createPayout(accountId, options = {}) {
   };
 
   try {
-    const payout = await razorpayInstance.payouts.create(payoutOptions);
+    const payout = await executeWithCircuitBreaker(async () => {
+      const razorpayInstance = getRazorpayInstance();
+      return razorpayInstance.payouts.create(payoutOptions);
+    });
 
     return {
       payoutId: payout.id,
@@ -425,13 +482,15 @@ async function createPayout(accountId, options = {}) {
       purpose: payout.purpose
     };
   } catch (error) {
+    if (error.message.includes('Circuit breaker')) {
+      throw new Error('Payment service temporarily unavailable. Please try again later.');
+    }
     console.error('Razorpay payout error:', error);
     throw error;
   }
 }
 
 async function createWalletTransaction(userId, amount, type, options = {}) {
-  const razorpayInstance = getRazorpayInstance();
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new Error('User not found');

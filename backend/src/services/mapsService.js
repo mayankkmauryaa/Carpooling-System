@@ -2,6 +2,10 @@ const GoogleMapsConfig = require('../config/googleMaps');
 const DistanceCalculator = require('../utils/distance');
 const ETACalculator = require('../utils/eta');
 const logger = require('../middleware/logger');
+const { circuitBreakerRegistry } = require('../middleware/circuitBreaker');
+const CircuitBreakerConfig = require('../config/circuitBreaker');
+
+const mapsBreaker = circuitBreakerRegistry.register('maps', CircuitBreakerConfig.getServiceConfig('maps'));
 
 class GoogleMapsService {
   constructor() {
@@ -52,21 +56,29 @@ class GoogleMapsService {
     }
 
     try {
-      const response = await this.fetchWithTimeout(url);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+      const data = await mapsBreaker.execute(async () => {
+        const response = await this.fetchWithTimeout(url);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
 
-      const data = await response.json();
+        const result = await response.json();
 
-      if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-        throw new Error(`Google Maps API error: ${data.status}`);
-      }
+        if (result.status !== 'OK' && result.status !== 'ZERO_RESULTS') {
+          throw new Error(`Google Maps API error: ${result.status}`);
+        }
+
+        return result;
+      });
 
       this.setCache(cacheKey, data);
       return data;
     } catch (error) {
+      if (error.message.includes('Circuit breaker')) {
+        logger.warn('Maps circuit breaker open, returning fallback');
+        throw error;
+      }
       logger.error('Google Maps API request failed', { url, error: error.message });
       throw error;
     }

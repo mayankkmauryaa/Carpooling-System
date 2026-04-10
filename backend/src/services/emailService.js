@@ -1,7 +1,11 @@
 const nodemailer = require('nodemailer');
 const path = require('path');
+const { circuitBreakerRegistry } = require('../middleware/circuitBreaker');
+const CircuitBreakerConfig = require('../config/circuitBreaker');
 
 let transporter = null;
+
+const emailBreaker = circuitBreakerRegistry.register('email', CircuitBreakerConfig.getServiceConfig('email'));
 
 function createTransporter() {
   if (transporter) return transporter;
@@ -21,8 +25,6 @@ function createTransporter() {
 }
 
 async function sendEmail(options) {
-  const transport = createTransporter();
-  
   const mailOptions = {
     from: `"${process.env.APP_NAME || 'Carpooling System'}" <${process.env.SMTP_USER}>`,
     to: options.to,
@@ -33,10 +35,19 @@ async function sendEmail(options) {
   };
 
   try {
-    const info = await transport.sendMail(mailOptions);
-    console.log('Email sent:', info.messageId);
-    return { success: true, messageId: info.messageId };
+    const result = await emailBreaker.execute(async () => {
+      const transport = createTransporter();
+      const info = await transport.sendMail(mailOptions);
+      return info;
+    });
+    
+    console.log('Email sent:', result.messageId);
+    return { success: true, messageId: result.messageId };
   } catch (error) {
+    if (error.message.includes('Circuit breaker')) {
+      console.warn('Email circuit breaker open, email queued for retry');
+      return { success: false, error: 'Service temporarily unavailable', queued: true };
+    }
     console.error('Email error:', error);
     return { success: false, error: error.message };
   }
