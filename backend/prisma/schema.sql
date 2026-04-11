@@ -1,6 +1,8 @@
 -- ============================================
 -- Carpooling System Database Schema
 -- Generated from Prisma Schema
+-- Last Updated: April 11, 2026
+-- Changes: Added unique constraints on document tables
 -- ============================================
 
 -- Users Table
@@ -413,9 +415,11 @@ CREATE TABLE IF NOT EXISTS "driver_documents" (
   "rejectedReason" VARCHAR,
   "expiresAt" TIMESTAMP,
   "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE ("driverId", "documentType")
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS "driver_documents_driverId_documentType_idx" ON "driver_documents"("driverId", "documentType");
 CREATE INDEX IF NOT EXISTS "driver_documents_driverId_idx" ON "driver_documents"("driverId");
 CREATE INDEX IF NOT EXISTS "driver_documents_documentType_idx" ON "driver_documents"("documentType");
 CREATE INDEX IF NOT EXISTS "driver_documents_status_idx" ON "driver_documents"("status");
@@ -433,9 +437,11 @@ CREATE TABLE IF NOT EXISTS "vehicle_documents" (
   "rejectedReason" VARCHAR,
   "expiresAt" TIMESTAMP,
   "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE ("vehicleId", "documentType")
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS "vehicle_documents_vehicleId_documentType_idx" ON "vehicle_documents"("vehicleId", "documentType");
 CREATE INDEX IF NOT EXISTS "vehicle_documents_vehicleId_idx" ON "vehicle_documents"("vehicleId");
 CREATE INDEX IF NOT EXISTS "vehicle_documents_documentType_idx" ON "vehicle_documents"("documentType");
 CREATE INDEX IF NOT EXISTS "vehicle_documents_status_idx" ON "vehicle_documents"("status");
@@ -484,9 +490,11 @@ CREATE TABLE IF NOT EXISTS "owner_documents" (
   "rejectedReason" VARCHAR,
   "expiresAt" TIMESTAMP,
   "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE ("ownerId", "documentType")
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS "owner_documents_ownerId_documentType_idx" ON "owner_documents"("ownerId", "documentType");
 CREATE INDEX IF NOT EXISTS "owner_documents_ownerId_idx" ON "owner_documents"("ownerId");
 CREATE INDEX IF NOT EXISTS "owner_documents_documentType_idx" ON "owner_documents"("documentType");
 CREATE INDEX IF NOT EXISTS "owner_documents_status_idx" ON "owner_documents"("status");

@@ -1,5 +1,8 @@
 # Database Schema - Carpooling System
 
+> **Last Updated:** April 11, 2026  
+> **Changes:** Added unique constraints to DriverDocument, VehicleDocument, OwnerDocument
+
 ## 📋 Overview
 
 This document defines the PostgreSQL database schema for the carpooling system using **Prisma ORM** with **Neon DB** (serverless PostgreSQL).
@@ -420,6 +423,7 @@ model DriverDocument {
   driver         User @relation("DriverDocuments", fields: [driverId], references: [id])
   verifiedByUser User? @relation("VerifiedDriverDocs", fields: [verifiedBy], references: [id])
 
+  @@unique([driverId, documentType])
   @@index([driverId])
   @@index([documentType])
   @@index([status])
@@ -459,6 +463,7 @@ model VehicleDocument {
   vehicle       Vehicle @relation(fields: [vehicleId], references: [id])
   verifiedByUser User?   @relation("VerifiedVehicleDocs", fields: [verifiedBy], references: [id])
 
+  @@unique([vehicleId, documentType])
   @@index([vehicleId])
   @@index([documentType])
   @@index([status])
@@ -496,6 +501,7 @@ model OwnerDocument {
   owner         Owner  @relation(fields: [ownerId], references: [id])
   verifiedByUser User?  @relation("VerifiedOwnerDocs", fields: [verifiedBy], references: [id])
 
+  @@unique([ownerId, documentType])
   @@index([ownerId])
   @@index([documentType])
   @@index([status])

@@ -23,6 +23,7 @@ const fleetService = require('./FleetService');
 const documentExpiryService = require('./DocumentExpiryService');
 const { ownerDocumentService } = require('./OwnerDocumentService');
 const { paymentMethodService } = require('./PaymentMethodService');
+const payoutService = require('./PayoutService');
 
 module.exports = {
   authService,
@@ -49,5 +50,6 @@ module.exports = {
   fleetService,
   documentExpiryService,
   ownerDocumentService,
-  paymentMethodService
+  paymentMethodService,
+  payoutService
 };

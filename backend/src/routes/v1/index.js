@@ -20,6 +20,7 @@ const paymentMethodsRoutes = require('./payment-methods.routes');
 const ownerRoutes = require('./owner.routes');
 const fleetRoutes = require('./fleet.routes');
 const ownerDocumentsRoutes = require('./owner.documents.routes');
+const payoutRoutes = require('./payout.routes');
 
 router.use('/auth', authLimiter.middleware(), authRoutes);
 router.use('/users', usersRoutes);
@@ -39,5 +40,6 @@ router.use('/payment-methods', paymentMethodsRoutes);
 router.use('/owner', ownerRoutes);
 router.use('/fleet', fleetRoutes);
 router.use('/owner-documents', ownerDocumentsRoutes);
+router.use('/payout', payoutRoutes);
 
 module.exports = router;

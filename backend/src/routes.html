@@ -595,6 +595,31 @@
       - Razorpay webhook
     </div>
 
+    <h2>💰 Payout <span class="badge">NEW</span></h2>
+    <div class="route-section new">
+      <p class="section-desc">Driver and Owner Earnings</p>
+      <a href="/api/v1/payout/earnings"
+        ><span class="method get">GET</span> /api/v1/payout/earnings</a>
+      >
+      - Driver earnings <span class="query">?page=1&limit=10&startDate=&endDate=&status=</span><br /><br />
+      <a href="/api/v1/payout/earnings/summary"
+        ><span class="method get">GET</span> /api/v1/payout/earnings/summary</a>
+      >
+      - Earnings summary <span class="query">?period=month</span><br /><br />
+      <a href="/api/v1/payout/my-earnings"
+        ><span class="method get">GET</span> /api/v1/payout/my-earnings</a>
+      >
+      - All user earnings<br /><br />
+      <a href="/api/v1/payout/owner/history"
+        ><span class="method get">GET</span> /api/v1/payout/owner/history</a>
+      >
+      - Owner payout history <span class="query">(owner)</span><br /><br />
+      <a href="/api/v1/payout/stats"
+        ><span class="method get">GET</span> /api/v1/payout/stats</a>
+      >
+      - Payout stats
+    </div>
+
     <h2>👨‍💼 Admin <span class="badge">NEW</span></h2>
     <div class="route-section new">
       <p class="section-desc">Admin dashboard and management endpoints</p>
@@ -788,7 +813,7 @@
       <code>Authorization: Bearer &lt;token&gt;</code>
     </p>
     <p>
-      <strong>Updated:</strong> April 11, 2026 | Backend Complete - All 18 Weeks
+      <strong>Updated:</strong> April 11, 2026 | Backend Complete - All 18 Weeks | Routes: 217 (+5 Payout)
     </p>
   </body>
 </html>
