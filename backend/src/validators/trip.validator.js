@@ -1,13 +1,23 @@
 const Joi = require('joi');
 const { paramIdSchema, paginationSchema, dateRangeSchema } = require('./common.schemas');
 
-const startTripSchema = Joi.object({});
+const startTripSchema = Joi.object({
+  rideId: Joi.number().positive().required().messages({
+    'any.required': 'Ride ID is required'
+  })
+});
 
 const completeTripSchema = Joi.object({
-  actualDistance: Joi.number().min(0),
-  actualDuration: Joi.number().min(0),
+  actualDistance: Joi.number().min(0).required().messages({
+    'number.min': 'Actual distance cannot be negative',
+    'any.required': 'Actual distance is required'
+  }),
+  actualDuration: Joi.number().min(0).required().messages({
+    'number.min': 'Actual duration cannot be negative',
+    'any.required': 'Actual duration is required'
+  }),
   endLocation: Joi.object({
-    coordinates: Joi.array().items(Joi.number()).length(2),
+    coordinates: Joi.array().items(Joi.number()).length(2).required(),
     address: Joi.string()
   })
 });

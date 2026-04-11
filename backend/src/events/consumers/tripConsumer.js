@@ -184,7 +184,7 @@ class TripConsumer {
     try {
       logger.info('Processing booking.created event', { bookingId: event.bookingId });
 
-      eventBus.emit('payment.initiate', {
+      eventBus.emit('payment.initiated', {
         bookingId: event.bookingId,
         amount: event.amount,
         userId: event.userId
@@ -198,9 +198,10 @@ class TripConsumer {
     try {
       logger.info('Processing booking.cancelled event', { bookingId: event.bookingId });
 
-      eventBus.emit('refund.process', {
+      eventBus.emit('payment.refund_initiated', {
         bookingId: event.bookingId,
         userId: event.userId,
+        amount: event.amount,
         reason: event.reason
       });
     } catch (error) {
@@ -211,6 +212,15 @@ class TripConsumer {
   async handleSeatReserved(event) {
     try {
       logger.info('Processing seat.reserved event', { ridePoolId: event.ridePoolId });
+
+      const ridePool = await prisma.ridePool.findUnique({
+        where: { id: event.ridePoolId }
+      });
+
+      if (!ridePool) {
+        logger.error('RidePool not found for seat reservation', { ridePoolId: event.ridePoolId });
+        return;
+      }
 
       await prisma.ridePool.update({
         where: { id: event.ridePoolId },
@@ -227,6 +237,15 @@ class TripConsumer {
   async handleSeatReleased(event) {
     try {
       logger.info('Processing seat.released event', { ridePoolId: event.ridePoolId });
+
+      const ridePool = await prisma.ridePool.findUnique({
+        where: { id: event.ridePoolId }
+      });
+
+      if (!ridePool) {
+        logger.error('RidePool not found for seat release', { ridePoolId: event.ridePoolId });
+        return;
+      }
 
       await prisma.ridePool.update({
         where: { id: event.ridePoolId },

@@ -11,6 +11,44 @@ class GoogleMapsService {
   constructor() {
     this.cache = new Map();
     this.cacheExpiry = 5 * 60 * 1000;
+    this.maxCacheSize = 500;
+    this.cleanupInterval = null;
+    this.startCacheCleanup();
+  }
+
+  startCacheCleanup() {
+    if (this.cleanupInterval) return;
+    
+    this.cleanupInterval = setInterval(() => {
+      const now = Date.now();
+      let deleted = 0;
+      
+      for (const [key, cached] of this.cache.entries()) {
+        if (now - cached.timestamp > this.cacheExpiry) {
+          this.cache.delete(key);
+          deleted++;
+        }
+      }
+      
+      if (this.cache.size > this.maxCacheSize) {
+        const entries = Array.from(this.cache.entries());
+        entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+        const toRemove = entries.slice(0, entries.length - this.maxCacheSize);
+        toRemove.forEach(([key]) => this.cache.delete(key));
+        deleted += toRemove.length;
+      }
+      
+      if (deleted > 0) {
+        logger.info('Maps cache cleaned up', { deleted, remaining: this.cache.size });
+      }
+    }, 5 * 60 * 1000);
+  }
+
+  stopCacheCleanup() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
   }
 
   async fetchWithTimeout(url, timeout = GoogleMapsConfig.timeout) {

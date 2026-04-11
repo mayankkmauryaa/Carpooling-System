@@ -6,6 +6,7 @@ const tripValidators = require('./trip.validator');
 const messageValidators = require('./message.validator');
 const reviewValidators = require('./review.validator');
 const bookingValidators = require('./booking.validator');
+const paymentValidators = require('./payment.validator');
 const common = require('./common.schemas');
 
 module.exports = {
@@ -17,5 +18,6 @@ module.exports = {
   ...tripValidators,
   ...messageValidators,
   ...reviewValidators,
-  ...bookingValidators
+  ...bookingValidators,
+  ...paymentValidators
 };

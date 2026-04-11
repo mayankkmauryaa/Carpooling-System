@@ -138,6 +138,31 @@ async function uploadDriverDocument(fileBuffer, driverId, documentType, options 
   });
 }
 
+async function uploadVehicleDocuments(files, vehicleId, documentTypes = []) {
+  const results = [];
+  
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const docType = documentTypes[i] || 'document';
+    
+    const result = await uploadFromBuffer(file.buffer, {
+      folder: `carpooling/vehicles/${vehicleId}/documents`,
+      public_id: `${docType}_${Date.now()}_${i}`,
+      resourceType: 'auto'
+    });
+    
+    results.push({
+      url: result.secure_url,
+      publicId: result.public_id,
+      format: result.format,
+      bytes: result.bytes,
+      documentType: docType
+    });
+  }
+  
+  return results;
+}
+
 async function uploadRideReceipt(fileBuffer, rideId, options = {}) {
   return await uploadFromBuffer(fileBuffer, {
     folder: `carpooling/rides/${rideId}/receipts`,
@@ -233,6 +258,7 @@ module.exports = {
   uploadUserProfile,
   uploadVehicleImage,
   uploadDriverDocument,
+  uploadVehicleDocuments,
   uploadRideReceipt,
   uploadTripDocument,
   deleteFile,

@@ -32,7 +32,10 @@ const mockPrisma = {
 };
 
 jest.mock('../../../src/database/connection', () => ({
-  prisma: mockPrisma
+  prisma: {
+    ...mockPrisma,
+    $transaction: jest.fn((callback) => callback(mockPrisma))
+  }
 }));
 
 const bookingService = require('../../../src/services/bookingService');

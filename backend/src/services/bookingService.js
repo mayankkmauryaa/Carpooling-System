@@ -226,12 +226,24 @@ class BookingService {
       throw new Error('Booking cannot be cancelled');
     }
 
-    const updated = await prisma.booking.update({
-      where: { id: bookingId },
-      data: {
-        status: 'CANCELLED',
-        cancelledAt: new Date()
-      }
+    const updated = await prisma.$transaction(async (tx) => {
+      const cancelled = await tx.booking.update({
+        where: { id: bookingId },
+        data: {
+          status: 'CANCELLED',
+          cancelledAt: new Date()
+        }
+      });
+
+      await tx.ridePool.update({
+        where: { id: booking.ridePoolId },
+        data: {
+          availableSeats: { increment: booking.seatsBooked || 1 },
+          bookedSeats: { decrement: booking.seatsBooked || 1 }
+        }
+      });
+
+      return cancelled;
     });
 
     logger.info('Booking cancelled', { bookingId, userId });

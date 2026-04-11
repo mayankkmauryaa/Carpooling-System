@@ -1,13 +1,18 @@
-const rateLimit = new Map();
-
 const DEFAULT_WINDOW_MS = 15 * 60 * 1000;
 const DEFAULT_MAX_REQUESTS = 100;
+const MAX_ENTRIES_PER_LIMITER = 10000;
+const CLEANUP_INTERVAL = 60 * 60 * 1000;
 
 class RateLimiter {
   constructor(options = {}) {
     this.windowMs = options.windowMs || DEFAULT_WINDOW_MS;
     this.maxRequests = options.maxRequests || DEFAULT_MAX_REQUESTS;
     this.handler = options.handler || this.defaultHandler;
+    this.name = options.name || 'default';
+    this.store = new Map();
+    this.cleanupInterval = null;
+    
+    this.startCleanup();
   }
   
   defaultHandler(req, res) {
@@ -21,12 +26,38 @@ class RateLimiter {
     return req.user ? req.user.id.toString() : req.ip;
   }
   
-  cleanupOldEntries() {
-    const now = Date.now();
-    for (const [key, data] of rateLimit.entries()) {
-      if (now > data.resetTime) {
-        rateLimit.delete(key);
+  startCleanup() {
+    if (this.cleanupInterval) return;
+    
+    this.cleanupInterval = setInterval(() => {
+      const now = Date.now();
+      let deleted = 0;
+      
+      for (const [key, data] of this.store.entries()) {
+        if (now > data.resetTime) {
+          this.store.delete(key);
+          deleted++;
+        }
       }
+      
+      if (this.store.size > MAX_ENTRIES_PER_LIMITER) {
+        const entries = Array.from(this.store.entries());
+        entries.sort((a, b) => a[1].resetTime - b[1].resetTime);
+        const toRemove = entries.slice(0, entries.length - MAX_ENTRIES_PER_LIMITER);
+        toRemove.forEach(([key]) => this.store.delete(key));
+        deleted += toRemove.length;
+      }
+      
+      if (deleted > 0) {
+        console.log(`RateLimiter [${this.name}]: Cleaned up ${deleted} entries`);
+      }
+    }, CLEANUP_INTERVAL);
+  }
+  
+  stopCleanup() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
     }
   }
   
@@ -35,14 +66,14 @@ class RateLimiter {
       const key = this.getKey(req);
       const now = Date.now();
       
-      let record = rateLimit.get(key);
+      let record = this.store.get(key);
       
       if (!record || now > record.resetTime) {
         record = {
           count: 0,
           resetTime: now + this.windowMs
         };
-        rateLimit.set(key, record);
+        this.store.set(key, record);
       }
       
       record.count++;
@@ -60,11 +91,11 @@ class RateLimiter {
   }
   
   reset(key) {
-    rateLimit.delete(key);
+    this.store.delete(key);
   }
   
   getStatus(key) {
-    const record = rateLimit.get(key);
+    const record = this.store.get(key);
     if (!record) return { remaining: this.maxRequests, reset: null };
     
     return {
@@ -75,6 +106,7 @@ class RateLimiter {
 }
 
 const globalLimiter = new RateLimiter({
+  name: 'global',
   windowMs: 15 * 60 * 1000,
   maxRequests: 100,
   handler: (req, res) => {
@@ -86,6 +118,7 @@ const globalLimiter = new RateLimiter({
 });
 
 const authLimiter = new RateLimiter({
+  name: 'auth',
   windowMs: 60 * 60 * 1000,
   maxRequests: 100,
   handler: (req, res) => {
@@ -97,6 +130,7 @@ const authLimiter = new RateLimiter({
 });
 
 const searchLimiter = new RateLimiter({
+  name: 'search',
   windowMs: 60 * 1000,
   maxRequests: 30,
   handler: (req, res) => {

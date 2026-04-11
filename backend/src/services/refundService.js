@@ -69,31 +69,38 @@ class RefundService {
       booking.ridePool.departureTime
     );
 
-    const updatedBooking = await prisma.booking.update({
-      where: { id: bookingId },
-      data: {
-        status: 'CANCELLED',
-        cancelledAt: new Date(),
-        cancelledBy: userId,
-        cancellationReason: reason,
-        refundStatus: refundInfo.isEligibleForRefund ? 'PENDING' : null,
-        refundAmount: refundInfo.isEligibleForRefund ? refundInfo.actualRefundToUser : null
-      },
-      include: { rider: true }
+    const { razorpayPaymentId, seatsBooked } = booking;
+    const seatsToRelease = seatsBooked || 1;
+
+    const updatedBooking = await prisma.$transaction(async (tx) => {
+      const cancelled = await tx.booking.update({
+        where: { id: bookingId },
+        data: {
+          status: 'CANCELLED',
+          cancelledAt: new Date(),
+          cancelledBy: userId,
+          cancellationReason: reason,
+          refundStatus: refundInfo.isEligibleForRefund ? 'PENDING' : null,
+          refundAmount: refundInfo.isEligibleForRefund ? refundInfo.actualRefundToUser : null
+        },
+        include: { rider: true }
+      });
+
+      await tx.ridePool.update({
+        where: { id: booking.ridePoolId },
+        data: {
+          availableSeats: { increment: seatsToRelease },
+          bookedSeats: { decrement: seatsToRelease }
+        }
+      });
+
+      return cancelled;
     });
 
-    await prisma.ridePool.update({
-      where: { id: booking.ridePoolId },
-      data: {
-        availableSeats: { increment: 1 },
-        bookedSeats: { decrement: 1 }
-      }
-    });
-
-    if (refundInfo.isEligibleForRefund && booking.razorpayPaymentId) {
+    if (refundInfo.isEligibleForRefund && razorpayPaymentId) {
       try {
         const payment = await prisma.payment.findFirst({
-          where: { razorpayPaymentId: booking.razorpayPaymentId }
+          where: { razorpayPaymentId }
         });
 
         if (payment) {

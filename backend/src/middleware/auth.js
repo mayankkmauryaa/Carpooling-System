@@ -6,6 +6,19 @@ const logger = require('./logger');
 
 const tokenBlacklist = new Set();
 const BLACKLIST_PREFIX = 'token:blacklist:';
+const MAX_BLACKLIST_SIZE = 10000;
+const BLACKLIST_CLEANUP_INTERVAL = 60 * 60 * 1000;
+
+const cleanupBlacklist = () => {
+  if (tokenBlacklist.size > MAX_BLACKLIST_SIZE) {
+    const entries = Array.from(tokenBlacklist);
+    const toRemove = entries.slice(0, entries.length - MAX_BLACKLIST_SIZE);
+    toRemove.forEach(token => tokenBlacklist.delete(token));
+    logger.info('Blacklist cleaned up', { removed: toRemove.length, remaining: tokenBlacklist.size });
+  }
+};
+
+setInterval(cleanupBlacklist, BLACKLIST_CLEANUP_INTERVAL);
 
 const auth = async (req, res, next) => {
   try {
@@ -134,7 +147,6 @@ const isTokenBlacklisted = async (token) => {
     if (redis) {
       const result = await redis.get(`${BLACKLIST_PREFIX}${token}`);
       if (result === 'blacklisted') {
-        tokenBlacklist.add(token);
         return true;
       }
     }

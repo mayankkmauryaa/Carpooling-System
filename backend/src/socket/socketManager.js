@@ -367,16 +367,17 @@ class SocketManager {
   emitToUser(userId, event, data) {
     const socketId = this.connectedUsers.get(userId);
     if (socketId) {
-      this.io.to(socketId).emit(event, data);
+      const userRoom = `user_${userId}`;
+      this.io.of('/users').to(userRoom).emit(event, data);
     }
   }
 
   emitToRide(rideId, event, data) {
-    this.io.to(`ride_${rideId}`).emit(event, data);
+    this.io.of('/rides').to(`ride_${rideId}`).emit(event, data);
   }
 
   emitToConversation(conversationId, event, data) {
-    this.io.to(`conversation_${conversationId}`).emit(event, data);
+    this.io.of('/chat').to(`conversation_${conversationId}`).emit(event, data);
   }
 
   emitNotification(userId, notification) {
@@ -384,7 +385,7 @@ class SocketManager {
   }
 
   broadcastDriverLocation(driverId, location) {
-    this.io.of('/rides').emit('driverLocationUpdate', {
+    this.io.of('/rides').emit('driverLocationUpdated', {
       driverId,
       ...location
     });

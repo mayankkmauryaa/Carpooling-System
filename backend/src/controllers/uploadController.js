@@ -187,6 +187,32 @@ class UploadController {
     }
   }
 
+  static async uploadVehicleDocuments(req, res, next) {
+    try {
+      const { vehicleId } = req.params;
+      const { documentTypes } = req.body;
+      
+      if (!req.files || req.files.length === 0) {
+        return ApiResponse.error(res, 'No documents uploaded', 400);
+      }
+
+      const types = documentTypes ? JSON.parse(documentTypes) : [];
+      
+      const results = await uploadService.uploadVehicleDocuments(
+        req.files,
+        vehicleId,
+        types
+      );
+
+      return ApiResponse.success(res, {
+        documents: results,
+        count: results.length
+      }, 'Documents uploaded successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async deleteUploadedFile(req, res, next) {
     try {
       const { publicId } = req.params;
@@ -292,6 +318,7 @@ module.exports = {
   uploadVehicleImage: UploadController.uploadVehicleImage,
   uploadVehicleImages: UploadController.uploadVehicleImages,
   uploadDriverDocument: UploadController.uploadDriverDocument,
+  uploadVehicleDocuments: UploadController.uploadVehicleDocuments,
   deleteUploadedFile: UploadController.deleteUploadedFile,
   deleteMultipleFiles: UploadController.deleteMultipleFiles,
   getFileMetadata: UploadController.getFileMetadata,

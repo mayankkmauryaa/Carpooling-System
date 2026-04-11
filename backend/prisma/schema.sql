@@ -380,7 +380,7 @@ CREATE INDEX IF NOT EXISTS "driver_locations_driverId_timestamp_idx" ON "driver_
 -- LocationHistories Table
 CREATE TABLE IF NOT EXISTS "location_histories" (
   "id" SERIAL PRIMARY KEY,
-  "driverId" INT NOT NULL,
+  "driverId" INT NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
   "latitude" FLOAT NOT NULL,
   "longitude" FLOAT NOT NULL,
   "heading" FLOAT,

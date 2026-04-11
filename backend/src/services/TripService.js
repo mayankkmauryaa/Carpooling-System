@@ -88,13 +88,28 @@ class TripService extends BaseService {
       .filter(p => p.status === 'confirmed')
       .map(p => p.userId);
 
-    const trip = await this.repository.startTrip(ride.id, driverId, {
-      riderIds,
-      startLocation: ride.pickupLocation,
-      totalFare: ride.pricePerSeat * riderIds.length
-    });
+    const { prisma } = require('../database/connection');
+    
+    const trip = await prisma.$transaction(async (tx) => {
+      const newTrip = await tx.trip.create({
+        data: {
+          ridePoolId: ride.id,
+          driverId,
+          riderIds,
+          startLocation: ride.pickupLocation,
+          totalFare: ride.pricePerSeat * riderIds.length,
+          status: 'IN_PROGRESS',
+          startTime: new Date()
+        }
+      });
 
-    await rideRepository.updateStatus(rideId, 'completed');
+      await tx.ridePool.update({
+        where: { id: ride.id },
+        data: { status: 'ACTIVE' }
+      });
+
+      return newTrip;
+    });
 
     logger.info('Trip started', { tripId: trip.id });
 
@@ -116,7 +131,25 @@ class TripService extends BaseService {
       throw BadRequestException.tripNotInProgress();
     }
 
-    const updated = await this.repository.completeTrip(tripId, endData);
+    const { prisma } = require('../database/connection');
+    
+    const updated = await prisma.$transaction(async (tx) => {
+      const completedTrip = await tx.trip.update({
+        where: { id: tripId },
+        data: {
+          ...endData,
+          endTime: new Date(),
+          status: 'COMPLETED'
+        }
+      });
+
+      await tx.ridePool.update({
+        where: { id: trip.ridePoolId },
+        data: { status: 'COMPLETED' }
+      });
+
+      return completedTrip;
+    });
 
     logger.info('Trip completed', { tripId });
 

@@ -2,26 +2,39 @@ const express = require('express');
 const router = express.Router();
 const paymentController = require('../../controllers/paymentController');
 const { auth, requireRole } = require('../../middleware/auth');
+const { validate } = require('../../middleware/common');
+const {
+  createOrderSchema,
+  verifyPaymentSchema,
+  capturePaymentSchema,
+  refundSchema,
+  createCustomerSchema,
+  walletRechargeSchema,
+  walletDebitSchema,
+  payoutSchema,
+  transferSchema,
+  subscriptionSchema
+} = require('../../validators');
 
-router.post('/order', auth, paymentController.createOrder);
-router.post('/verify', paymentController.verifyPayment);
-router.post('/capture', auth, paymentController.capturePayment);
-router.post('/refund', auth, paymentController.refundPayment);
+router.post('/order', auth, validate(createOrderSchema), paymentController.createOrder);
+router.post('/verify', validate(verifyPaymentSchema), paymentController.verifyPayment);
+router.post('/capture', auth, validate(capturePaymentSchema), paymentController.capturePayment);
+router.post('/refund', auth, validate(refundSchema), paymentController.refundPayment);
 router.get('/payment/:paymentId', auth, paymentController.getPaymentDetails);
 
-router.post('/customer', auth, paymentController.createCustomer);
+router.post('/customer', auth, validate(createCustomerSchema), paymentController.createCustomer);
 router.get('/customer/:customerId', auth, paymentController.getCustomer);
 
-router.post('/subscription', auth, paymentController.createSubscription);
+router.post('/subscription', auth, validate(subscriptionSchema), paymentController.createSubscription);
 router.delete('/subscription/:subscriptionId', auth, paymentController.cancelSubscription);
 
-router.post('/wallet/recharge', auth, paymentController.walletRecharge);
-router.post('/wallet/debit', auth, paymentController.walletDebit);
+router.post('/wallet/recharge', auth, validate(walletRechargeSchema), paymentController.walletRecharge);
+router.post('/wallet/debit', auth, validate(walletDebitSchema), paymentController.walletDebit);
 router.get('/wallet/balance', auth, paymentController.getWalletBalance);
 router.get('/wallet/transactions', auth, paymentController.getWalletHistory);
 
-router.post('/payout', auth, requireRole('ADMIN'), paymentController.createDriverPayout);
-router.post('/transfer', auth, requireRole('ADMIN'), paymentController.createTransfer);
+router.post('/payout', auth, requireRole('ADMIN'), validate(payoutSchema), paymentController.createDriverPayout);
+router.post('/transfer', auth, requireRole('ADMIN'), validate(transferSchema), paymentController.createTransfer);
 
 router.post('/webhook', paymentController.handleWebhook);
 

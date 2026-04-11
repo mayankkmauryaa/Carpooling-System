@@ -3,6 +3,34 @@ const { config } = require('../config');
 const logger = require('../middleware/logger');
 
 const memoryCache = new Map();
+const MAX_MEMORY_CACHE_SIZE = 1000;
+const CACHE_CLEANUP_INTERVAL = 5 * 60 * 1000;
+
+const cleanupMemoryCache = () => {
+  const now = Date.now();
+  let deleted = 0;
+  
+  for (const [key, item] of memoryCache.entries()) {
+    if (now > item.expiry) {
+      memoryCache.delete(key);
+      deleted++;
+    }
+  }
+  
+  if (memoryCache.size > MAX_MEMORY_CACHE_SIZE) {
+    const entries = Array.from(memoryCache.entries());
+    entries.sort((a, b) => a[1].expiry - b[1].expiry);
+    const toRemove = entries.slice(0, entries.length - MAX_MEMORY_CACHE_SIZE);
+    toRemove.forEach(([key]) => memoryCache.delete(key));
+    deleted += toRemove.length;
+  }
+  
+  if (deleted > 0) {
+    logger.info('Memory cache cleaned up', { deleted, remaining: memoryCache.size });
+  }
+};
+
+setInterval(cleanupMemoryCache, CACHE_CLEANUP_INTERVAL);
 
 class CacheService {
   isRedisAvailable() {

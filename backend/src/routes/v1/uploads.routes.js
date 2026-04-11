@@ -59,7 +59,7 @@ router.post(
   '/vehicle/:vehicleId/documents',
   auth,
   uploadVehicleDocuments,
-  UploadController.uploadDriverDocument
+  UploadController.uploadVehicleDocuments
 );
 
 router.delete(
