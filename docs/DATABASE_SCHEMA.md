@@ -39,35 +39,50 @@ postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require
 
 ```prisma
 model User {
-  id              Int       @id @default(autoincrement())
-  email           String    @unique
-  password        String?   // Optional for Google Sign-In users
-  firstName       String
-  lastName        String
-  phone           String?   // Optional for Google Sign-In users
-  role            Role      @default(RIDER)
-  profilePicture  String?
-  isProfileBlurred Boolean  @default(true)
-  isActive        Boolean   @default(true)
-  rating          Float     @default(0)
-  totalReviews    Int       @default(0)
-  googleId        String?   @unique  // For Google Sign-In
-  isGoogleUser    Boolean   @default(false)
-  emailVerified   Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                Int       @id @default(autoincrement())
+  email             String    @unique
+  password          String?   // Optional for Google Sign-In users
+  firstName         String
+  lastName          String
+  phone             String?
+  role              Role      @default(RIDER)
+  profilePicture    String?
+  isProfileBlurred  Boolean   @default(true)
+  isActive          Boolean   @default(true)
+  isSuspended       Boolean   @default(false)
+  suspendedReason   String?
+  rating            Float     @default(0)
+  totalReviews      Int       @default(0)
+  googleId          String?   @unique  // For Google Sign-In
+  isGoogleUser      Boolean   @default(false)
+  emailVerified     Boolean   @default(false)
+  razorpayAccountId String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   // Relations
-  vehicles        Vehicle[]
-  ridePools       RidePool[]
-  tripsAsDriver   Trip[]    @relation("DriverTrips")
-  tripsAsRider    Trip[]    @relation("RiderTrips")
-  sentMessages    Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
-  reviewsGiven    Review[]  @relation("ReviewsGiven")
-  reviewsReceived Review[]  @relation("ReviewsReceived")
-  sosAlerts       SOSAlert[]
-  rideRequests    RideRequest[]
+  vehicles          Vehicle[]          @relation("DriverVehicles")
+  ownedVehicles     Vehicle[]         @relation("OwnerVehicles")
+  ridePools         RidePool[]
+  tripsAsDriver     Trip[]             @relation("DriverTrips")
+  tripsAsRider      Trip[]            @relation("RiderTrips")
+  sentMessages      Message[]          @relation("SentMessages")
+  receivedMessages  Message[]         @relation("ReceivedMessages")
+  reviewsGiven     Review[]           @relation("ReviewsGiven")
+  reviewsReceived  Review[]          @relation("ReviewsReceived")
+  sosAlerts        SOSAlert[]
+  rideRequests     RideRequest[]
+  bookings         Booking[]
+  payouts          Payout[]
+  driverLocations  DriverLocation[]
+  locationHistories LocationHistory[]
+  payments         Payment[]
+  wallet           Wallet?
+  razorpayCustomer RazorpayCustomer[]
+  driverDocuments  DriverDocument[]   @relation("DriverDocuments")
+  paymentMethods   PaymentMethod[]
+  owner            Owner?
+  ownerDocuments   OwnerDocument[]    @relation("OwnerDocuments")
 
   @@index([email])
   @@index([role])
@@ -78,6 +93,7 @@ enum Role {
   DRIVER
   RIDER
   ADMIN
+  OWNER
 }
 ```
 
@@ -87,22 +103,35 @@ enum Role {
 
 ```prisma
 model Vehicle {
-  id                  Int       @id @default(autoincrement())
+  id                  Int                @id @default(autoincrement())
   driverId            Int
+  ownerId             Int?
+  brand               String
+  make                String?
   model               String
-  licensePlate        String    @unique
+  licensePlate        String              @unique
   color               String
   capacity            Int
-  preferences         Json      @default("{\"smoking\": false, \"pets\": false, \"music\": true}")
-  isActive            Boolean   @default(true)
+  vehicleType         VehicleType        @default(SEDAN)
+  verificationStatus  VerificationStatus @default(PENDING)
+  preferences         Json               @default("{\"smoking\": false, \"pets\": false, \"music\": true}")
+  isActive            Boolean            @default(true)
   registrationExpiry  DateTime
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  pricePerDay         Float              @default(0)
+  pricePerKm          Float              @default(0)
+  minimumCharge       Float              @default(0)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 
-  driver              User      @relation(fields: [driverId], references: [id])
-  ridePools           RidePool[]
+  driver    User       @relation("DriverVehicles", fields: [driverId], references: [id])
+  owner     User?      @relation("OwnerVehicles", fields: [ownerId], references: [id])
+  ridePools RidePool[]
+  documents VehicleDocument[]
 
   @@index([driverId])
+  @@index([ownerId])
+  @@index([brand])
+  @@index([verificationStatus])
 }
 ```
 
@@ -312,6 +341,211 @@ enum SOSStatus {
   ACTIVE
   ACKNOWLEDGED
   RESOLVED
+}
+```
+
+---
+
+### 9. PaymentMethod (`paymentMethods`) - Saved Payment Methods
+
+```prisma
+model PaymentMethod {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String   // CARD, UPI, BANK_ACCOUNT, WALLET, CASH
+  isDefault Boolean  @default(false)
+  details   Json     // { last4: String, bank: String, etc. }
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+}
+```
+
+---
+
+### 10. Owner (`owners`) - Fleet/Owner Registration
+
+```prisma
+model Owner {
+  id                 Int      @id @default(autoincrement())
+  userId             Int      @unique
+  businessName       String?
+  gstNumber          String?
+  panNumber          String?
+  rejectionReason    String?
+  verificationStatus DocStatus @default(PENDING)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user      User            @relation(fields: [userId], references: [id])
+  documents OwnerDocument[]
+
+  @@index([userId])
+}
+
+enum DocStatus {
+  PENDING
+  UPLOADED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+```
+
+---
+
+### 11. DriverDocument (`driverDocuments`) - Driver Verification Documents
+
+```prisma
+model DriverDocument {
+  id             Int                @id @default(autoincrement())
+  driverId       Int
+  documentType   DriverDocumentType
+  url            String
+  status         DocStatus          @default(PENDING)
+  verifiedAt     DateTime?
+  verifiedBy     Int?
+  rejectedReason String?
+  expiresAt      DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  driver         User @relation("DriverDocuments", fields: [driverId], references: [id])
+  verifiedByUser User? @relation("VerifiedDriverDocs", fields: [verifiedBy], references: [id])
+
+  @@index([driverId])
+  @@index([documentType])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+enum DriverDocumentType {
+  AADHAAR
+  PAN
+  PASSPORT_PHOTO
+  DRIVING_LICENSE
+  POLICE_VERIFICATION
+  BANK_DETAILS
+  BADGE
+  MEDICAL_FITNESS
+}
+```
+
+---
+
+### 12. VehicleDocument (`vehicleDocuments`) - Vehicle Verification Documents
+
+```prisma
+model VehicleDocument {
+  id             Int                   @id @default(autoincrement())
+  vehicleId      Int
+  documentType   VehicleDocumentType
+  url            String
+  status         DocStatus             @default(PENDING)
+  verifiedAt     DateTime?
+  verifiedBy     Int?
+  rejectedReason String?
+  expiresAt      DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  vehicle       Vehicle @relation(fields: [vehicleId], references: [id])
+  verifiedByUser User?   @relation("VerifiedVehicleDocs", fields: [verifiedBy], references: [id])
+
+  @@index([vehicleId])
+  @@index([documentType])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+enum VehicleDocumentType {
+  RC
+  PERMIT
+  INSURANCE
+  FITNESS_CERTIFICATE
+  PUC
+  FASTAG
+}
+```
+
+---
+
+### 13. OwnerDocument (`ownerDocuments`) - Owner Business Documents
+
+```prisma
+model OwnerDocument {
+  id             Int                @id @default(autoincrement())
+  ownerId        Int
+  documentType   OwnerDocumentType
+  url            String
+  status         DocStatus          @default(PENDING)
+  verifiedAt     DateTime?
+  verifiedBy     Int?
+  rejectedReason String?
+  expiresAt      DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  owner         Owner  @relation(fields: [ownerId], references: [id])
+  verifiedByUser User?  @relation("VerifiedOwnerDocs", fields: [verifiedBy], references: [id])
+
+  @@index([ownerId])
+  @@index([documentType])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+enum OwnerDocumentType {
+  GST
+  PAN
+  BUSINESS_LICENSE
+  ADDRESS_PROOF
+}
+```
+
+---
+
+### 14. VehicleType Enum (Updated)
+
+```prisma
+enum VehicleType {
+  SEDAN
+  SUV
+  HATCHBACK
+  MINIVAN
+  TEMPO
+  MOTORCYCLE
+  AUTO
+  EV_SEDAN
+  EV_SUV
+  EV_HATCHBACK
+  EV_AUTO
+  EV_MOTORCYCLE
+  LUXURY
+  PREMIUM
+  ECONOMY
+  PICKUP
+  TRUCK
+  VAN
+}
+```
+
+---
+
+### 15. VerificationStatus Enum
+
+```prisma
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
 }
 ```
 

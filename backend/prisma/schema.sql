@@ -35,6 +35,7 @@ CREATE INDEX IF NOT EXISTS "users_googleId_idx" ON "users"("googleId");
 CREATE TABLE IF NOT EXISTS "vehicles" (
   "id" SERIAL PRIMARY KEY,
   "driverId" INT NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+  "ownerId" INT REFERENCES "users"("id") ON DELETE SET NULL,
   "brand" VARCHAR NOT NULL,
   "make" VARCHAR,
   "model" VARCHAR NOT NULL,
@@ -54,7 +55,9 @@ CREATE TABLE IF NOT EXISTS "vehicles" (
 );
 
 CREATE INDEX IF NOT EXISTS "vehicles_driverId_idx" ON "vehicles"("driverId");
+CREATE INDEX IF NOT EXISTS "vehicles_ownerId_idx" ON "vehicles"("ownerId");
 CREATE INDEX IF NOT EXISTS "vehicles_brand_idx" ON "vehicles"("brand");
+CREATE INDEX IF NOT EXISTS "vehicles_verificationStatus_idx" ON "vehicles"("verificationStatus");
 
 -- RidePools Table
 CREATE TABLE IF NOT EXISTS "ride_pools" (
@@ -292,6 +295,7 @@ CREATE TABLE IF NOT EXISTS "payments" (
 CREATE INDEX IF NOT EXISTS "payments_razorpayOrderId_idx" ON "payments"("razorpayOrderId");
 CREATE INDEX IF NOT EXISTS "payments_razorpayPaymentId_idx" ON "payments"("razorpayPaymentId");
 CREATE INDEX IF NOT EXISTS "payments_userId_idx" ON "payments"("userId");
+CREATE INDEX IF NOT EXISTS "payments_vehicleId_idx" ON "payments"("vehicleId");
 CREATE INDEX IF NOT EXISTS "payments_status_idx" ON "payments"("status");
 
 -- Refunds Table
@@ -390,8 +394,7 @@ CREATE TABLE IF NOT EXISTS "location_histories" (
   "locationType" VARCHAR DEFAULT 'DRIVER_LOCATION',
   "relatedId" INT,
   "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  "userId" INT REFERENCES "users"("id") ON DELETE SET NULL
+  "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS "location_histories_driverId_idx" ON "location_histories"("driverId");
@@ -461,12 +464,33 @@ CREATE TABLE IF NOT EXISTS "owners" (
   "businessName" VARCHAR,
   "gstNumber" VARCHAR,
   "panNumber" VARCHAR,
+  "rejectionReason" VARCHAR,
   "verificationStatus" VARCHAR DEFAULT 'PENDING',
   "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS "owners_userId_idx" ON "owners"("userId");
+
+-- OwnerDocuments Table
+CREATE TABLE IF NOT EXISTS "owner_documents" (
+  "id" SERIAL PRIMARY KEY,
+  "ownerId" INT NOT NULL REFERENCES "owners"("id") ON DELETE CASCADE,
+  "documentType" VARCHAR NOT NULL,
+  "url" VARCHAR NOT NULL,
+  "status" VARCHAR DEFAULT 'PENDING',
+  "verifiedAt" TIMESTAMP,
+  "verifiedBy" INT REFERENCES "users"("id") ON DELETE SET NULL,
+  "rejectedReason" VARCHAR,
+  "expiresAt" TIMESTAMP,
+  "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS "owner_documents_ownerId_idx" ON "owner_documents"("ownerId");
+CREATE INDEX IF NOT EXISTS "owner_documents_documentType_idx" ON "owner_documents"("documentType");
+CREATE INDEX IF NOT EXISTS "owner_documents_status_idx" ON "owner_documents"("status");
+CREATE INDEX IF NOT EXISTS "owner_documents_expiresAt_idx" ON "owner_documents"("expiresAt");
 
 -- ============================================
 -- Enums
@@ -486,10 +510,11 @@ CREATE TYPE refund_status AS ENUM ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED
 CREATE TYPE transaction_type AS ENUM ('CREDIT', 'DEBIT');
 CREATE TYPE location_type AS ENUM ('DRIVER_LOCATION', 'PICKUP_LOCATION', 'DROPOFF_LOCATION', 'SOS_LOCATION');
 CREATE TYPE verification_status AS ENUM ('PENDING', 'VERIFIED', 'REJECTED');
-CREATE TYPE driver_document_type AS ENUM ('AADHAAR', 'PAN', 'PASSPORT_PHOTO', 'DRIVING_LICENSE', 'POLICE_VERIFICATION', 'BANK_DETAILS', 'BADGE');
-CREATE TYPE vehicle_document_type AS ENUM ('RC', 'PERMIT', 'INSURANCE', 'FITNESS_CERTIFICATE', 'PUC');
+CREATE TYPE driver_document_type AS ENUM ('AADHAAR', 'PAN', 'PASSPORT_PHOTO', 'DRIVING_LICENSE', 'POLICE_VERIFICATION', 'BANK_DETAILS', 'BADGE', 'MEDICAL_FITNESS');
+CREATE TYPE vehicle_document_type AS ENUM ('RC', 'PERMIT', 'INSURANCE', 'FITNESS_CERTIFICATE', 'PUC', 'FASTAG');
 CREATE TYPE doc_status AS ENUM ('PENDING', 'UPLOADED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'EXPIRED');
-CREATE TYPE vehicle_type AS ENUM ('SEDAN', 'SUV', 'HATCHBACK', 'MINIVAN', 'TEMPO', 'MOTORCYCLE', 'AUTO', 'EV_SEDAN', 'EV_SUV', 'EV_HATCHBACK');
+CREATE TYPE owner_document_type AS ENUM ('GST', 'PAN', 'BUSINESS_LICENSE', 'ADDRESS_PROOF');
+CREATE TYPE vehicle_type AS ENUM ('SEDAN', 'SUV', 'HATCHBACK', 'MINIVAN', 'TEMPO', 'MOTORCYCLE', 'AUTO', 'EV_SEDAN', 'EV_SUV', 'EV_HATCHBACK', 'EV_AUTO', 'EV_MOTORCYCLE', 'LUXURY', 'PREMIUM', 'ECONOMY', 'PICKUP', 'TRUCK', 'VAN');
 
 -- ============================================
 -- Functions and Triggers
@@ -527,6 +552,7 @@ CREATE TRIGGER update_driver_documents_updated_at BEFORE UPDATE ON driver_docume
 CREATE TRIGGER update_vehicle_documents_updated_at BEFORE UPDATE ON vehicle_documents FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_payment_methods_updated_at BEFORE UPDATE ON payment_methods FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_owners_updated_at BEFORE UPDATE ON owners FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_owner_documents_updated_at BEFORE UPDATE ON owner_documents FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
 -- End of Schema

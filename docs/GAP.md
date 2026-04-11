@@ -93,11 +93,11 @@
 
 ### Models Added
 
-- `DriverDocument`
-- `VehicleDocument`
-- `PaymentMethod`
-- `Owner`
-- `OwnerDocument`
+- `DriverDocument` - Driver verification documents
+- `VehicleDocument` - Vehicle registration documents
+- `PaymentMethod` - Saved payment methods (CARD, UPI, BANK_ACCOUNT, WALLET, CASH)
+- `Owner` - Fleet/owner registration
+- `OwnerDocument` - Owner business documents
 
 ---
 
@@ -230,7 +230,11 @@ backend/src/constants/
 | File                                                   | Changes                                                                           |
 | ------------------------------------------------------ | --------------------------------------------------------------------------------- |
 | `backend/prisma/schema.prisma`                         | Added enums, models, relations, Payment→Vehicle relation                          |
-| `backend/prisma/schema.sql`                            | Added tables, enums, triggers                                                     |
+| `backend/prisma/schema.sql`                            | Complete rewrite: added OwnerDocument table, ownerId on vehicles, all enum values  |
+| `.env.example`                                         | Updated JWT_SECRET comment (min 32 chars)                                         |
+| `.env.docker`                                          | Updated JWT_SECRET comment (min 32 chars)                                         |
+| `.gitignore` (root)                                   | Cleaned up duplicates, organized sections                                         |
+| `.gitignore` (backend)                                | Complete rewrite with comprehensive entries                                        |
 | `backend/src/constants/roles.js`                       | Added OWNER role                                                                  |
 | `backend/src/constants/documentTypes.js`               | Added OWNER_DOCUMENT_TYPES, new vehicle types                                     |
 | `backend/src/repositories/index.js`                    | Added new repos                                                                   |
@@ -266,6 +270,8 @@ backend/src/constants/
 | `backend/src/config/jwt.js`                            | Added production validation, warning for weak secrets                             |
 | `backend/src/config/index.js`                          | Updated for nested jwt config                                                     |
 | `tests/support/setup.js`                               | Fixed JWT_SECRET length for tests                                                 |
+| `docs/API_ENDPOINTS.md`                               | Added Owner, Fleet, Document, Payment Method endpoints                             |
+| `docs/DATABASE_SCHEMA.md`                             | Added Owner, OwnerDocument, PaymentMethod models, updated Vehicle/User models      |
 
 ---
 
@@ -354,6 +360,19 @@ backend/src/constants/
 | Fleet routes admin paths                       | HIGH     | ✅ Changed to query params instead of path params     |
 | AdminController fleet methods                  | HIGH     | ✅ Updated to pass user context to service methods    |
 
+### Sixth Update - April 11, 2026 (Round 6)
+
+| Category | Changes |
+| -------- | ------- |
+| schema.sql | Complete rewrite with all tables, enums, indexes, triggers |
+| OwnerDocument | Added OwnerDocument table with all indexes |
+| Vehicles | Added ownerId column, updated indexes |
+| Enums | Added all missing enum values (BADGE, MEDICAL_FITNESS, FASTAG, all 18 vehicle types) |
+| .env files | Updated JWT_SECRET comments (min 32 chars) |
+| .gitignore | Cleaned up duplicates, comprehensive backend .gitignore |
+| API_ENDPOINTS.md | Added Owner, Fleet, Document, Payment Method endpoints |
+| DATABASE_SCHEMA.md | Added Owner, OwnerDocument, PaymentMethod models |
+
 ### Vehicle Types Now Supported
 
 - SEDAN, SUV, HATCHBACK, MINIVAN, TEMPO
@@ -363,18 +382,6 @@ backend/src/constants/
 - LUXURY (BMW, Mercedes, Audi, etc.)
 - PREMIUM (Honda City, Hyundai Verna)
 - ECONOMY (WagonR, Alto, Kwid)
-- PICKUP (light goods - Tata Ace)
-- TRUCK (medium/heavy goods)
-- VAN (Tempo Traveller - 9-17 seater)
-
-### Vehicle Types Now Supported
-
-- SEDAN, SUV, HATCHBACK, MINIVAN, TEMPO
-- MOTORCYCLE (bike taxi)
-- AUTO (auto rickshaw)
-- EV_SEDAN, EV_SUV, EV_HATCHBACK (electric vehicles)
-- LUXURY (BMW, Mercedes, Audi, etc.)
-- PREMIUM (Honda City, Hyundai Verna)
 - PICKUP (light goods - Tata Ace)
 - TRUCK (medium/heavy goods)
 - VAN (Tempo Traveller - 9-17 seater)

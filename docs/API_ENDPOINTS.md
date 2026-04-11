@@ -2213,6 +2213,528 @@ Test: Skips validation
 
 ---
 
+## Owner/Fleet Management Endpoints
+
+Owner registration and fleet management for multi-vehicle operations.
+
+### POST /api/v1/owners/register
+
+Register current user as an owner.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request:**
+
+```json
+{
+  "businessName": "My Fleet Services",
+  "gstNumber": "22AAAAA0000A1Z5",
+  "panNumber": "AAAAA0000A"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "message": "Registered as owner successfully",
+  "data": {
+    "id": 1,
+    "userId": 1,
+    "businessName": "My Fleet Services",
+    "verificationStatus": "PENDING"
+  }
+}
+```
+
+---
+
+### GET /api/v1/owners/profile
+
+Get owner's fleet profile.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "owner": {
+      "id": 1,
+      "businessName": "My Fleet Services",
+      "verificationStatus": "PENDING"
+    },
+    "vehicles": [...],
+    "stats": {
+      "totalVehicles": 5,
+      "activeVehicles": 3,
+      "totalDrivers": 4,
+      "totalRides": 50,
+      "totalEarnings": 25000
+    }
+  }
+}
+```
+
+---
+
+### PUT /api/v1/owners/profile
+
+Update owner profile.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request:**
+
+```json
+{
+  "businessName": "Updated Fleet Name"
+}
+```
+
+---
+
+## Fleet Endpoints
+
+### GET /api/v1/fleet/vehicles
+
+Get all vehicles in owner's fleet.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Query Parameters:**
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 20)
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "licensePlate": "ABC123",
+        "vehicleType": "SEDAN",
+        "driver": {...}
+      }
+    ],
+    "total": 5,
+    "page": 1,
+    "pages": 1
+  }
+}
+```
+
+---
+
+### GET /api/v1/fleet/drivers
+
+Get all drivers in owner's fleet.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Query Parameters:**
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 20)
+
+---
+
+### GET /api/v1/fleet/performance
+
+Get fleet performance metrics.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Query Parameters:**
+- `ownerId`: Owner ID
+- `period`: Time period (e.g., `30d`, `90d`)
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "period": "30d",
+    "stats": {
+      "totalVehicles": 5,
+      "activeVehicles": 3,
+      "totalDrivers": 4
+    },
+    "performance": {
+      "completedTrips": 150,
+      "totalRevenue": 75000,
+      "averagePerTrip": 500,
+      "utilizationRate": 65.5
+    }
+  }
+}
+```
+
+---
+
+### GET /api/v1/fleet/utilization
+
+Get vehicle utilization rates.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Query Parameters:**
+- `days`: Number of days (default: 30)
+
+---
+
+### POST /api/v1/fleet/assign-driver
+
+Assign a driver to a vehicle.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request:**
+
+```json
+{
+  "vehicleId": 1,
+  "driverId": 5
+}
+```
+
+---
+
+## Driver Document Endpoints
+
+### POST /api/v1/driver/documents
+
+Upload a driver document.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Body:** `multipart/form-data`
+
+- `document`: File upload
+- `documentType`: AADHAAR | PAN | PASSPORT_PHOTO | DRIVING_LICENSE | POLICE_VERIFICATION | BANK_DETAILS | BADGE | MEDICAL_FITNESS
+- `expiresAt`: Expiry date (optional)
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "message": "Document uploaded successfully",
+  "data": {
+    "id": 1,
+    "documentType": "DRIVING_LICENSE",
+    "url": "https://cloudinary.com/...",
+    "status": "UPLOADED"
+  }
+}
+```
+
+---
+
+### GET /api/v1/driver/documents
+
+Get all documents for current driver.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "documents": [...],
+    "isComplete": true,
+    "verificationStatus": "PENDING_REVIEW"
+  }
+}
+```
+
+---
+
+### POST /api/v1/driver/documents/submit
+
+Submit documents for verification review.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Documents submitted for review"
+}
+```
+
+---
+
+## Vehicle Document Endpoints
+
+### POST /api/v1/vehicles/:vehicleId/documents
+
+Upload a vehicle document.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Body:** `multipart/form-data`
+
+- `document`: File upload
+- `documentType`: RC | PERMIT | INSURANCE | FITNESS_CERTIFICATE | PUC | FASTAG
+- `expiresAt`: Expiry date (optional)
+
+---
+
+### GET /api/v1/vehicles/:vehicleId/documents
+
+Get all documents for a vehicle.
+
+**Headers:** `Authorization: Bearer <token>`
+
+---
+
+### POST /api/v1/vehicles/:vehicleId/documents/submit
+
+Submit vehicle documents for verification.
+
+**Headers:** `Authorization: Bearer <token>`
+
+---
+
+## Owner Document Endpoints
+
+### POST /api/v1/owner/documents
+
+Upload an owner document.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Body:** `multipart/form-data`
+
+- `document`: File upload
+- `documentType`: GST | PAN | BUSINESS_LICENSE | ADDRESS_PROOF
+- `expiresAt`: Expiry date (optional)
+
+---
+
+### GET /api/v1/owner/documents
+
+Get all documents for current owner.
+
+**Headers:** `Authorization: Bearer <token>`
+
+---
+
+### POST /api/v1/owner/documents/submit
+
+Submit owner documents for verification.
+
+**Headers:** `Authorization: Bearer <token>`
+
+---
+
+## Payment Method Endpoints
+
+### POST /api/v1/payment-methods
+
+Add a new payment method.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request:**
+
+```json
+{
+  "type": "CARD",
+  "details": {
+    "cardNumber": "4111111111111111",
+    "expiryMonth": "12",
+    "expiryYear": "2025",
+    "cvv": "123"
+  },
+  "isDefault": true
+}
+```
+
+**Types:** CARD | UPI | BANK_ACCOUNT | WALLET | CASH
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "message": "Payment method added",
+  "data": {
+    "id": 1,
+    "type": "CARD",
+    "isDefault": true,
+    "details": {
+      "cardNumber": "************1111"
+    },
+    "status": "ACTIVE"
+  }
+}
+```
+
+---
+
+### GET /api/v1/payment-methods
+
+Get all payment methods for current user.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "type": "CARD",
+      "isDefault": true,
+      "status": "ACTIVE"
+    },
+    {
+      "id": 2,
+      "type": "UPI",
+      "isDefault": false,
+      "status": "ACTIVE"
+    }
+  ]
+}
+```
+
+---
+
+### PUT /api/v1/payment-methods/:methodId
+
+Update a payment method.
+
+**Headers:** `Authorization: Bearer <token>`
+
+---
+
+### DELETE /api/v1/payment-methods/:methodId
+
+Delete a payment method.
+
+**Headers:** `Authorization: Bearer <token>`
+
+---
+
+### PUT /api/v1/payment-methods/:methodId/default
+
+Set a payment method as default.
+
+**Headers:** `Authorization: Bearer <token>`
+
+---
+
+### PUT /api/v1/payment-methods/:methodId/deactivate
+
+Deactivate a payment method.
+
+**Headers:** `Authorization: Bearer <token>`
+
+---
+
+## Admin Document Verification Endpoints
+
+### Driver Documents
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/admin/driver-documents/pending` | Get pending driver documents |
+| GET | `/admin/driver-documents/:documentId` | Get driver document details |
+| PUT | `/admin/driver-documents/:documentId/verify` | Verify driver document |
+| PUT | `/admin/driver-documents/:documentId/reject` | Reject driver document |
+
+#### PUT /api/v1/admin/driver-documents/:documentId/verify
+
+**Headers:** `Authorization: Bearer <token>` (Admin only)
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Driver document verified successfully",
+  "data": {
+    "id": 1,
+    "status": "APPROVED",
+    "verifiedAt": "2024-01-20T10:00:00Z"
+  }
+}
+```
+
+---
+
+#### PUT /api/v1/admin/driver-documents/:documentId/reject
+
+**Headers:** `Authorization: Bearer <token>` (Admin only)
+
+**Request:**
+
+```json
+{
+  "reason": "Document is blurry and unreadable"
+}
+```
+
+---
+
+### Vehicle Documents
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/admin/vehicle-documents/pending` | Get pending vehicle documents |
+| GET | `/admin/vehicle-documents/:documentId` | Get vehicle document details |
+| PUT | `/admin/vehicle-documents/:documentId/verify` | Verify vehicle document |
+| PUT | `/admin/vehicle-documents/:documentId/reject` | Reject vehicle document |
+
+### Owner Documents
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/admin/owner-documents/pending` | Get pending owner documents |
+| GET | `/admin/owner-documents/:documentId` | Get owner document details |
+| PUT | `/admin/owner-documents/:documentId/verify` | Verify owner document |
+| PUT | `/admin/owner-documents/:documentId/reject` | Reject owner document |
+
+### Owner Management
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/admin/owners` | Get all owners |
+| GET | `/admin/owners/pending` | Get pending owners |
+| GET | `/admin/owners/:ownerId` | Get owner details |
+| PUT | `/admin/owners/:ownerId/verify` | Verify owner |
+| PUT | `/admin/owners/:ownerId/reject` | Reject owner |
+
+### Fleet Management
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/admin/fleets/performance` | Get fleet performance (query: ownerId, period) |
+| GET | `/admin/fleets/vehicles` | Get fleet vehicles (query: ownerId, page, limit) |
+
+### Document Expiry Management
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/admin/documents/expiring` | Get expiring documents (query: days) |
+| POST | `/admin/documents/check-expiry` | Run expiry check manually |
+
+---
+
 ## Graceful Shutdown - NEW
 
 Proper process termination for zero-downtime deployments.
