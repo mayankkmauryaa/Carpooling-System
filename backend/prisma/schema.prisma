@@ -29,7 +29,8 @@ model User {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  vehicles          Vehicle[]
+  vehicles          Vehicle[]          @relation("DriverVehicles")
+  ownedVehicles     Vehicle[]          @relation("OwnerVehicles")
   ridePools         RidePool[]
   tripsAsDriver     Trip[]              @relation("DriverTrips")
   tripsAsRider      Trip[]              @relation("RiderTrips")
@@ -47,6 +48,13 @@ model User {
   wallet            Wallet?
   razorpayCustomer  RazorpayCustomer[]
   WalletTransaction WalletTransaction[]
+  driverDocuments   DriverDocument[]    @relation("DriverDocuments")
+  verifiedDriverDocs DriverDocument[]   @relation("VerifiedDriverDocs")
+  verifiedVehicleDocs VehicleDocument[] @relation("VerifiedVehicleDocs")
+  paymentMethods    PaymentMethod[]
+  owner             Owner?
+  ownerDocuments    OwnerDocument[]    @relation("OwnerDocuments")
+  verifiedOwnerDocs OwnerDocument[]    @relation("VerifiedOwnerDocs")
 
   @@index([email])
   @@index([role])
@@ -56,12 +64,14 @@ model User {
 model Vehicle {
   id                  Int               @id @default(autoincrement())
   driverId            Int
+  ownerId             Int?
   brand               String
   make                String?
   model               String
   licensePlate        String            @unique
   color               String
   capacity            Int
+  vehicleType         VehicleType       @default(SEDAN)
   verificationStatus  VerificationStatus @default(PENDING)
   preferences         Json              @default("{\"smoking\": false, \"pets\": false, \"music\": true}")
   isActive            Boolean           @default(true)
@@ -73,10 +83,14 @@ model Vehicle {
   updatedAt           DateTime          @updatedAt
 
   driver    User       @relation(fields: [driverId], references: [id])
+  owner     User?      @relation("OwnerVehicles", fields: [ownerId], references: [id])
   ridePools RidePool[]
+  documents VehicleDocument[]
 
   @@index([driverId])
+  @@index([ownerId])
   @@index([brand])
+  @@index([verificationStatus])
 }
 
 model RidePool {
@@ -267,6 +281,7 @@ enum Role {
   DRIVER
   RIDER
   ADMIN
+  OWNER
 }
 
 enum RideStatus {
@@ -405,11 +420,13 @@ model Payment {
 
   user    User?    @relation(fields: [userId], references: [id])
   trip    Trip?    @relation(fields: [tripId], references: [id])
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
   refunds Refund[]
 
   @@index([razorpayOrderId])
   @@index([razorpayPaymentId])
   @@index([userId])
+  @@index([vehicleId])
   @@index([status])
 }
 
@@ -535,8 +552,8 @@ model LocationHistory {
   relatedId    Int?
   timestamp    DateTime     @default(now())
   createdAt    DateTime     @default(now())
-  user         User?        @relation(fields: [userId], references: [id])
-  userId       Int?
+
+  driver User @relation("LocationHistories", fields: [driverId], references: [id])
 
   @@index([driverId])
   @@index([timestamp])
@@ -554,4 +571,161 @@ enum VerificationStatus {
   PENDING
   VERIFIED
   REJECTED
+}
+
+enum DriverDocumentType {
+  AADHAAR
+  PAN
+  PASSPORT_PHOTO
+  DRIVING_LICENSE
+  POLICE_VERIFICATION
+  BANK_DETAILS
+  BADGE
+  MEDICAL_FITNESS
+}
+
+enum VehicleDocumentType {
+  RC
+  PERMIT
+  INSURANCE
+  FITNESS_CERTIFICATE
+  PUC
+  FASTAG
+}
+
+enum DocStatus {
+  PENDING
+  UPLOADED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum VehicleType {
+  SEDAN
+  SUV
+  HATCHBACK
+  MINIVAN
+  TEMPO
+  MOTORCYCLE
+  AUTO
+  EV_SEDAN
+  EV_SUV
+  EV_HATCHBACK
+  EV_AUTO
+  EV_MOTORCYCLE
+  LUXURY
+  PREMIUM
+  ECONOMY
+  PICKUP
+  TRUCK
+  VAN
+}
+
+model DriverDocument {
+  id             Int                  @id @default(autoincrement())
+  driverId       Int
+  documentType   DriverDocumentType
+  url            String
+  status         DocStatus            @default(PENDING)
+  verifiedAt     DateTime?
+  verifiedBy     Int?
+  rejectedReason String?
+  expiresAt      DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  driver       User @relation("DriverDocuments", fields: [driverId], references: [id])
+  verifiedByUser User?                @relation("VerifiedDriverDocs", fields: [verifiedBy], references: [id])
+
+  @@index([driverId])
+  @@index([documentType])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model VehicleDocument {
+  id             Int                   @id @default(autoincrement())
+  vehicleId      Int
+  documentType   VehicleDocumentType
+  url            String
+  status         DocStatus             @default(PENDING)
+  verifiedAt     DateTime?
+  verifiedBy     Int?
+  rejectedReason String?
+  expiresAt      DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  vehicle       Vehicle @relation(fields: [vehicleId], references: [id])
+  verifiedByUser User?   @relation("VerifiedVehicleDocs", fields: [verifiedBy], references: [id])
+
+  @@index([vehicleId])
+  @@index([documentType])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model PaymentMethod {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String
+  isDefault Boolean  @default(false)
+  details   Json
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+}
+
+model Owner {
+  id                 Int        @id @default(autoincrement())
+  userId             Int        @unique
+  businessName       String?
+  gstNumber          String?
+  panNumber          String?
+  rejectionReason    String?
+  verificationStatus DocStatus  @default(PENDING)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  user      User            @relation(fields: [userId], references: [id])
+  documents OwnerDocument[]
+
+  @@index([userId])
+}
+
+enum OwnerDocumentType {
+  GST
+  PAN
+  BUSINESS_LICENSE
+  ADDRESS_PROOF
+}
+
+model OwnerDocument {
+  id             Int                @id @default(autoincrement())
+  ownerId        Int
+  documentType   OwnerDocumentType
+  url            String
+  status         DocStatus          @default(PENDING)
+  verifiedAt     DateTime?
+  verifiedBy     Int?
+  rejectedReason String?
+  expiresAt      DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  owner         Owner    @relation(fields: [ownerId], references: [id])
+  verifiedByUser User?   @relation("VerifiedOwnerDocs", fields: [verifiedBy], references: [id])
+
+  @@index([ownerId])
+  @@index([documentType])
+  @@index([status])
+  @@index([expiresAt])
 }

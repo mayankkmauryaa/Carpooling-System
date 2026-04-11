@@ -392,57 +392,57 @@ The system follows a **Service-Oriented Architecture (SOA)** similar to Uber's d
 | acknowledgedBy | Int?      | Admin who acknowledged         |
 | acknowledgedAt | DateTime? | Acknowledged time              |
 | notes          | String?   | Resolution notes               |
-| resolvedAt     | DateTime? | Resolution time               |
+| resolvedAt     | DateTime? | Resolution time                |
 
 **bookings** - NEW
 
-| Column          | Type      | Description                       |
-| --------------- | --------- | --------------------------------- |
-| id              | Int (PK)  | Auto-increment ID                 |
-| ridePoolId      | Int (FK)  | Reference to RidePool              |
-| riderId         | Int (FK)  | Reference to User                  |
-| rideRequestId   | Int?      | Reference to RideRequest           |
-| status          | Enum      | PENDING, CONFIRMED, CANCELLED     |
-| pickupLocation   | JSON?     | Pickup coordinates                |
-| dropLocation     | JSON?     | Dropoff coordinates               |
-| totalAmount     | Float     | Total booking amount              |
-| paymentOrderId  | String?   | Razorpay order ID                 |
+| Column         | Type     | Description                   |
+| -------------- | -------- | ----------------------------- |
+| id             | Int (PK) | Auto-increment ID             |
+| ridePoolId     | Int (FK) | Reference to RidePool         |
+| riderId        | Int (FK) | Reference to User             |
+| rideRequestId  | Int?     | Reference to RideRequest      |
+| status         | Enum     | PENDING, CONFIRMED, CANCELLED |
+| pickupLocation | JSON?    | Pickup coordinates            |
+| dropLocation   | JSON?    | Dropoff coordinates           |
+| totalAmount    | Float    | Total booking amount          |
+| paymentOrderId | String?  | Razorpay order ID             |
 
 **payouts** - NEW
 
-| Column             | Type      | Description                       |
-| ----------------- | --------- | --------------------------------- |
-| id                | Int (PK)  | Auto-increment ID                 |
-| driverId          | Int (FK)  | Reference to User                 |
-| tripId            | Int (FK)  | Reference to Trip                 |
-| amount            | Float     | Payout amount (80% of fare)      |
-| platformFee       | Float     | Platform fee (20%)                |
-| razorpayPayoutId  | String?   | Razorpay payout ID               |
-| status            | Enum      | PENDING, PROCESSING, COMPLETED    |
+| Column           | Type     | Description                    |
+| ---------------- | -------- | ------------------------------ |
+| id               | Int (PK) | Auto-increment ID              |
+| driverId         | Int (FK) | Reference to User              |
+| tripId           | Int (FK) | Reference to Trip              |
+| amount           | Float    | Payout amount (80% of fare)    |
+| platformFee      | Float    | Platform fee (20%)             |
+| razorpayPayoutId | String?  | Razorpay payout ID             |
+| status           | Enum     | PENDING, PROCESSING, COMPLETED |
 
 **sagaLogs** - NEW
 
-| Column       | Type      | Description                    |
-| ------------ | --------- | ------------------------------ |
-| id           | Int (PK)  | Auto-increment ID              |
-| sagaType     | String    | BOOKING, PAYOUT               |
+| Column       | Type      | Description                     |
+| ------------ | --------- | ------------------------------- |
+| id           | Int (PK)  | Auto-increment ID               |
+| sagaType     | String    | BOOKING, PAYOUT                 |
 | status       | Enum      | PENDING, IN_PROGRESS, COMPLETED |
-| currentStep  | Int       | Current step index            |
-| totalSteps   | Int       | Total number of steps         |
-| errorMessage | String?   | Error message if failed       |
-| context      | JSON?     | Saga context data             |
-| completedAt  | DateTime? | Completion timestamp           |
+| currentStep  | Int       | Current step index              |
+| totalSteps   | Int       | Total number of steps           |
+| errorMessage | String?   | Error message if failed         |
+| context      | JSON?     | Saga context data               |
+| completedAt  | DateTime? | Completion timestamp            |
 
 **sagaStepLogs** - NEW
 
-| Column     | Type      | Description                 |
-| ---------- | --------- | --------------------------- |
-| id         | Int (PK)  | Auto-increment ID           |
-| sagaId     | Int (FK)  | Reference to SagaLog        |
-| stepName   | String    | Step name                  |
-| status     | String    | SUCCESS, COMPENSATED, FAILED |
-| result     | String?   | Step result JSON            |
-| executedAt | DateTime  | Execution timestamp          |
+| Column     | Type     | Description                  |
+| ---------- | -------- | ---------------------------- |
+| id         | Int (PK) | Auto-increment ID            |
+| sagaId     | Int (FK) | Reference to SagaLog         |
+| stepName   | String   | Step name                    |
+| status     | String   | SUCCESS, COMPENSATED, FAILED |
+| result     | String?  | Step result JSON             |
+| executedAt | DateTime | Execution timestamp          |
 
 ---
 
@@ -627,24 +627,24 @@ backend/
 
 ## Implementation Status
 
-| Component       | Status | Notes                             |
-| --------------- | ------ | --------------------------------- |
-| Backend API     | 100%   | All endpoints complete            |
-| Database        | 100%   | PostgreSQL/Prisma                 |
-| Authentication  | 100%   | JWT + Google OAuth                |
-| Real-time       | 100%   | Socket.IO complete                |
-| File Upload     | 100%   | Cloudinary integrated             |
-| Email           | 100%   | All templates complete            |
-| Admin Panel     | 100%   | Full dashboard + analytics        |
-| Payments        | 100%   | Razorpay integrated              |
-| Testing         | 100%   | Comprehensive unit tests          |
-| Docker          | 100%   | Production-ready                 |
-| Documentation   | 100%   | All docs updated                 |
-| Google Maps     | 100%   | Distance Matrix, Directions API   |
-| Event-Driven    | 100%   | Kafka + in-memory fallback       |
-| Circuit Breaker | 100%   | Custom implementation            |
-| Saga Pattern    | 100%   | Booking + Payout sagas           |
-| Frontend        | 0%     | React app pending                |
+| Component       | Status | Notes                           |
+| --------------- | ------ | ------------------------------- |
+| Backend API     | 100%   | All endpoints complete          |
+| Database        | 100%   | PostgreSQL/Prisma               |
+| Authentication  | 100%   | JWT + Google OAuth              |
+| Real-time       | 100%   | Socket.IO complete              |
+| File Upload     | 100%   | Cloudinary integrated           |
+| Email           | 100%   | All templates complete          |
+| Admin Panel     | 100%   | Full dashboard + analytics      |
+| Payments        | 100%   | Razorpay integrated             |
+| Testing         | 100%   | Comprehensive unit tests        |
+| Docker          | 100%   | Production-ready                |
+| Documentation   | 100%   | All docs updated                |
+| Google Maps     | 100%   | Distance Matrix, Directions API |
+| Event-Driven    | 100%   | Kafka + in-memory fallback      |
+| Circuit Breaker | 100%   | Custom implementation           |
+| Saga Pattern    | 100%   | Booking + Payout sagas          |
+| Frontend        | 0%     | React app pending               |
 
 ---
 
@@ -811,6 +811,7 @@ _All new services documented: Admin, Payments, Uploads, Real-time, Email, Securi
 ## Critical Bug Fixes (April 11, 2026)
 
 ### Schema Updates
+
 - Added `verificationStatus` enum to Vehicle model
 - Added `isSuspended`, `suspendedReason` to User model
 - Added `make` field to Vehicle model
@@ -819,6 +820,7 @@ _All new services documented: Admin, Payments, Uploads, Real-time, Email, Securi
 - Fixed LocationHistory relation (user -> User)
 
 ### Code Fixes
+
 - Fixed Jest version (v30 -> v29.7.0)
 - Fixed adminService.js field references (name -> firstName/lastName)
 - Fixed SOSAlert references (sOS -> sOSAlert)
@@ -830,6 +832,7 @@ _All new services documented: Admin, Payments, Uploads, Real-time, Email, Securi
 - Added bookingValidator export
 
 ### New Features
+
 - Health check endpoints (/health/live, /health/ready)
 - Token blacklist in auth middleware with Redis persistence
 - Graceful shutdown handling

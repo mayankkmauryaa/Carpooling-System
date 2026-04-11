@@ -8,6 +8,10 @@ const reviewValidators = require('./review.validator');
 const bookingValidators = require('./booking.validator');
 const paymentValidators = require('./payment.validator');
 const common = require('./common.schemas');
+const driverValidators = require('./driver.validator');
+const paymentMethodValidators = require('./paymentMethod.validator');
+const ownerValidators = require('./owner.validator');
+const fleetValidators = require('./fleet.validator');
 
 module.exports = {
   ...common,
@@ -19,5 +23,9 @@ module.exports = {
   ...messageValidators,
   ...reviewValidators,
   ...bookingValidators,
-  ...paymentValidators
+  ...paymentValidators,
+  ...driverValidators,
+  ...paymentMethodValidators,
+  ...ownerValidators,
+  ...fleetValidators
 };

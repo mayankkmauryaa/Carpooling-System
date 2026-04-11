@@ -7,7 +7,8 @@ const logger = require('./logger');
 const tokenBlacklist = new Set();
 const BLACKLIST_PREFIX = 'token:blacklist:';
 const MAX_BLACKLIST_SIZE = 10000;
-const BLACKLIST_CLEANUP_INTERVAL = 60 * 60 * 1000;
+
+let cleanupIntervalId = null;
 
 const cleanupBlacklist = () => {
   if (tokenBlacklist.size > MAX_BLACKLIST_SIZE) {
@@ -18,7 +19,21 @@ const cleanupBlacklist = () => {
   }
 };
 
-setInterval(cleanupBlacklist, BLACKLIST_CLEANUP_INTERVAL);
+const startBlacklistCleanup = () => {
+  if (cleanupIntervalId === null) {
+    cleanupIntervalId = setInterval(cleanupBlacklist, 60 * 60 * 1000);
+    cleanupIntervalId.unref();
+  }
+};
+
+const stopBlacklistCleanup = () => {
+  if (cleanupIntervalId !== null) {
+    clearInterval(cleanupIntervalId);
+    cleanupIntervalId = null;
+  }
+};
+
+startBlacklistCleanup();
 
 const auth = async (req, res, next) => {
   try {
@@ -163,11 +178,17 @@ const clearBlacklist = () => {
 
 const getBlacklistSize = () => tokenBlacklist.size;
 
+const shutdown = () => {
+  stopBlacklistCleanup();
+  clearBlacklist();
+};
+
 module.exports = { 
   auth, 
   requireRole,
   blacklistToken,
   isTokenBlacklisted,
   clearBlacklist,
-  getBlacklistSize
+  getBlacklistSize,
+  shutdown
 };

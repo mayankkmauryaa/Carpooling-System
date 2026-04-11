@@ -43,4 +43,31 @@ router.put('/sos/:alertId/status', adminController.updateSOSAlertStatus);
 
 router.get('/messages', adminController.getMessages);
 
+router.get('/driver-documents/pending', adminController.getPendingDriverDocuments);
+router.put('/driver-documents/:documentId/verify', adminController.verifyDriverDocument);
+router.put('/driver-documents/:documentId/reject', adminController.rejectDriverDocument);
+router.get('/driver-documents/:documentId', adminController.getDriverDocument);
+
+router.get('/vehicle-documents/pending', adminController.getPendingVehicleDocuments);
+router.put('/vehicle-documents/:documentId/verify', adminController.verifyVehicleDocument);
+router.put('/vehicle-documents/:documentId/reject', adminController.rejectVehicleDocument);
+router.get('/vehicle-documents/:documentId', adminController.getVehicleDocument);
+
+router.get('/owners', adminController.getAllOwners);
+router.get('/owners/pending', adminController.getPendingOwners);
+router.put('/owners/:ownerId/verify', adminController.verifyOwner);
+router.put('/owners/:ownerId/reject', adminController.rejectOwner);
+router.get('/owners/:ownerId', adminController.getOwner);
+
+router.get('/fleets/performance', adminController.getFleetPerformance);
+router.get('/fleets/vehicles', adminController.getFleetVehicles);
+
+router.get('/owner-documents/pending', adminController.getPendingOwnerDocuments);
+router.put('/owner-documents/:documentId/verify', adminController.verifyOwnerDocument);
+router.put('/owner-documents/:documentId/reject', adminController.rejectOwnerDocument);
+router.get('/owner-documents/:documentId', adminController.getOwnerDocumentById);
+
+router.get('/documents/expiring', adminController.getExpiringDocuments);
+router.post('/documents/check-expiry', adminController.runDocumentExpiryCheck);
+
 module.exports = router;

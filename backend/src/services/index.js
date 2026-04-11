@@ -16,6 +16,13 @@ const mapsService = require('./mapsService');
 const locationService = require('./locationService');
 const uploadService = require('./uploadService');
 const priceCalculationService = require('./priceCalculationService');
+const driverDocumentService = require('./DriverDocumentService');
+const vehicleDocumentService = require('./VehicleDocumentService');
+const ownerService = require('./OwnerService');
+const fleetService = require('./FleetService');
+const documentExpiryService = require('./DocumentExpiryService');
+const { ownerDocumentService } = require('./OwnerDocumentService');
+const { paymentMethodService } = require('./PaymentMethodService');
 
 module.exports = {
   authService,
@@ -35,5 +42,12 @@ module.exports = {
   mapsService,
   locationService,
   uploadService,
-  priceCalculationService
+  priceCalculationService,
+  driverDocumentService,
+  vehicleDocumentService,
+  ownerService,
+  fleetService,
+  documentExpiryService,
+  ownerDocumentService,
+  paymentMethodService
 };

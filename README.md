@@ -38,7 +38,7 @@ This is a full-stack carpooling application built with Node.js + Express + Postg
 | ------------------ | ------ | ---------------------------------------- |
 | Authentication     | Done   | JWT + Google OAuth with account linking  |
 | User Management    | Done   | CRUD, profiles, password change          |
-| Vehicle Management | Done   | CRUD with brand, verification status      |
+| Vehicle Management | Done   | CRUD with brand, verification status     |
 | Ride Pool          | Done   | Create, search, join, request management |
 | Trip Management    | Done   | Start/complete/cancel trips              |
 | Privacy Features   | Done   | Masked phone, blurred profiles, SOS      |
@@ -49,20 +49,20 @@ This is a full-stack carpooling application built with Node.js + Express + Postg
 
 ### Infrastructure
 
-| Feature          | Status | Description                              |
-| ---------------- | ------ | ---------------------------------------- |
-| Docker           | Done   | Multi-stage Dockerfile, docker-compose   |
-| Testing          | Done   | Jest unit tests (19 test files)         |
-| Security         | Done   | Input sanitization, rate limiting        |
-| Real-time        | Done   | Socket.IO chat, location tracking         |
-| File Upload      | Done   | Cloudinary integration                    |
-| Email            | Done   | Nodemailer with templates                |
-| Payments         | Done   | Razorpay with wallet & payouts           |
-| Caching          | Done   | Redis with in-memory fallback            |
-| Google Maps      | Done   | Distance Matrix, Directions API           |
-| Event-Driven     | Done   | Kafka + in-memory fallback               |
-| Circuit Breakers | Done   | Custom implementation                    |
-| Saga Pattern     | Done   | Booking + Payout sagas                   |
+| Feature          | Status | Description                            |
+| ---------------- | ------ | -------------------------------------- |
+| Docker           | Done   | Multi-stage Dockerfile, docker-compose |
+| Testing          | Done   | Jest unit tests (19 test files)        |
+| Security         | Done   | Input sanitization, rate limiting      |
+| Real-time        | Done   | Socket.IO chat, location tracking      |
+| File Upload      | Done   | Cloudinary integration                 |
+| Email            | Done   | Nodemailer with templates              |
+| Payments         | Done   | Razorpay with wallet & payouts         |
+| Caching          | Done   | Redis with in-memory fallback          |
+| Google Maps      | Done   | Distance Matrix, Directions API        |
+| Event-Driven     | Done   | Kafka + in-memory fallback             |
+| Circuit Breakers | Done   | Custom implementation                  |
+| Saga Pattern     | Done   | Booking + Payout sagas                 |
 
 ---
 
@@ -249,12 +249,12 @@ npm test -- --testPathPattern=utils/distance
 
 ### Test Results (April 11, 2026)
 
-| Metric | Count |
-|--------|-------|
-| Passing Test Suites | 14 |
-| Skipped Test Suites | 6 |
-| Passing Tests | 161 |
-| Skipped Tests | 72 |
+| Metric              | Count |
+| ------------------- | ----- |
+| Passing Test Suites | 14    |
+| Skipped Test Suites | 6     |
+| Passing Tests       | 161   |
+| Skipped Tests       | 72    |
 
 ---
 
@@ -296,21 +296,21 @@ make shell
 
 ### Commits (Last 13 Features)
 
-| Commit    | Feature                      |
-| --------- | ---------------------------- |
+| Commit    | Feature                         |
+| --------- | ------------------------------- |
 | `b7cec95` | Saga Pattern (Booking + Payout) |
 | `cccdc2e` | Kafka Event-Driven Architecture |
-| `7571a29` | Circuit Breakers (Custom)    |
-| `1ed7339` | Google Maps API Integration   |
-| `fc36c99` | Car Brand Field              |
-| `36cbfc9` | Razorpay Payment Integration |
-| `374cdef` | Admin API with Analytics     |
-| `76c03f6` | Nodemailer Email Service     |
-| `9bb851e` | Cloudinary File Upload       |
-| `fe2c991` | Socket.IO Real-time          |
-| `1721d38` | Input Sanitization           |
-| `93ceb08` | Jest Unit Tests              |
-| `66518e4` | Docker Configuration         |
+| `7571a29` | Circuit Breakers (Custom)       |
+| `1ed7339` | Google Maps API Integration     |
+| `fc36c99` | Car Brand Field                 |
+| `36cbfc9` | Razorpay Payment Integration    |
+| `374cdef` | Admin API with Analytics        |
+| `76c03f6` | Nodemailer Email Service        |
+| `9bb851e` | Cloudinary File Upload          |
+| `fe2c991` | Socket.IO Real-time             |
+| `1721d38` | Input Sanitization              |
+| `93ceb08` | Jest Unit Tests                 |
+| `66518e4` | Docker Configuration            |
 
 ### Progress
 
@@ -320,9 +320,11 @@ make shell
 ████████████████████ 100% Unit Tests (161 passing)
 ████████████░░░░░░░░ 0% Frontend Pending
 ```
+
 ████████████████░░░░ 95% Backend Complete
 ████████████████░░░░ 95% Documentation Updated
 ██████████░░░░░░░░░░░ 10% Frontend Pending
+
 ```
 
 ---
@@ -337,10 +339,11 @@ make shell
 
 ---
 
-**Backend Status:** Complete  
-**Frontend Status:** Pending  
+**Backend Status:** Complete
+**Frontend Status:** Pending
 **Last Updated:** April 10, 2026
 
 ---
 
 _Built for learning purposes_
+```

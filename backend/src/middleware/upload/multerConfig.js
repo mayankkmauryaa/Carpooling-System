@@ -1,8 +1,11 @@
 const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
+const fs = require('fs').promises;
+const logger = require('../middleware/logger');
 
 const UPLOAD_TEMP_DIR = path.join(process.cwd(), 'uploads', 'temp');
+const TEMP_FILE_MAX_AGE = 24 * 60 * 60 * 1000;
 
 const ALLOWED_IMAGE_FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
 const ALLOWED_DOCUMENT_FORMATS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'];
@@ -64,6 +67,55 @@ const uploadDriverDocument = uploadMiddleware.single('document');
 const uploadVehicleDocuments = uploadMiddleware.array('vehicleDocs', 5);
 const uploadReceipt = uploadMiddleware.single('receipt');
 
+const cleanupTempFiles = async () => {
+  try {
+    const dirExists = await fs.access(UPLOAD_TEMP_DIR).then(() => true).catch(() => false);
+    if (!dirExists) return;
+
+    const files = await fs.readdir(UPLOAD_TEMP_DIR);
+    const now = Date.now();
+    let deletedCount = 0;
+
+    for (const file of files) {
+      const filePath = path.join(UPLOAD_TEMP_DIR, file);
+      try {
+        const stats = await fs.stat(filePath);
+        if (now - stats.mtimeMs > TEMP_FILE_MAX_AGE) {
+          await fs.unlink(filePath);
+          deletedCount++;
+        }
+      } catch (err) {
+        logger.warn(`Failed to process temp file: ${file}`, { error: err.message });
+      }
+    }
+
+    if (deletedCount > 0) {
+      logger.info('Cleaned up temp files', { deletedCount });
+    }
+  } catch (error) {
+    logger.error('Failed to cleanup temp files', { error: error.message });
+  }
+};
+
+let cleanupIntervalId = null;
+
+const startTempFileCleanup = () => {
+  if (cleanupIntervalId === null) {
+    cleanupIntervalId = setInterval(cleanupTempFiles, 60 * 60 * 1000);
+    cleanupIntervalId.unref();
+    cleanupTempFiles();
+  }
+};
+
+const stopTempFileCleanup = () => {
+  if (cleanupIntervalId !== null) {
+    clearInterval(cleanupIntervalId);
+    cleanupIntervalId = null;
+  }
+};
+
+startTempFileCleanup();
+
 module.exports = {
   uploadMiddleware,
   uploadSingle,
@@ -82,5 +134,8 @@ module.exports = {
   ALLOWED_AUDIO_FORMATS,
   ALL_ALLOWED_FORMATS,
   isAllowedFormat,
-  getFileExtension
+  getFileExtension,
+  cleanupTempFiles,
+  startTempFileCleanup,
+  stopTempFileCleanup
 };

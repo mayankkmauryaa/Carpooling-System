@@ -14,6 +14,12 @@ const uploadsRoutes = require('./uploads.routes');
 const adminRoutes = require('./admin.routes');
 const paymentsRoutes = require('./payments.routes');
 const bookingsRoutes = require('./bookings.routes');
+const driverDocumentsRoutes = require('./driver.documents.routes');
+const vehicleDocumentsRoutes = require('./vehicle.documents.routes');
+const paymentMethodsRoutes = require('./payment-methods.routes');
+const ownerRoutes = require('./owner.routes');
+const fleetRoutes = require('./fleet.routes');
+const ownerDocumentsRoutes = require('./owner.documents.routes');
 
 router.use('/auth', authLimiter.middleware(), authRoutes);
 router.use('/users', usersRoutes);
@@ -27,5 +33,11 @@ router.use('/uploads', uploadsRoutes);
 router.use('/admin', adminRoutes);
 router.use('/payments', paymentsRoutes);
 router.use('/bookings', bookingsRoutes);
+router.use('/driver-documents', driverDocumentsRoutes);
+router.use('/vehicle-documents', vehicleDocumentsRoutes);
+router.use('/payment-methods', paymentMethodsRoutes);
+router.use('/owner', ownerRoutes);
+router.use('/fleet', fleetRoutes);
+router.use('/owner-documents', ownerDocumentsRoutes);
 
 module.exports = router;

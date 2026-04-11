@@ -1123,7 +1123,7 @@ Create a new booking request.
     "rideId": 3,
     "riderId": 1,
     "seatsBooked": 1,
-    "totalAmount": 25.00,
+    "totalAmount": 25.0,
     "sagaState": "IN_PROGRESS"
   }
 }
@@ -1158,7 +1158,7 @@ Get all bookings for current user.
           "dropLocation": "456 Oak Ave"
         },
         "seatsBooked": 1,
-        "totalAmount": 25.00
+        "totalAmount": 25.0
       }
     ],
     "pagination": {
@@ -1260,8 +1260,8 @@ Get cancellation details and refund eligibility.
   "data": {
     "bookingId": "booking_123",
     "bookingStatus": "PENDING",
-    "totalAmount": 25.00,
-    "originalAmount": 25.00,
+    "totalAmount": 25.0,
+    "originalAmount": 25.0,
     "refundPercentage": 1.0,
     "refundAmount": 21.25,
     "actualRefundToUser": 21.25,
@@ -1303,15 +1303,18 @@ Get refund status for a cancelled booking.
 Calculate price for rental or ride.
 
 **Query Parameters (Rental):**
+
 - `vehicleId`: Vehicle ID
 - `startDate`: Start date (YYYY-MM-DD)
 - `endDate`: End date (YYYY-MM-DD)
 
 **Query Parameters (Ride):**
+
 - `ridePoolId`: Ride pool ID
 - `seats`: Number of seats
 
 **Example (Rental):**
+
 ```
 GET /api/v1/bookings/calculate-price?vehicleId=1&startDate=2024-01-20&endDate=2024-01-25
 ```
@@ -1335,7 +1338,7 @@ GET /api/v1/bookings/calculate-price?vehicleId=1&startDate=2024-01-20&endDate=20
       "taxes": 1080,
       "taxPercentage": 18
     },
-    "totalPrice": 7080.00,
+    "totalPrice": 7080.0,
     "currency": "INR"
   }
 }
@@ -2021,16 +2024,18 @@ Calculated automatically in ride search response:
 
 ```json
 {
-  "rides": [{
-    "id": 3,
-    "matchPercentage": 85,
-    "distanceToPickup": 2.5,
-    "distanceToPickupText": "2.5 km",
-    "totalDistance": 25.3,
-    "totalDistanceText": "25.3 km",
-    "estimatedDuration": 1800,
-    "estimatedDurationText": "30 min"
-  }]
+  "rides": [
+    {
+      "id": 3,
+      "matchPercentage": 85,
+      "distanceToPickup": 2.5,
+      "distanceToPickupText": "2.5 km",
+      "totalDistance": 25.3,
+      "totalDistanceText": "25.3 km",
+      "estimatedDuration": 1800,
+      "estimatedDurationText": "30 min"
+    }
+  ]
 }
 ```
 
@@ -2042,16 +2047,18 @@ Kafka topics for async event processing.
 
 ### Kafka Topics
 
-| Topic | Events |
-|-------|--------|
-| `trip-events` | TRIP_CREATED, TRIP_STARTED, TRIP_COMPLETED, TRIP_CANCELLED |
-| `payment-events` | PAYMENT_INITIATED, PAYMENT_SUCCESS, PAYMENT_FAILED, PAYOUT_COMPLETED |
-| `notification-events` | EMAIL_NOTIFICATION, PUSH_NOTIFICATION, SOS_ALERT |
+| Topic                 | Events                                                               |
+| --------------------- | -------------------------------------------------------------------- |
+| `trip-events`         | TRIP_CREATED, TRIP_STARTED, TRIP_COMPLETED, TRIP_CANCELLED           |
+| `payment-events`      | PAYMENT_INITIATED, PAYMENT_SUCCESS, PAYMENT_FAILED, PAYOUT_COMPLETED |
+| `notification-events` | EMAIL_NOTIFICATION, PUSH_NOTIFICATION, SOS_ALERT                     |
 
 ### Kafka Consumers - NEW
 
 #### TripConsumer
+
 Listens to:
+
 - `trip.created` - Send confirmation notifications
 - `trip.started` - Update trip status, start location tracking
 - `trip.completed` - Calculate earnings, trigger payout, send notifications
@@ -2061,7 +2068,9 @@ Listens to:
 - `seat.reserved` / `seat.released` - Update seat counts
 
 #### PaymentConsumer
+
 Listens to:
+
 - `payment.initiated` - Create payment record
 - `payment.captured` - Update booking to PAID
 - `payment.failed` - Mark booking as FAILED, release seats
@@ -2121,24 +2130,24 @@ Distributed transaction management for critical flows.
 #### Cancellation Refund Policy
 
 | Hours Before Trip | Refund Percentage |
-|-------------------|------------------|
-| 48+ hours | 100% refund |
-| 24-48 hours | 50% refund |
-| 12-24 hours | 25% refund |
-| < 12 hours | No refund |
+| ----------------- | ----------------- |
+| 48+ hours         | 100% refund       |
+| 24-48 hours       | 50% refund        |
+| 12-24 hours       | 25% refund        |
+| < 12 hours        | No refund         |
 
 Note: Platform fee (15%) is non-refundable.
 
 ### Saga States
 
-| State | Description |
-|-------|-------------|
-| PENDING | Saga created, not started |
-| IN_PROGRESS | Executing steps |
-| COMPLETED | All steps successful |
-| FAILED | Step failed |
-| COMPENSATING | Rolling back |
-| ROLLED_BACK | Rollback complete |
+| State        | Description               |
+| ------------ | ------------------------- |
+| PENDING      | Saga created, not started |
+| IN_PROGRESS  | Executing steps           |
+| COMPLETED    | All steps successful      |
+| FAILED       | Step failed               |
+| COMPENSATING | Rolling back              |
+| ROLLED_BACK  | Rollback complete         |
 
 ---
 
@@ -2148,12 +2157,12 @@ Resilience pattern for external service failures.
 
 ### Protected Services
 
-| Service | Failure Threshold | Timeout |
-|---------|-------------------|---------|
-| razorpay | 5 failures | 30s |
-| email | 3 failures | 15s |
-| maps | 5 failures | 10s |
-| redis | 10 failures | 5s |
+| Service  | Failure Threshold | Timeout |
+| -------- | ----------------- | ------- |
+| razorpay | 5 failures        | 30s     |
+| email    | 3 failures        | 15s     |
+| maps     | 5 failures        | 10s     |
+| redis    | 10 failures       | 5s      |
 
 ### Circuit States
 
@@ -2172,27 +2181,27 @@ Startup validation for required environment variables.
 
 ### Required Variables
 
-| Variable | Description | Required In |
-|----------|-------------|-------------|
-| `NODE_ENV` | Environment (development/production) | All |
-| `PORT` | Server port | All |
-| `JWT_SECRET` | JWT signing secret (min 32 chars) | All |
-| `DATABASE_URL` | PostgreSQL connection string | All |
-| `RAZORPAY_KEY_ID` | Razorpay API key | Production |
-| `RAZORPAY_KEY_SECRET` | Razorpay API secret | Production |
-| `GOOGLE_MAPS_API_KEY` | Google Maps API key | Production |
-| `CLOUDINARY_*` | Cloudinary credentials | Production |
-| `SMTP_*` | Email SMTP settings | Production |
+| Variable              | Description                          | Required In |
+| --------------------- | ------------------------------------ | ----------- |
+| `NODE_ENV`            | Environment (development/production) | All         |
+| `PORT`                | Server port                          | All         |
+| `JWT_SECRET`          | JWT signing secret (min 32 chars)    | All         |
+| `DATABASE_URL`        | PostgreSQL connection string         | All         |
+| `RAZORPAY_KEY_ID`     | Razorpay API key                     | Production  |
+| `RAZORPAY_KEY_SECRET` | Razorpay API secret                  | Production  |
+| `GOOGLE_MAPS_API_KEY` | Google Maps API key                  | Production  |
+| `CLOUDINARY_*`        | Cloudinary credentials               | Production  |
+| `SMTP_*`              | Email SMTP settings                  | Production  |
 
 ### Optional Variables
 
-| Variable | Description |
-|----------|-------------|
-| `REDIS_URL` | Redis connection (fallback: in-memory) |
-| `KAFKA_BROKERS` | Kafka broker addresses |
-| `GOOGLE_CLIENT_ID/SECRET` | Google OAuth |
-| `FACEBOOK_CLIENT_ID/SECRET` | Facebook OAuth |
-| `APPLE_*` | Apple Sign In |
+| Variable                    | Description                            |
+| --------------------------- | -------------------------------------- |
+| `REDIS_URL`                 | Redis connection (fallback: in-memory) |
+| `KAFKA_BROKERS`             | Kafka broker addresses                 |
+| `GOOGLE_CLIENT_ID/SECRET`   | Google OAuth                           |
+| `FACEBOOK_CLIENT_ID/SECRET` | Facebook OAuth                         |
+| `APPLE_*`                   | Apple Sign In                          |
 
 ### Validation Behavior
 
@@ -2220,11 +2229,11 @@ Proper process termination for zero-downtime deployments.
 
 ### Supported Signals
 
-| Signal | Description |
-|--------|-------------|
-| `SIGTERM` | Kubernetes/Container stop |
-| `SIGINT` | Ctrl+C local shutdown |
-| `SIGUSR1/2` | User-defined signals |
+| Signal      | Description               |
+| ----------- | ------------------------- |
+| `SIGTERM`   | Kubernetes/Container stop |
+| `SIGINT`    | Ctrl+C local shutdown     |
+| `SIGUSR1/2` | User-defined signals      |
 
 ### Shutdown Timeout
 

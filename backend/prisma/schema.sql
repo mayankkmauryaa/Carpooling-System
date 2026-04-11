@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS "vehicles" (
   "licensePlate" VARCHAR UNIQUE NOT NULL,
   "color" VARCHAR NOT NULL,
   "capacity" INT NOT NULL,
+  "vehicleType" VARCHAR DEFAULT 'SEDAN',
   "verificationStatus" VARCHAR DEFAULT 'PENDING',
   "preferences" JSONB DEFAULT '{"smoking": false, "pets": false, "music": true}',
   "isActive" BOOLEAN DEFAULT true,
@@ -397,11 +398,81 @@ CREATE INDEX IF NOT EXISTS "location_histories_driverId_idx" ON "location_histor
 CREATE INDEX IF NOT EXISTS "location_histories_timestamp_idx" ON "location_histories"("timestamp");
 CREATE INDEX IF NOT EXISTS "location_histories_locationType_idx" ON "location_histories"("locationType");
 
+-- DriverDocuments Table
+CREATE TABLE IF NOT EXISTS "driver_documents" (
+  "id" SERIAL PRIMARY KEY,
+  "driverId" INT NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+  "documentType" VARCHAR NOT NULL,
+  "url" VARCHAR NOT NULL,
+  "status" VARCHAR DEFAULT 'PENDING',
+  "verifiedAt" TIMESTAMP,
+  "verifiedBy" INT REFERENCES "users"("id") ON DELETE SET NULL,
+  "rejectedReason" VARCHAR,
+  "expiresAt" TIMESTAMP,
+  "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS "driver_documents_driverId_idx" ON "driver_documents"("driverId");
+CREATE INDEX IF NOT EXISTS "driver_documents_documentType_idx" ON "driver_documents"("documentType");
+CREATE INDEX IF NOT EXISTS "driver_documents_status_idx" ON "driver_documents"("status");
+CREATE INDEX IF NOT EXISTS "driver_documents_expiresAt_idx" ON "driver_documents"("expiresAt");
+
+-- VehicleDocuments Table
+CREATE TABLE IF NOT EXISTS "vehicle_documents" (
+  "id" SERIAL PRIMARY KEY,
+  "vehicleId" INT NOT NULL REFERENCES "vehicles"("id") ON DELETE CASCADE,
+  "documentType" VARCHAR NOT NULL,
+  "url" VARCHAR NOT NULL,
+  "status" VARCHAR DEFAULT 'PENDING',
+  "verifiedAt" TIMESTAMP,
+  "verifiedBy" INT REFERENCES "users"("id") ON DELETE SET NULL,
+  "rejectedReason" VARCHAR,
+  "expiresAt" TIMESTAMP,
+  "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS "vehicle_documents_vehicleId_idx" ON "vehicle_documents"("vehicleId");
+CREATE INDEX IF NOT EXISTS "vehicle_documents_documentType_idx" ON "vehicle_documents"("documentType");
+CREATE INDEX IF NOT EXISTS "vehicle_documents_status_idx" ON "vehicle_documents"("status");
+CREATE INDEX IF NOT EXISTS "vehicle_documents_expiresAt_idx" ON "vehicle_documents"("expiresAt");
+
+-- PaymentMethods Table
+CREATE TABLE IF NOT EXISTS "payment_methods" (
+  "id" SERIAL PRIMARY KEY,
+  "userId" INT NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+  "type" VARCHAR NOT NULL,
+  "isDefault" BOOLEAN DEFAULT false,
+  "details" JSONB NOT NULL,
+  "status" VARCHAR DEFAULT 'ACTIVE',
+  "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS "payment_methods_userId_idx" ON "payment_methods"("userId");
+CREATE INDEX IF NOT EXISTS "payment_methods_type_idx" ON "payment_methods"("type");
+CREATE INDEX IF NOT EXISTS "payment_methods_status_idx" ON "payment_methods"("status");
+
+-- Owners Table
+CREATE TABLE IF NOT EXISTS "owners" (
+  "id" SERIAL PRIMARY KEY,
+  "userId" INT UNIQUE NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+  "businessName" VARCHAR,
+  "gstNumber" VARCHAR,
+  "panNumber" VARCHAR,
+  "verificationStatus" VARCHAR DEFAULT 'PENDING',
+  "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS "owners_userId_idx" ON "owners"("userId");
+
 -- ============================================
 -- Enums
 -- ============================================
 
-CREATE TYPE role AS ENUM ('DRIVER', 'RIDER', 'ADMIN');
+CREATE TYPE role AS ENUM ('DRIVER', 'RIDER', 'ADMIN', 'OWNER');
 CREATE TYPE ride_status AS ENUM ('ACTIVE', 'COMPLETED', 'CANCELLED');
 CREATE TYPE trip_status AS ENUM ('SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');
 CREATE TYPE review_type AS ENUM ('DRIVER_TO_RIDER', 'RIDER_TO_DRIVER');
@@ -415,6 +486,10 @@ CREATE TYPE refund_status AS ENUM ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED
 CREATE TYPE transaction_type AS ENUM ('CREDIT', 'DEBIT');
 CREATE TYPE location_type AS ENUM ('DRIVER_LOCATION', 'PICKUP_LOCATION', 'DROPOFF_LOCATION', 'SOS_LOCATION');
 CREATE TYPE verification_status AS ENUM ('PENDING', 'VERIFIED', 'REJECTED');
+CREATE TYPE driver_document_type AS ENUM ('AADHAAR', 'PAN', 'PASSPORT_PHOTO', 'DRIVING_LICENSE', 'POLICE_VERIFICATION', 'BANK_DETAILS', 'BADGE');
+CREATE TYPE vehicle_document_type AS ENUM ('RC', 'PERMIT', 'INSURANCE', 'FITNESS_CERTIFICATE', 'PUC');
+CREATE TYPE doc_status AS ENUM ('PENDING', 'UPLOADED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'EXPIRED');
+CREATE TYPE vehicle_type AS ENUM ('SEDAN', 'SUV', 'HATCHBACK', 'MINIVAN', 'TEMPO', 'MOTORCYCLE', 'AUTO', 'EV_SEDAN', 'EV_SUV', 'EV_HATCHBACK');
 
 -- ============================================
 -- Functions and Triggers
@@ -448,6 +523,10 @@ CREATE TRIGGER update_wallets_updated_at BEFORE UPDATE ON wallets FOR EACH ROW E
 CREATE TRIGGER update_razorpay_customers_updated_at BEFORE UPDATE ON razorpay_customers FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_driver_locations_updated_at BEFORE UPDATE ON driver_locations FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_location_histories_updated_at BEFORE UPDATE ON location_histories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_driver_documents_updated_at BEFORE UPDATE ON driver_documents FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_vehicle_documents_updated_at BEFORE UPDATE ON vehicle_documents FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_payment_methods_updated_at BEFORE UPDATE ON payment_methods FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_owners_updated_at BEFORE UPDATE ON owners FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
 -- End of Schema

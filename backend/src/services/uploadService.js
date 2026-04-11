@@ -138,6 +138,14 @@ async function uploadDriverDocument(fileBuffer, driverId, documentType, options 
   });
 }
 
+async function uploadOwnerDocument(fileBuffer, ownerId, documentType, options = {}) {
+  return await uploadFromBuffer(fileBuffer, {
+    folder: `carpooling/owners/${ownerId}/documents`,
+    public_id: `${documentType}_${Date.now()}`,
+    resourceType: 'auto'
+  });
+}
+
 async function uploadVehicleDocuments(files, vehicleId, documentTypes = []) {
   const results = [];
   
@@ -258,6 +266,7 @@ module.exports = {
   uploadUserProfile,
   uploadVehicleImage,
   uploadDriverDocument,
+  uploadOwnerDocument,
   uploadVehicleDocuments,
   uploadRideReceipt,
   uploadTripDocument,

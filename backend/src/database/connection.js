@@ -7,7 +7,16 @@ const prisma = new PrismaClient({
     { emit: 'event', level: 'error' },
     { emit: 'event', level: 'warn' },
   ],
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL
+    }
+  }
 });
+
+if (typeof prisma.$connect === 'function') {
+  prisma.$connect();
+}
 
 prisma.$on('error', (e) => {
   logger.error(`Prisma Error: ${e.message}`);
@@ -38,8 +47,19 @@ const disconnectDB = async () => {
   }
 };
 
+const shutdownDB = async () => {
+  try {
+    await disconnectDB();
+    logger.info('Database shutdown complete');
+  } catch (error) {
+    logger.error(`Error during database shutdown: ${error.message}`);
+    throw error;
+  }
+};
+
 module.exports = {
   prisma,
   connectDB,
-  disconnectDB
+  disconnectDB,
+  shutdownDB
 };

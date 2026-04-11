@@ -1,4 +1,5 @@
 const adminService = require('../services/adminService');
+const { driverDocumentService, vehicleDocumentService, ownerService, documentExpiryService, fleetService, ownerDocumentService } = require('../services');
 const { ApiResponse, PaginatedResponse } = require('../dto/response/ApiResponse');
 
 class AdminController {
@@ -279,6 +280,277 @@ class AdminController {
       const { page = 1, limit = 20, ...filters } = req.query;
       const result = await adminService.getMessages(parseInt(page), parseInt(limit), filters);
       return PaginatedResponse.success(res, result.messages, result.pagination, 'Messages retrieved');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPendingDriverDocuments(req, res, next) {
+    try {
+      const { page = 1, limit = 20 } = req.query;
+      const result = await driverDocumentService.getPendingDocuments({ page: parseInt(page), limit: parseInt(limit) });
+      return PaginatedResponse.success(res, result.items, {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        pages: result.pages
+      }, 'Pending driver documents retrieved');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getDriverDocument(req, res, next) {
+    try {
+      const { documentId } = req.params;
+      const { userId, role } = req.user;
+      const document = await driverDocumentService.getDocumentById(parseInt(documentId), userId, role);
+      return ApiResponse.success(res, document, 'Driver document retrieved');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async verifyDriverDocument(req, res, next) {
+    try {
+      const { userId, role } = req.user;
+      const { documentId } = req.params;
+      const document = await driverDocumentService.verifyDocument(parseInt(documentId), userId, role);
+      return ApiResponse.success(res, document, 'Driver document verified successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async rejectDriverDocument(req, res, next) {
+    try {
+      const { userId, role } = req.user;
+      const { documentId } = req.params;
+      const { reason } = req.body;
+      const document = await driverDocumentService.rejectDocument(parseInt(documentId), userId, role, reason);
+      return ApiResponse.success(res, document, 'Driver document rejected');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPendingVehicleDocuments(req, res, next) {
+    try {
+      const { page = 1, limit = 20 } = req.query;
+      const result = await vehicleDocumentService.getPendingDocuments({ page: parseInt(page), limit: parseInt(limit) });
+      return PaginatedResponse.success(res, result.items, {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        pages: result.pages
+      }, 'Pending vehicle documents retrieved');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getVehicleDocument(req, res, next) {
+    try {
+      const { documentId } = req.params;
+      const { userId, role } = req.user;
+      const document = await vehicleDocumentService.getDocumentById(parseInt(documentId), userId, role);
+      return ApiResponse.success(res, document, 'Vehicle document retrieved');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async verifyVehicleDocument(req, res, next) {
+    try {
+      const { userId, role } = req.user;
+      const { documentId } = req.params;
+      const document = await vehicleDocumentService.verifyDocument(parseInt(documentId), userId, role);
+      return ApiResponse.success(res, document, 'Vehicle document verified successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async rejectVehicleDocument(req, res, next) {
+    try {
+      const { userId, role } = req.user;
+      const { documentId } = req.params;
+      const { reason } = req.body;
+      const document = await vehicleDocumentService.rejectDocument(parseInt(documentId), userId, role, reason);
+      return ApiResponse.success(res, document, 'Vehicle document rejected');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getAllOwners(req, res, next) {
+    try {
+      const { page = 1, limit = 20 } = req.query;
+      const result = await ownerService.getAllOwners({ page: parseInt(page), limit: parseInt(limit) });
+      return PaginatedResponse.success(res, result.items, {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        pages: result.pages
+      }, 'Owners retrieved');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPendingOwners(req, res, next) {
+    try {
+      const { page = 1, limit = 20 } = req.query;
+      const result = await ownerService.getPendingOwners({ page: parseInt(page), limit: parseInt(limit) });
+      return PaginatedResponse.success(res, result.items, {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        pages: result.pages
+      }, 'Pending owners retrieved');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getOwner(req, res, next) {
+    try {
+      const { ownerId } = req.params;
+      const owner = await ownerService.getOwnerById(parseInt(ownerId));
+      return ApiResponse.success(res, owner, 'Owner retrieved');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async verifyOwner(req, res, next) {
+    try {
+      const { userId, role } = req.user;
+      const { ownerId } = req.params;
+      const owner = await ownerService.verifyOwner(parseInt(ownerId), userId, role);
+      return ApiResponse.success(res, owner, 'Owner verified successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async rejectOwner(req, res, next) {
+    try {
+      const { userId, role } = req.user;
+      const { ownerId } = req.params;
+      const { reason } = req.body;
+      const owner = await ownerService.rejectOwner(parseInt(ownerId), userId, role, reason);
+      return ApiResponse.success(res, owner, 'Owner rejected');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getExpiringDocuments(req, res, next) {
+    try {
+      const { days = 30 } = req.query;
+      const result = await documentExpiryService.getExpiringDocuments(parseInt(days));
+      return ApiResponse.success(res, result, 'Expiring documents retrieved');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async runDocumentExpiryCheck(req, res, next) {
+    try {
+      const result = await documentExpiryService.markExpiredDocuments();
+      return ApiResponse.success(res, result, 'Document expiry check completed');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getFleetPerformance(req, res, next) {
+    try {
+      const { ownerId, period = '30d' } = req.query;
+      const { userId, role } = req.user;
+      if (!ownerId) {
+        return res.status(400).json({
+          success: false,
+          message: 'ownerId is required'
+        });
+      }
+      const result = await fleetService.getFleetPerformance(parseInt(ownerId), period, userId, role);
+      return ApiResponse.success(res, result, 'Fleet performance retrieved');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getFleetVehicles(req, res, next) {
+    try {
+      const { ownerId, page = 1, limit = 20 } = req.query;
+      const { userId, role } = req.user;
+      if (!ownerId) {
+        return res.status(400).json({
+          success: false,
+          message: 'ownerId is required'
+        });
+      }
+      const result = await fleetService.getFleetVehicles(parseInt(ownerId), {
+        page: parseInt(page),
+        limit: parseInt(limit)
+      }, userId, role);
+      return PaginatedResponse.success(res, result.items, {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        pages: result.pages
+      }, 'Fleet vehicles retrieved');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPendingOwnerDocuments(req, res, next) {
+    try {
+      const { page = 1, limit = 20 } = req.query;
+      const result = await ownerDocumentService.getPendingDocuments({ page: parseInt(page), limit: parseInt(limit) });
+      return PaginatedResponse.success(res, result.items, {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        pages: result.pages
+      }, 'Pending owner documents retrieved');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getOwnerDocumentById(req, res, next) {
+    try {
+      const { documentId } = req.params;
+      const { userId, role } = req.user;
+      const document = await ownerDocumentService.getDocumentById(parseInt(documentId), userId, role);
+      return ApiResponse.success(res, document, 'Owner document retrieved');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async verifyOwnerDocument(req, res, next) {
+    try {
+      const { userId, role } = req.user;
+      const { documentId } = req.params;
+      const document = await ownerDocumentService.verifyDocument(parseInt(documentId), userId, role);
+      return ApiResponse.success(res, document, 'Owner document verified successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async rejectOwnerDocument(req, res, next) {
+    try {
+      const { userId, role } = req.user;
+      const { documentId } = req.params;
+      const { reason } = req.body;
+      const document = await ownerDocumentService.rejectDocument(parseInt(documentId), userId, role, reason);
+      return ApiResponse.success(res, document, 'Owner document rejected');
     } catch (error) {
       next(error);
     }

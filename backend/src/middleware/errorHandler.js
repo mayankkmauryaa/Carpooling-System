@@ -17,16 +17,30 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  if (err.name === 'ValidationError') {
-    const errors = Object.values(err.errors).map(e => ({
-      field: e.path,
-      message: e.message
-    }));
-    
+  if (err.name === 'PrismaClientKnownRequestError') {
+    if (err.code === 'P2002') {
+      const field = err.meta?.target?.join(', ') || 'field';
+      return res.status(409).json({
+        success: false,
+        message: `${field} already exists`
+      });
+    }
+    if (err.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        message: 'Record not found'
+      });
+    }
     return res.status(400).json({
       success: false,
-      message: 'Validation failed',
-      errors
+      message: err.message
+    });
+  }
+
+  if (err.name === 'PrismaClientValidationError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid data provided'
     });
   }
 
@@ -38,7 +52,7 @@ const errorHandler = (err, req, res, next) => {
   }
 
   if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
+    const field = Object.keys(err.keyValue || {})[0] || 'field';
     return res.status(409).json({
       success: false,
       message: `${field} already exists`

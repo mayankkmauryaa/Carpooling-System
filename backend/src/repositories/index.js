@@ -6,6 +6,12 @@ const messageRepository = require('./MessageRepository');
 const reviewRepository = require('./ReviewRepository');
 const rideRequestRepository = require('./RideRequestRepository');
 const sosRepository = require('./SOSRepository');
+const driverDocumentRepository = require('./DriverDocumentRepository');
+const vehicleDocumentRepository = require('./VehicleDocumentRepository');
+const paymentMethodRepository = require('./PaymentMethodRepository');
+const ownerRepository = require('./OwnerRepository');
+const fleetRepository = require('./FleetRepository');
+const ownerDocumentRepository = require('./OwnerDocumentRepository');
 
 module.exports = {
   userRepository,
@@ -15,5 +21,11 @@ module.exports = {
   messageRepository,
   reviewRepository,
   rideRequestRepository,
-  sosRepository
+  sosRepository,
+  driverDocumentRepository,
+  vehicleDocumentRepository,
+  paymentMethodRepository,
+  ownerRepository,
+  fleetRepository,
+  ownerDocumentRepository
 };
