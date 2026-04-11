@@ -2,6 +2,7 @@ const eventBus = require('../eventBus');
 const { prisma } = require('../../database/connection');
 const emailService = require('../../services/emailService');
 const { socketManager } = require('../../socket/socketManager');
+const pushNotificationService = require('../../services/PushNotificationService');
 const logger = require('../../middleware/logger');
 
 class NotificationConsumer {
@@ -22,7 +23,7 @@ class NotificationConsumer {
     try {
       logger.info('Processing notification.send event', { userId: event.userId, type: event.type });
 
-      const { userId, type, title, message, data } = event;
+      const { userId, type, title, message, data, fcmToken } = event;
 
       socketManager.emitToUser(userId, 'notification', {
         type,
@@ -32,7 +33,23 @@ class NotificationConsumer {
         timestamp: new Date().toISOString()
       });
 
-      logger.info('Real-time notification sent', { userId, type });
+      if (title && message) {
+        if (fcmToken) {
+          await pushNotificationService.sendToToken(fcmToken, {
+            title,
+            body: message,
+            data: data || {}
+          });
+        } else if (userId) {
+          await pushNotificationService.sendToUser(userId, {
+            title,
+            body: message,
+            data: data || {}
+          });
+        }
+      }
+
+      logger.info('Real-time and push notification sent', { userId, type });
     } catch (error) {
       logger.error('Error processing notification.send', { error: error.message, event });
     }
@@ -85,26 +102,57 @@ class NotificationConsumer {
 
   async handleSendPush(event) {
     try {
-      logger.info('Processing notification.sendPush event', { userId: event.userId, type: event.type });
+      logger.info('Processing notification.sendPush event', { 
+        userId: event.userId, 
+        fcmToken: !!event.fcmToken,
+        type: event.type 
+      });
 
-      // TODO [Push]: Integrate with Firebase Cloud Messaging (FCM)
-      // const admin = require('firebase-admin');
-      // if (!admin.apps.length) {
-      //   admin.initializeApp({
-      //     credential: admin.credential.cert({
-      //       projectId: process.env.FCM_PROJECT_ID,
-      //       privateKey: process.env.FCM_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      //       clientEmail: process.env.FCM_CLIENT_EMAIL
-      //     })
-      //   });
-      // }
-      // await admin.messaging().send({
-      //   token: event.fcmToken,
-      //   notification: { title: event.title, body: event.message },
-      //   data: event.data
-      // });
+      const { userId, fcmToken, title, message, data, type } = event;
 
-      logger.info('Push notification queued (FCM integration pending)', { userId: event.userId, type: event.type });
+      if (fcmToken && title && message) {
+        const result = await pushNotificationService.sendToToken(fcmToken, {
+          title,
+          body: message,
+          data: data || {}
+        });
+
+        if (result.success) {
+          logger.info('Push notification sent successfully', { 
+            userId, 
+            type,
+            messageId: result.messageId 
+          });
+        } else if (result.shouldRemove) {
+          logger.warn('Invalid FCM token, removing', { userId });
+          await pushNotificationService.removeInvalidToken(userId, fcmToken);
+        } else {
+          logger.warn('Push notification failed', { 
+            userId, 
+            type,
+            error: result.error 
+          });
+        }
+      } else if (userId && title && message) {
+        const result = await pushNotificationService.sendToUser(userId, {
+          title,
+          body: message,
+          data: data || {}
+        });
+
+        logger.info('Push notification sent to user devices', { 
+          userId, 
+          type,
+          sent: result.sent || 0
+        });
+      } else {
+        logger.warn('Push notification missing required fields', { 
+          userId: !!userId, 
+          fcmToken: !!fcmToken,
+          title: !!title,
+          message: !!message
+        });
+      }
     } catch (error) {
       logger.error('Error processing notification.sendPush', { error: error.message, event });
     }

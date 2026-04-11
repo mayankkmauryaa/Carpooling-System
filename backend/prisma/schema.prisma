@@ -54,6 +54,7 @@ model User {
   paymentMethods      PaymentMethod[]
   owner               Owner?
   verifiedOwnerDocs   OwnerDocument[]     @relation("VerifiedOwnerDocs")
+  deviceTokens        DeviceToken[]       @relation("UserDeviceTokens")
 
   @@index([email])
   @@index([role])
@@ -282,6 +283,12 @@ enum Role {
   RIDER
   ADMIN
   OWNER
+}
+
+enum DeviceType {
+  ANDROID
+  IOS
+  WEB
 }
 
 enum RideStatus {
@@ -731,4 +738,24 @@ model OwnerDocument {
   @@index([documentType])
   @@index([status])
   @@index([expiresAt])
+}
+
+model DeviceToken {
+  id          Int        @id @default(autoincrement())
+  userId      Int
+  token       String     @unique
+  deviceType  DeviceType
+  deviceName  String?
+  appVersion  String?
+  fcmToken    String?
+  isActive    Boolean    @default(true)
+  lastUsedAt   DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user User @relation("UserDeviceTokens", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([deviceType])
+  @@index([isActive])
 }

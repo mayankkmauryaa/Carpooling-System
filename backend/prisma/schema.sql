@@ -500,6 +500,25 @@ CREATE INDEX IF NOT EXISTS "owner_documents_documentType_idx" ON "owner_document
 CREATE INDEX IF NOT EXISTS "owner_documents_status_idx" ON "owner_documents"("status");
 CREATE INDEX IF NOT EXISTS "owner_documents_expiresAt_idx" ON "owner_documents"("expiresAt");
 
+-- Device Tokens Table (for Push Notifications)
+CREATE TABLE IF NOT EXISTS "device_tokens" (
+  "id" SERIAL PRIMARY KEY,
+  "userId" INT NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+  "token" VARCHAR UNIQUE NOT NULL,
+  "deviceType" VARCHAR NOT NULL,
+  "deviceName" VARCHAR,
+  "appVersion" VARCHAR,
+  "fcmToken" VARCHAR,
+  "isActive" BOOLEAN DEFAULT true,
+  "lastUsedAt" TIMESTAMP,
+  "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS "device_tokens_userId_idx" ON "device_tokens"("userId");
+CREATE INDEX IF NOT EXISTS "device_tokens_deviceType_idx" ON "device_tokens"("deviceType");
+CREATE INDEX IF NOT EXISTS "device_tokens_isActive_idx" ON "device_tokens"("isActive");
+
 -- ============================================
 -- Enums
 -- ============================================
@@ -523,6 +542,7 @@ CREATE TYPE vehicle_document_type AS ENUM ('RC', 'PERMIT', 'INSURANCE', 'FITNESS
 CREATE TYPE doc_status AS ENUM ('PENDING', 'UPLOADED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'EXPIRED');
 CREATE TYPE owner_document_type AS ENUM ('GST', 'PAN', 'BUSINESS_LICENSE', 'ADDRESS_PROOF');
 CREATE TYPE vehicle_type AS ENUM ('SEDAN', 'SUV', 'HATCHBACK', 'MINIVAN', 'TEMPO', 'MOTORCYCLE', 'AUTO', 'EV_SEDAN', 'EV_SUV', 'EV_HATCHBACK', 'EV_AUTO', 'EV_MOTORCYCLE', 'LUXURY', 'PREMIUM', 'ECONOMY', 'PICKUP', 'TRUCK', 'VAN');
+CREATE TYPE device_type AS ENUM ('ANDROID', 'IOS', 'WEB');
 
 -- ============================================
 -- Functions and Triggers
@@ -561,6 +581,7 @@ CREATE TRIGGER update_vehicle_documents_updated_at BEFORE UPDATE ON vehicle_docu
 CREATE TRIGGER update_payment_methods_updated_at BEFORE UPDATE ON payment_methods FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_owners_updated_at BEFORE UPDATE ON owners FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_owner_documents_updated_at BEFORE UPDATE ON owner_documents FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_device_tokens_updated_at BEFORE UPDATE ON device_tokens FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
 -- End of Schema

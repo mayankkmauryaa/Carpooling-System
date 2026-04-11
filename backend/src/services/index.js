@@ -24,6 +24,8 @@ const documentExpiryService = require('./DocumentExpiryService');
 const { ownerDocumentService } = require('./OwnerDocumentService');
 const { paymentMethodService } = require('./PaymentMethodService');
 const payoutService = require('./PayoutService');
+const pushNotificationService = require('./PushNotificationService');
+const deviceService = require('./DeviceService');
 
 module.exports = {
   authService,
@@ -51,5 +53,7 @@ module.exports = {
   documentExpiryService,
   ownerDocumentService,
   paymentMethodService,
-  payoutService
+  payoutService,
+  pushNotificationService,
+  deviceService
 };

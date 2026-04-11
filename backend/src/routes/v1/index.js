@@ -21,6 +21,7 @@ const ownerRoutes = require('./owner.routes');
 const fleetRoutes = require('./fleet.routes');
 const ownerDocumentsRoutes = require('./owner.documents.routes');
 const payoutRoutes = require('./payout.routes');
+const devicesRoutes = require('./devices.routes');
 
 router.use('/auth', authLimiter.middleware(), authRoutes);
 router.use('/users', usersRoutes);
@@ -41,5 +42,6 @@ router.use('/owner', ownerRoutes);
 router.use('/fleet', fleetRoutes);
 router.use('/owner-documents', ownerDocumentsRoutes);
 router.use('/payout', payoutRoutes);
+router.use('/devices', devicesRoutes);
 
 module.exports = router;
