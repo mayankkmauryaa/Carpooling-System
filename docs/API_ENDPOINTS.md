@@ -1082,6 +1082,298 @@ Get reviews for a user.
 
 ---
 
+## Booking Endpoints
+
+Booking management for riders. Integrated with Saga pattern for distributed transactions.
+
+### POST /api/v1/bookings
+
+Create a new booking request.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request:**
+
+```json
+{
+  "rideId": 3,
+  "pickupLocation": {
+    "address": "123 Main St, San Francisco, CA",
+    "latitude": 37.7749,
+    "longitude": -122.4194
+  },
+  "dropLocation": {
+    "address": "456 Oak Ave, Palo Alto, CA",
+    "latitude": 37.4028,
+    "longitude": -122.0869
+  },
+  "seatsBooked": 1,
+  "paymentMethod": "razorpay"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "booking_123",
+    "status": "PENDING",
+    "rideId": 3,
+    "riderId": 1,
+    "seatsBooked": 1,
+    "totalAmount": 25.00,
+    "sagaState": "IN_PROGRESS"
+  }
+}
+```
+
+---
+
+### GET /api/v1/bookings
+
+Get all bookings for current user.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Query Parameters:**
+
+- `status`: Filter by status (PENDING, APPROVED, PAID, ACTIVE, COMPLETED, CANCELLED, FAILED)
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 20)
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "bookings": [
+      {
+        "id": "booking_123",
+        "status": "COMPLETED",
+        "ride": {
+          "pickupLocation": "123 Main St",
+          "dropLocation": "456 Oak Ave"
+        },
+        "seatsBooked": 1,
+        "totalAmount": 25.00
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 5,
+      "pages": 1
+    }
+  }
+}
+```
+
+---
+
+### GET /api/v1/bookings/:bookingId
+
+Get booking details.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "booking_123",
+    "status": "PAID",
+    "ride": {
+      "id": 3,
+      "driver": {
+        "firstName": "John",
+        "phone": "+1234567890"
+      },
+      "vehicle": {
+        "brand": "Toyota",
+        "model": "Camry",
+        "licensePlate": "ABC123"
+      },
+      "departureTime": "2024-01-20T09:00:00Z"
+    },
+    "pickupLocation": {...},
+    "dropLocation": {...},
+    "seatsBooked": 1,
+    "totalAmount": 25.00,
+    "payment": {
+      "id": "pay_123",
+      "status": "captured"
+    },
+    "sagaState": "COMPLETED"
+  }
+}
+```
+
+---
+
+### PUT /api/v1/bookings/:bookingId/cancel
+
+Cancel a booking using CancellationSaga.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request:**
+
+```json
+{
+  "reason": "Changed plans"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "bookingId": "booking_123",
+    "cancelled": true,
+    "refundEligible": true,
+    "refundAmount": 21.25,
+    "refundPolicy": "100% refund (48h+ notice)"
+  }
+}
+```
+
+---
+
+### GET /api/v1/bookings/:bookingId/cancellation
+
+Get cancellation details and refund eligibility.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "bookingId": "booking_123",
+    "bookingStatus": "PENDING",
+    "totalAmount": 25.00,
+    "originalAmount": 25.00,
+    "refundPercentage": 1.0,
+    "refundAmount": 21.25,
+    "actualRefundToUser": 21.25,
+    "hoursUntilTrip": 60,
+    "refundPolicy": "100% refund (48h+ notice)",
+    "isEligibleForRefund": true
+  }
+}
+```
+
+---
+
+### GET /api/v1/bookings/:bookingId/refund-status
+
+Get refund status for a cancelled booking.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "bookingId": "booking_123",
+    "refundStatus": "COMPLETED",
+    "refundAmount": 21.25,
+    "razorpayRefundId": "rfnd_123",
+    "processedAt": "2024-01-20T10:00:00Z",
+    "speed": "optimum"
+  }
+}
+```
+
+---
+
+### GET /api/v1/bookings/calculate-price
+
+Calculate price for rental or ride.
+
+**Query Parameters (Rental):**
+- `vehicleId`: Vehicle ID
+- `startDate`: Start date (YYYY-MM-DD)
+- `endDate`: End date (YYYY-MM-DD)
+
+**Query Parameters (Ride):**
+- `ridePoolId`: Ride pool ID
+- `seats`: Number of seats
+
+**Example (Rental):**
+```
+GET /api/v1/bookings/calculate-price?vehicleId=1&startDate=2024-01-20&endDate=2024-01-25
+```
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "days": 5,
+    "breakdown": {
+      "pricePerDay": 1000,
+      "numberOfDays": 5,
+      "basePrice": 5000,
+      "platformFee": 750,
+      "platformFeePercentage": 15,
+      "insurance": 250,
+      "insurancePerDay": 50,
+      "subtotal": 6000,
+      "taxes": 1080,
+      "taxPercentage": 18
+    },
+    "totalPrice": 7080.00,
+    "currency": "INR"
+  }
+}
+```
+
+---
+
+### GET /api/v1/bookings/ride/:rideId
+
+Get all bookings for a specific ride (Driver only).
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "bookings": [
+      {
+        "id": "booking_123",
+        "rider": {
+          "firstName": "Jane",
+          "rating": 4.8
+        },
+        "status": "APPROVED",
+        "seatsBooked": 1
+      }
+    ],
+    "totalBookedSeats": 2,
+    "availableSeats": 2
+  }
+}
+```
+
+---
+
 ## Message Endpoints
 
 ### GET /api/messages
@@ -1146,6 +1438,95 @@ Health check endpoint (no auth required).
 {
   "status": "success",
   "message": "API is running",
+  "timestamp": "2024-01-15T10:00:00Z"
+}
+```
+
+---
+
+## Health Check Endpoints - NEW
+
+Kubernetes-compatible health endpoints for container orchestration.
+
+### GET /health/live
+
+Liveness probe - Check if the process is running.
+
+**Response (200):**
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2024-01-15T10:00:00Z"
+}
+```
+
+---
+
+### GET /health/ready
+
+Readiness probe - Check if all dependencies are available.
+
+**Response (200):**
+
+```json
+{
+  "status": "ok",
+  "checks": {
+    "database": true,
+    "redis": true,
+    "eventBus": false
+  },
+  "timestamp": "2024-01-15T10:00:00Z"
+}
+```
+
+**Response (503 - Degraded):**
+
+```json
+{
+  "status": "degraded",
+  "checks": {
+    "database": true,
+    "redis": false,
+    "eventBus": false
+  },
+  "timestamp": "2024-01-15T10:00:00Z"
+}
+```
+
+---
+
+### GET /health
+
+Full health check with all service statuses.
+
+**Response (200 - Healthy):**
+
+```json
+{
+  "status": "healthy",
+  "checks": {
+    "database": true,
+    "redis": true,
+    "eventBus": true
+  },
+  "version": "1.0.0",
+  "timestamp": "2024-01-15T10:00:00Z"
+}
+```
+
+**Response (503 - Unhealthy):**
+
+```json
+{
+  "status": "unhealthy",
+  "checks": {
+    "database": true,
+    "redis": false,
+    "eventBus": false
+  },
+  "version": "1.0.0",
   "timestamp": "2024-01-15T10:00:00Z"
 }
 ```
@@ -1469,7 +1850,95 @@ Get peak hours analysis.
 | ------ | ----------------------------------------- | -------------------------- |
 | GET    | `/admin/vehicles`                         | List all vehicles          |
 | GET    | `/admin/vehicles/:vehicleId`              | Get vehicle details        |
+| POST   | `/admin/vehicles`                         | Create vehicle             |
+| PUT    | `/admin/vehicles/:vehicleId`              | Update vehicle             |
+| DELETE | `/admin/vehicles/:vehicleId`              | Delete vehicle             |
 | PUT    | `/admin/vehicles/:vehicleId/verification` | Update verification status |
+
+#### POST /api/v1/admin/vehicles
+
+Create a new vehicle for a driver.
+
+**Request:**
+
+```json
+{
+  "driverId": 5,
+  "brand": "Toyota",
+  "model": "Camry",
+  "licensePlate": "ABC123",
+  "color": "Silver",
+  "capacity": 4,
+  "preferences": {
+    "smoking": false,
+    "pets": false,
+    "music": true
+  },
+  "registrationExpiry": "2025-12-31"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 10,
+    "driverId": 5,
+    "brand": "Toyota",
+    "model": "Camry",
+    "licensePlate": "ABC123",
+    "capacity": 4,
+    "verificationStatus": "PENDING"
+  }
+}
+```
+
+#### PUT /api/v1/admin/vehicles/:vehicleId
+
+Update vehicle details.
+
+**Request:**
+
+```json
+{
+  "brand": "Honda",
+  "model": "Accord",
+  "color": "Black",
+  "capacity": 5,
+  "isActive": true
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 10,
+    "brand": "Honda",
+    "model": "Accord"
+  }
+}
+```
+
+#### DELETE /api/v1/admin/vehicles/:vehicleId
+
+Delete a vehicle.
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "deleted": true,
+    "vehicleId": 10
+  }
+}
+```
 
 ### Ride Management
 
@@ -1542,5 +2011,235 @@ Real-time communication using Socket.IO.
 
 ---
 
+## Google Maps Integration - NEW
+
+Distance and route calculations using Google Maps API.
+
+### Distance & ETA
+
+Calculated automatically in ride search response:
+
+```json
+{
+  "rides": [{
+    "id": 3,
+    "matchPercentage": 85,
+    "distanceToPickup": 2.5,
+    "distanceToPickupText": "2.5 km",
+    "totalDistance": 25.3,
+    "totalDistanceText": "25.3 km",
+    "estimatedDuration": 1800,
+    "estimatedDurationText": "30 min"
+  }]
+}
+```
+
+---
+
+## Event-Driven Architecture - NEW
+
+Kafka topics for async event processing.
+
+### Kafka Topics
+
+| Topic | Events |
+|-------|--------|
+| `trip-events` | TRIP_CREATED, TRIP_STARTED, TRIP_COMPLETED, TRIP_CANCELLED |
+| `payment-events` | PAYMENT_INITIATED, PAYMENT_SUCCESS, PAYMENT_FAILED, PAYOUT_COMPLETED |
+| `notification-events` | EMAIL_NOTIFICATION, PUSH_NOTIFICATION, SOS_ALERT |
+
+### Kafka Consumers - NEW
+
+#### TripConsumer
+Listens to:
+- `trip.created` - Send confirmation notifications
+- `trip.started` - Update trip status, start location tracking
+- `trip.completed` - Calculate earnings, trigger payout, send notifications
+- `trip.cancelled` - Notify riders, release seats
+- `booking.created` - Initiate payment
+- `booking.cancelled` - Process refund
+- `seat.reserved` / `seat.released` - Update seat counts
+
+#### PaymentConsumer
+Listens to:
+- `payment.initiated` - Create payment record
+- `payment.captured` - Update booking to PAID
+- `payment.failed` - Mark booking as FAILED, release seats
+- `refund.initiated` - Update booking refund status
+- `refund.processed` - Complete refund tracking
+- `payout.calculate` - Calculate driver earnings
+- `payout.processed` - Complete payout record
+
+### Event Flow
+
+```
+Booking Created
+    |
+    v
+[payment.initiated] -> [PaymentConsumer] -> [booking.confirmed]
+    |
+    v
+[booking.cancelled] -> [CancellationSaga] -> [seat.released] -> [refund.process]
+    |
+    v
+[Trip Completed] -> [TripConsumer] -> [payout.calculate] -> [PaymentConsumer] -> [notification.send]
+```
+
+---
+
+## Saga Patterns - NEW
+
+Distributed transaction management for critical flows.
+
+### Booking Saga Steps
+
+```
+1. Reserve Seat (PENDING) -> 2. Process Payment -> 3. Approve Request -> 4. Confirm Booking
+         |                              |                    |
+         v                              v                    v
+    ROLLBACK                    ROLLBACK              ROLLBACK
+```
+
+### Payout Saga Steps
+
+```
+1. Validate Trip -> 2. Calculate Payout -> 3. Process Payout -> 4. Update Earnings -> 5. Notify Driver
+         |               |                    |                |
+         v               v                    v                v
+     ROLLBACK        ROLLBACK             ROLLBACK         ROLLBACK
+```
+
+### Cancellation Saga - NEW
+
+```
+1. Validate Booking -> 2. Update Status to CANCELLED -> 3. Release Seats -> 4. Process Refund -> 5. Send Notification
+         |                     |                            |                |                    |
+         v                     v                            v                v                    v
+     ROLLBACK           ROLLBACK                    ROLLBACK      ROLLBACK           ROLLBACK
+```
+
+#### Cancellation Refund Policy
+
+| Hours Before Trip | Refund Percentage |
+|-------------------|------------------|
+| 48+ hours | 100% refund |
+| 24-48 hours | 50% refund |
+| 12-24 hours | 25% refund |
+| < 12 hours | No refund |
+
+Note: Platform fee (15%) is non-refundable.
+
+### Saga States
+
+| State | Description |
+|-------|-------------|
+| PENDING | Saga created, not started |
+| IN_PROGRESS | Executing steps |
+| COMPLETED | All steps successful |
+| FAILED | Step failed |
+| COMPENSATING | Rolling back |
+| ROLLED_BACK | Rollback complete |
+
+---
+
+## Circuit Breakers - NEW
+
+Resilience pattern for external service failures.
+
+### Protected Services
+
+| Service | Failure Threshold | Timeout |
+|---------|-------------------|---------|
+| razorpay | 5 failures | 30s |
+| email | 3 failures | 15s |
+| maps | 5 failures | 10s |
+| redis | 10 failures | 5s |
+
+### Circuit States
+
+```
+CLOSED -> (5 failures) -> OPEN -> (30s) -> HALF_OPEN -> (success) -> CLOSED
+                                          |
+                                          v (failure)
+                                          OPEN
+```
+
+---
+
+## Environment Validation - NEW
+
+Startup validation for required environment variables.
+
+### Required Variables
+
+| Variable | Description | Required In |
+|----------|-------------|-------------|
+| `NODE_ENV` | Environment (development/production) | All |
+| `PORT` | Server port | All |
+| `JWT_SECRET` | JWT signing secret (min 32 chars) | All |
+| `DATABASE_URL` | PostgreSQL connection string | All |
+| `RAZORPAY_KEY_ID` | Razorpay API key | Production |
+| `RAZORPAY_KEY_SECRET` | Razorpay API secret | Production |
+| `GOOGLE_MAPS_API_KEY` | Google Maps API key | Production |
+| `CLOUDINARY_*` | Cloudinary credentials | Production |
+| `SMTP_*` | Email SMTP settings | Production |
+
+### Optional Variables
+
+| Variable | Description |
+|----------|-------------|
+| `REDIS_URL` | Redis connection (fallback: in-memory) |
+| `KAFKA_BROKERS` | Kafka broker addresses |
+| `GOOGLE_CLIENT_ID/SECRET` | Google OAuth |
+| `FACEBOOK_CLIENT_ID/SECRET` | Facebook OAuth |
+| `APPLE_*` | Apple Sign In |
+
+### Validation Behavior
+
+```
+Production: Fails on missing required vars
+Development: Warns on missing optional vars
+Test: Skips validation
+```
+
+---
+
+## Graceful Shutdown - NEW
+
+Proper process termination for zero-downtime deployments.
+
+### Shutdown Sequence
+
+```
+1. Close HTTP server (stop accepting new connections)
+2. Disconnect Socket.IO
+3. Close Event Bus (Kafka producer)
+4. Close Redis connection
+5. Close Database connection
+```
+
+### Supported Signals
+
+| Signal | Description |
+|--------|-------------|
+| `SIGTERM` | Kubernetes/Container stop |
+| `SIGINT` | Ctrl+C local shutdown |
+| `SIGUSR1/2` | User-defined signals |
+
+### Shutdown Timeout
+
+Default: 30 seconds
+Forces exit if graceful shutdown exceeds timeout.
+
+### PM2 Integration
+
+```bash
+pm2 stop ecosystem.config.js    # Graceful SIGTERM
+pm2 kill                        # Force kill
+pm2 restart ecosystem.config.js # Graceful restart
+```
+
+---
+
 _API endpoints designed following RESTful conventions with proper HTTP status codes._
-_Last Updated: April 10, 2026_
+_Last Updated: April 11, 2026_

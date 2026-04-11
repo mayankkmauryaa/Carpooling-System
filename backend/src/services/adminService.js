@@ -169,7 +169,8 @@ class AdminService {
     if (filters.isSuspended !== undefined) where.isSuspended = filters.isSuspended === 'true';
     if (filters.search) {
       where.OR = [
-        { name: { contains: filters.search, mode: 'insensitive' } },
+        { firstName: { contains: filters.search, mode: 'insensitive' } },
+        { lastName: { contains: filters.search, mode: 'insensitive' } },
         { email: { contains: filters.search, mode: 'insensitive' } }
       ];
     }
@@ -182,13 +183,15 @@ class AdminService {
         orderBy: { createdAt: 'desc' },
         select: {
           id: true,
-          name: true,
+          firstName: true,
+          lastName: true,
           email: true,
           phone: true,
           role: true,
           isActive: true,
           isSuspended: true,
-          isVerified: true,
+          suspendedReason: true,
+          emailVerified: true,
           createdAt: true,
           _count: { select: { tripsAsRider: true, tripsAsDriver: true, reviewsGiven: true } }
         }
@@ -241,7 +244,7 @@ class AdminService {
     return prisma.user.update({
       where: { id: userId },
       data: { isActive },
-      select: { id: true, isActive: true, name: true, email: true }
+      select: { id: true, isActive: true, firstName: true, lastName: true, email: true }
     });
   }
 
@@ -253,7 +256,7 @@ class AdminService {
     return prisma.user.update({
       where: { id: userId },
       data: { isSuspended: true, suspendedReason: reason },
-      select: { id: true, isSuspended: true, name: true, email: true }
+      select: { id: true, isSuspended: true, suspendedReason: true, firstName: true, lastName: true, email: true }
     });
   }
 
@@ -261,7 +264,7 @@ class AdminService {
     return prisma.user.update({
       where: { id: userId },
       data: { isSuspended: false, suspendedReason: null },
-      select: { id: true, isSuspended: true, name: true, email: true }
+      select: { id: true, isSuspended: true, suspendedReason: true, firstName: true, lastName: true, email: true }
     });
   }
 
@@ -278,13 +281,11 @@ class AdminService {
     const skip = (page - 1) * limit;
 
     const where = {};
-    if (filters.verificationStatus) where.verificationStatus = filters.verificationStatus.toUpperCase();
-    if (filters.ownershipType) where.ownershipType = filters.ownershipType.toUpperCase();
     if (filters.isActive !== undefined) where.isActive = filters.isActive === 'true';
     if (filters.search) {
       where.OR = [
         { licensePlate: { contains: filters.search, mode: 'insensitive' } },
-        { make: { contains: filters.search, mode: 'insensitive' } },
+        { brand: { contains: filters.search, mode: 'insensitive' } },
         { model: { contains: filters.search, mode: 'insensitive' } }
       ];
     }
@@ -295,7 +296,7 @@ class AdminService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: { owner: { select: { id: true, name: true, email: true } } }
+        include: { driver: { select: { id: true, firstName: true, lastName: true, email: true } } }
       }),
       prisma.vehicle.count({ where })
     ]);
@@ -310,8 +311,8 @@ class AdminService {
     const vehicle = await prisma.vehicle.findUnique({
       where: { id: vehicleId },
       include: {
-        owner: { select: { id: true, name: true, email: true, phone: true } },
-        rides: { take: 10, orderBy: { createdAt: 'desc' } }
+        driver: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
+        ridePools: { take: 10, orderBy: { createdAt: 'desc' } }
       }
     });
 
@@ -319,19 +320,82 @@ class AdminService {
     return vehicle;
   }
 
+  async createVehicle(vehicleData) {
+    const { driverId, brand, model, licensePlate, color, capacity, preferences, registrationExpiry } = vehicleData;
+
+    const driver = await prisma.user.findUnique({ where: { id: driverId } });
+    if (!driver) throw new NotFoundException('Driver not found');
+    if (driver.role !== 'DRIVER') throw new BadRequestException('User is not a driver');
+
+    const existingVehicle = await prisma.vehicle.findUnique({ where: { licensePlate } });
+    if (existingVehicle) throw new BadRequestException('Vehicle with this license plate already exists');
+
+    const vehicle = await prisma.vehicle.create({
+      data: {
+        driverId,
+        brand,
+        model,
+        licensePlate: licensePlate.toUpperCase(),
+        color,
+        capacity,
+        preferences: preferences || { smoking: false, pets: false, music: true },
+        registrationExpiry: new Date(registrationExpiry)
+      },
+      include: {
+        driver: { select: { id: true, firstName: true, lastName: true, email: true } }
+      }
+    });
+
+    return vehicle;
+  }
+
+  async updateVehicle(vehicleId, updateData) {
+    const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
+    if (!vehicle) throw new NotFoundException('Vehicle not found');
+
+    const data = {};
+    if (updateData.brand) data.brand = updateData.brand;
+    if (updateData.model) data.model = updateData.model;
+    if (updateData.color) data.color = updateData.color;
+    if (updateData.capacity) data.capacity = updateData.capacity;
+    if (updateData.preferences) data.preferences = updateData.preferences;
+    if (updateData.isActive !== undefined) data.isActive = updateData.isActive;
+    if (updateData.registrationExpiry) data.registrationExpiry = new Date(updateData.registrationExpiry);
+
+    const updated = await prisma.vehicle.update({
+      where: { id: vehicleId },
+      data,
+      include: {
+        driver: { select: { id: true, firstName: true, lastName: true, email: true } }
+      }
+    });
+
+    return updated;
+  }
+
+  async deleteVehicle(vehicleId) {
+    const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
+    if (!vehicle) throw new NotFoundException('Vehicle not found');
+
+    await prisma.vehicle.delete({ where: { id: vehicleId } });
+    return { deleted: true, vehicleId };
+  }
+
   async updateVehicleVerification(vehicleId, status) {
+    const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
+    if (!vehicle) throw new NotFoundException('Vehicle not found');
+
     const validStatuses = ['PENDING', 'VERIFIED', 'REJECTED'];
     if (!validStatuses.includes(status.toUpperCase())) {
       throw new BadRequestException('Invalid verification status');
     }
 
-    const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
-    if (!vehicle) throw new NotFoundException('Vehicle not found');
-
     return prisma.vehicle.update({
       where: { id: vehicleId },
       data: { verificationStatus: status.toUpperCase() },
-      select: { id: true, verificationStatus: true, licensePlate: true }
+      include: {
+        driver: { select: { id: true, firstName: true, lastName: true, email: true } }
+      }
     });
   }
 
@@ -355,8 +419,8 @@ class AdminService {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          driver: { select: { id: true, name: true, email: true } },
-          vehicle: { select: { id: true, licensePlate: true, make: true, model: true } },
+          driver: { select: { id: true, firstName: true, lastName: true, email: true } },
+          vehicle: { select: { id: true, licensePlate: true, brand: true, model: true } },
           _count: { select: { rideRequests: true } }
         }
       }),
@@ -373,10 +437,10 @@ class AdminService {
     const ride = await prisma.ridePool.findUnique({
       where: { id: rideId },
       include: {
-        driver: { select: { id: true, name: true, email: true, phone: true } },
+        driver: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
         vehicle: true,
-        rideRequests: { include: { rider: { select: { id: true, name: true, email: true } } } },
-        trip: true
+        rideRequests: { include: { rider: { select: { id: true, firstName: true, lastName: true, email: true } } } },
+        trips: true
       }
     });
 
@@ -391,7 +455,7 @@ class AdminService {
     return prisma.ridePool.update({
       where: { id: rideId },
       data: { status: 'CANCELLED' },
-      include: { driver: { select: { email: true, name: true } } }
+      include: { driver: { select: { email: true, firstName: true, lastName: true } } }
     });
   }
 
@@ -403,9 +467,7 @@ class AdminService {
     if (filters.paymentStatus) where.paymentStatus = filters.paymentStatus.toUpperCase();
     if (filters.search) {
       where.OR = [
-        { id: { contains: filters.search, mode: 'insensitive' } },
-        { pickupLocation: { contains: filters.search, mode: 'insensitive' } },
-        { dropLocation: { contains: filters.search, mode: 'insensitive' } }
+        { id: { contains: filters.search, mode: 'insensitive' } }
       ];
     }
 
@@ -416,8 +478,13 @@ class AdminService {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          rider: { select: { id: true, name: true, email: true } },
-          ride: { select: { driver: { select: { id: true, name: true } } } }
+          ridePool: { 
+            select: { 
+              pickupLocation: true, 
+              dropLocation: true,
+              driver: { select: { id: true, firstName: true, lastName: true } } 
+            } 
+          }
         }
       }),
       prisma.trip.count({ where })
@@ -433,8 +500,13 @@ class AdminService {
     const trip = await prisma.trip.findUnique({
       where: { id: tripId },
       include: {
-        rider: { select: { id: true, name: true, email: true, phone: true } },
-        ride: { include: { driver: { select: { id: true, name: true, email: true, phone: true } }, vehicle: true } }
+        riders: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
+        ridePool: { 
+          include: { 
+            driver: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } }, 
+            vehicle: true 
+          } 
+        }
       }
     });
 
@@ -450,8 +522,10 @@ class AdminService {
     if (filters.search) {
       where.OR = [
         { comment: { contains: filters.search, mode: 'insensitive' } },
-        { reviewer: { name: { contains: filters.search, mode: 'insensitive' } } },
-        { reviewee: { name: { contains: filters.search, mode: 'insensitive' } } }
+        { reviewer: { firstName: { contains: filters.search, mode: 'insensitive' } } },
+        { reviewer: { lastName: { contains: filters.search, mode: 'insensitive' } } },
+        { reviewee: { firstName: { contains: filters.search, mode: 'insensitive' } } },
+        { reviewee: { lastName: { contains: filters.search, mode: 'insensitive' } } }
       ];
     }
 
@@ -462,8 +536,8 @@ class AdminService {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          reviewer: { select: { id: true, name: true, email: true } },
-          reviewee: { select: { id: true, name: true, email: true } }
+          reviewer: { select: { id: true, firstName: true, lastName: true, email: true } },
+          reviewee: { select: { id: true, firstName: true, lastName: true, email: true } }
         }
       }),
       prisma.review.count({ where })
@@ -490,17 +564,17 @@ class AdminService {
     if (filters.status) where.status = filters.status.toUpperCase();
 
     const [alerts, total] = await Promise.all([
-      prisma.sOS.findMany({
+      prisma.sOSAlert.findMany({
         where,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          user: { select: { id: true, name: true, email: true, phone: true } },
-          trip: { select: { id: true, pickupLocation: true, dropLocation: true } }
+          user: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
+          ridePool: { select: { id: true, pickupLocation: true, dropLocation: true } }
         }
       }),
-      prisma.sOS.count({ where })
+      prisma.sOSAlert.count({ where })
     ]);
 
     return {
@@ -510,10 +584,10 @@ class AdminService {
   }
 
   async updateSOSAlertStatus(alertId, status) {
-    const alert = await prisma.sOS.findUnique({ where: { id: alertId } });
+    const alert = await prisma.sOSAlert.findUnique({ where: { id: alertId } });
     if (!alert) throw new NotFoundException('SOS Alert not found');
 
-    return prisma.sOS.update({
+    return prisma.sOSAlert.update({
       where: { id: alertId },
       data: { status: status.toUpperCase() },
       select: { id: true, status: true }
@@ -527,7 +601,8 @@ class AdminService {
     if (filters.search) {
       where.OR = [
         { content: { contains: filters.search, mode: 'insensitive' } },
-        { sender: { name: { contains: filters.search, mode: 'insensitive' } } }
+        { sender: { firstName: { contains: filters.search, mode: 'insensitive' } } },
+        { sender: { lastName: { contains: filters.search, mode: 'insensitive' } } }
       ];
     }
 
@@ -538,8 +613,7 @@ class AdminService {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          sender: { select: { id: true, name: true, email: true } },
-          conversation: { select: { id: true } }
+          sender: { select: { id: true, firstName: true, lastName: true, email: true } }
         }
       }),
       prisma.message.count({ where })

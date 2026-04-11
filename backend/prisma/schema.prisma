@@ -8,37 +8,45 @@ datasource db {
 }
 
 model User {
-  id              Int       @id @default(autoincrement())
-  email           String    @unique
-  password        String?
-  firstName       String
-  lastName        String
-  phone           String?
-  role            Role      @default(RIDER)
-  profilePicture  String?
-  isProfileBlurred Boolean  @default(true)
-  isActive        Boolean   @default(true)
-  rating          Float     @default(0)
-  totalReviews    Int       @default(0)
-  googleId        String?   @unique
-  isGoogleUser    Boolean   @default(false)
-  emailVerified   Boolean   @default(false)
+  id                Int      @id @default(autoincrement())
+  email             String   @unique
+  password          String?
+  firstName         String
+  lastName          String
+  phone             String?
+  role              Role     @default(RIDER)
+  profilePicture    String?
+  isProfileBlurred  Boolean  @default(true)
+  isActive          Boolean  @default(true)
+  isSuspended       Boolean  @default(false)
+  suspendedReason   String?
+  rating            Float    @default(0)
+  totalReviews      Int      @default(0)
+  googleId          String?  @unique
+  isGoogleUser      Boolean  @default(false)
+  emailVerified     Boolean  @default(false)
   razorpayAccountId String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  vehicles        Vehicle[]
-  ridePools       RidePool[]
-  tripsAsDriver   Trip[]    @relation("DriverTrips")
-  tripsAsRider    Trip[]    @relation("RiderTrips")
-  sentMessages    Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
-  reviewsGiven    Review[]  @relation("ReviewsGiven")
-  reviewsReceived Review[]  @relation("ReviewsReceived")
-  sosAlerts       SOSAlert[]
-  rideRequests    RideRequest[]
-  bookings        Booking[]
-  payouts         Payout[]
+  vehicles          Vehicle[]
+  ridePools         RidePool[]
+  tripsAsDriver     Trip[]              @relation("DriverTrips")
+  tripsAsRider      Trip[]              @relation("RiderTrips")
+  sentMessages      Message[]           @relation("SentMessages")
+  receivedMessages  Message[]           @relation("ReceivedMessages")
+  reviewsGiven      Review[]            @relation("ReviewsGiven")
+  reviewsReceived   Review[]            @relation("ReviewsReceived")
+  sosAlerts         SOSAlert[]
+  rideRequests      RideRequest[]
+  bookings          Booking[]
+  payouts           Payout[]
+  driverLocations   DriverLocation[]
+  locationHistories LocationHistory[]
+  payments          Payment[]
+  wallet            Wallet?
+  razorpayCustomer  RazorpayCustomer[]
+  WalletTransaction WalletTransaction[]
 
   @@index([email])
   @@index([role])
@@ -46,79 +54,92 @@ model User {
 }
 
 model Vehicle {
-  id                  Int       @id @default(autoincrement())
+  id                  Int               @id @default(autoincrement())
   driverId            Int
   brand               String
+  make                String?
   model               String
-  licensePlate        String    @unique
+  licensePlate        String            @unique
   color               String
   capacity            Int
-  preferences         Json      @default("{\"smoking\": false, \"pets\": false, \"music\": true}")
-  isActive            Boolean   @default(true)
-  registrationExpiry  DateTime
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  verificationStatus  VerificationStatus @default(PENDING)
+  preferences         Json              @default("{\"smoking\": false, \"pets\": false, \"music\": true}")
+  isActive            Boolean           @default(true)
+  registrationExpiry DateTime
+  pricePerDay         Float             @default(0)
+  pricePerKm          Float             @default(0)
+  minimumCharge       Float             @default(0)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
 
-  driver              User      @relation(fields: [driverId], references: [id])
-  ridePools           RidePool[]
+  driver    User       @relation(fields: [driverId], references: [id])
+  ridePools RidePool[]
 
   @@index([driverId])
   @@index([brand])
 }
 
 model RidePool {
-  id              Int       @id @default(autoincrement())
-  driverId        Int
-  vehicleId       Int
-  pickupLocation  Json
-  dropLocation    Json
-  departureTime   DateTime
-  availableSeats  Int
-  pricePerSeat    Float
-  status          RideStatus @default(ACTIVE)
-  preferences     Json      @default("{\"smoking\": false, \"pets\": false, \"femaleOnly\": false, \"music\": true}")
-  routeData       Json?
-  bookedSeats     Int       @default(0)
-  passengers      Json      @default("[]")
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                Int        @id @default(autoincrement())
+  driverId          Int
+  vehicleId         Int
+  pickupLocation    Json
+  dropLocation      Json
+  departureTime     DateTime
+  availableSeats    Int
+  pricePerSeat      Float
+  status            RideStatus @default(ACTIVE)
+  preferences       Json       @default("{\"smoking\": false, \"pets\": false, \"femaleOnly\": false, \"music\": true}")
+  routeData         Json?
+  distance          Float?
+  estimatedDuration Int?
+  bookedSeats       Int        @default(0)
+  passengers        Json       @default("[]")
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
-  driver          User      @relation(fields: [driverId], references: [id])
-  vehicle         Vehicle   @relation(fields: [vehicleId], references: [id])
-  trips           Trip[]
-  messages        Message[]
-  rideRequests    RideRequest[]
-  sosAlerts       SOSAlert[]
-  bookings        Booking[]
+  driver       User          @relation(fields: [driverId], references: [id])
+  vehicle      Vehicle       @relation(fields: [vehicleId], references: [id])
+  trips        Trip[]
+  messages     Message[]
+  rideRequests RideRequest[]
+  sosAlerts    SOSAlert[]
+  bookings     Booking[]
 
   @@index([pickupLocation])
   @@index([dropLocation])
   @@index([departureTime])
   @@index([status])
   @@index([driverId])
+  @@index([status, departureTime])
+  @@index([status, driverId])
+  @@index([driverId, status])
 }
 
 model Trip {
-  id              Int       @id @default(autoincrement())
-  ridePoolId      Int
-  driverId        Int
-  riderIds        Int[]
-  startTime       DateTime?
-  endTime         DateTime?
-  status          TripStatus @default(SCHEDULED)
-  totalFare      Float     @default(0)
-  actualDistance Float?
-  actualDuration Int?
-  startLocation  Json?
-  endLocation    Json?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                Int        @id @default(autoincrement())
+  ridePoolId        Int
+  driverId          Int
+  riderIds          Int[]
+  startTime         DateTime?
+  endTime           DateTime?
+  status            TripStatus @default(SCHEDULED)
+  totalFare         Float      @default(0)
+  distance          Float?
+  estimatedDuration Int?
+  actualDistance    Float?
+  actualDuration    Int?
+  startLocation     Json?
+  endLocation       Json?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
-  ridePool        RidePool  @relation(fields: [ridePoolId], references: [id])
-  driver          User      @relation("DriverTrips", fields: [driverId], references: [id])
-  riders          User[]    @relation("RiderTrips")
-  reviews         Review[]
-  payouts         Payout[]
+  ridePool RidePool  @relation(fields: [ridePoolId], references: [id])
+  driver   User      @relation("DriverTrips", fields: [driverId], references: [id])
+  riders   User[]    @relation("RiderTrips")
+  reviews  Review[]
+  payouts  Payout[]
+  payments Payment[]
 
   @@index([ridePoolId])
   @@index([driverId])
@@ -126,39 +147,39 @@ model Trip {
 }
 
 model Message {
-  id              Int       @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   senderId        Int
   receiverId      Int
   ridePoolId      Int?
   content         String
-  isRead          Boolean   @default(false)
-  isSystemMessage Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  isRead          Boolean  @default(false)
+  isSystemMessage Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  sender          User      @relation("SentMessages", fields: [senderId], references: [id])
-  receiver        User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
-  ridePool        RidePool? @relation(fields: [ridePoolId], references: [id])
+  sender   User      @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  ridePool RidePool? @relation(fields: [ridePoolId], references: [id])
 
   @@index([senderId, receiverId])
   @@index([createdAt])
 }
 
 model Review {
-  id          Int       @id @default(autoincrement())
-  tripId      Int
-  reviewerId  Int
-  revieweeId  Int
-  type        ReviewType
-  rating      Int
-  comment     String?
-  isVisible   Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id         Int        @id @default(autoincrement())
+  tripId     Int
+  reviewerId Int
+  revieweeId Int
+  type       ReviewType
+  rating     Int
+  comment    String?
+  isVisible  Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
-  trip        Trip      @relation(fields: [tripId], references: [id])
-  reviewer    User      @relation("ReviewsGiven", fields: [reviewerId], references: [id])
-  reviewee    User      @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+  trip     Trip @relation(fields: [tripId], references: [id])
+  reviewer User @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewee User @relation("ReviewsReceived", fields: [revieweeId], references: [id])
 
   @@index([tripId])
   @@index([reviewerId])
@@ -166,21 +187,21 @@ model Review {
 }
 
 model SOSAlert {
-  id              Int         @id @default(autoincrement())
-  userId          Int
-  ridePoolId      Int?
-  message         String?
-  location        Json?
-  status          SOSStatus   @default(ACTIVE)
-  acknowledgedBy  Int?
-  acknowledgedAt  DateTime?
-  resolvedAt      DateTime?
-  notes           String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  ridePoolId     Int?
+  message        String?
+  location       Json?
+  status         SOSStatus @default(ACTIVE)
+  acknowledgedBy Int?
+  acknowledgedAt DateTime?
+  resolvedAt     DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  user            User        @relation(fields: [userId], references: [id])
-  ridePool        RidePool?   @relation(fields: [ridePoolId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+  ridePool RidePool? @relation(fields: [ridePoolId], references: [id])
 
   @@index([userId])
   @@index([ridePoolId])
@@ -189,21 +210,21 @@ model SOSAlert {
 }
 
 model RideRequest {
-  id              Int             @id @default(autoincrement())
+  id              Int           @id @default(autoincrement())
   ridePoolId      Int
   riderId         Int
-  status          RequestStatus   @default(PENDING)
+  status          RequestStatus @default(PENDING)
   pickupLocation  Json?
   dropLocation    Json?
-  requestedAt     DateTime        @default(now())
+  requestedAt     DateTime      @default(now())
   approvedAt      DateTime?
   rejectedAt      DateTime?
   rejectionReason String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  ridePool        RidePool        @relation(fields: [ridePoolId], references: [id])
-  rider           User            @relation(fields: [riderId], references: [id])
+  ridePool RidePool @relation(fields: [ridePoolId], references: [id])
+  rider    User     @relation(fields: [riderId], references: [id])
 
   @@index([ridePoolId])
   @@index([riderId])
@@ -211,33 +232,33 @@ model RideRequest {
 }
 
 model SagaLog {
-  id            Int       @id @default(autoincrement())
-  sagaType      String
-  status        SagaStatus @default(PENDING)
-  currentStep   Int       @default(0)
-  totalSteps    Int
-  errorMessage  String?
-  context       Json?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  completedAt   DateTime?
+  id           Int        @id @default(autoincrement())
+  sagaType     String
+  status       SagaStatus @default(PENDING)
+  currentStep  Int        @default(0)
+  totalSteps   Int
+  errorMessage String?
+  context      Json?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  completedAt  DateTime?
 
-  stepLogs      SagaStepLog[]
+  stepLogs SagaStepLog[]
 
   @@index([sagaType])
   @@index([status])
 }
 
 model SagaStepLog {
-  id          Int       @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   sagaId     Int
   stepName   String
   status     String
   result     String?
   error      String?
-  executedAt DateTime  @default(now())
+  executedAt DateTime @default(now())
 
-  saga       SagaLog   @relation(fields: [sagaId], references: [id])
+  saga SagaLog @relation(fields: [sagaId], references: [id])
 
   @@index([sagaId])
 }
@@ -289,49 +310,66 @@ enum SagaStatus {
 }
 
 model Booking {
-  id              Int       @id @default(autoincrement())
-  ridePoolId      Int
-  riderId         Int
-  rideRequestId   Int?
-  status          BookingStatus @default(PENDING)
-  pickupLocation  Json?
-  dropLocation    Json?
-  totalAmount     Float     @default(0)
-  paymentOrderId  String?
-  confirmedAt     DateTime?
-  cancelledAt     DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                  Int           @id @default(autoincrement())
+  ridePoolId          Int
+  riderId             Int
+  rideRequestId       Int?
+  seatsBooked         Int           @default(1)
+  status              BookingStatus @default(PENDING)
+  pickupLocation      Json?
+  dropLocation        Json?
+  startDate           DateTime?
+  endDate             DateTime?
+  totalAmount         Float         @default(0)
+  paymentOrderId      String?
+  razorpayPaymentId   String?
+  confirmedAt         DateTime?
+  cancelledAt         DateTime?
+  cancelledBy         Int?
+  cancellationReason   String?
+  refundAmount        Float?
+  refundStatus        RefundStatus?
+  sagaState           SagaStatus?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
-  ridePool        RidePool  @relation(fields: [ridePoolId], references: [id])
-  rider           User      @relation(fields: [riderId], references: [id])
+  ridePool RidePool @relation(fields: [ridePoolId], references: [id])
+  rider    User     @relation(fields: [riderId], references: [id])
 
   @@index([ridePoolId])
   @@index([riderId])
   @@index([status])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([riderId, status])
+  @@index([ridePoolId, riderId])
+  @@index([status, createdAt])
 }
 
 enum BookingStatus {
   PENDING
+  APPROVED
+  PAID
+  ACTIVE
   CONFIRMED
   CANCELLED
   COMPLETED
 }
 
 model Payout {
-  id                Int       @id @default(autoincrement())
-  driverId          Int
-  tripId            Int
-  amount            Float
-  platformFee       Float     @default(0)
-  razorpayPayoutId  String?
-  status            PayoutStatus @default(PENDING)
-  processedAt       DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id               Int          @id @default(autoincrement())
+  driverId         Int
+  tripId           Int
+  amount           Float
+  platformFee      Float        @default(0)
+  razorpayPayoutId String?
+  status           PayoutStatus @default(PENDING)
+  processedAt      DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
-  driver            User      @relation(fields: [driverId], references: [id])
-  trip              Trip      @relation(fields: [tripId], references: [id])
+  driver User @relation(fields: [driverId], references: [id])
+  trip   Trip @relation(fields: [tripId], references: [id])
 
   @@index([driverId])
   @@index([tripId])
@@ -344,4 +382,176 @@ enum PayoutStatus {
   COMPLETED
   FAILED
   CANCELLED
+}
+
+model Payment {
+  id                Int           @id @default(autoincrement())
+  razorpayOrderId   String?       @unique
+  razorpayPaymentId String?       @unique
+  userId            Int?
+  tripId            Int?
+  vehicleId         Int?
+  amount            Float
+  currency          String        @default("INR")
+  status            PaymentStatus @default(PENDING)
+  receipt           String?
+  capturedAmount    Float?
+  refundedAmount    Float?
+  notes             Json?
+  capturedAt        DateTime?
+  refundedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user    User?    @relation(fields: [userId], references: [id])
+  trip    Trip?    @relation(fields: [tripId], references: [id])
+  refunds Refund[]
+
+  @@index([razorpayOrderId])
+  @@index([razorpayPaymentId])
+  @@index([userId])
+  @@index([status])
+}
+
+enum PaymentStatus {
+  PENDING
+  CAPTURED
+  REFUNDED
+  FAILED
+}
+
+model Refund {
+  id                Int          @id @default(autoincrement())
+  razorpayRefundId  String?      @unique
+  razorpayPaymentId String?
+  paymentId         Int
+  amount            Float
+  status            RefundStatus @default(PENDING)
+  speed             String?
+  notes             Json?
+  processedAt       DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+
+  @@index([razorpayRefundId])
+  @@index([paymentId])
+  @@index([status])
+}
+
+enum RefundStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Wallet {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  balance   Float    @default(0)
+  currency  String   @default("INR")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User                @relation(fields: [userId], references: [id])
+  transactions WalletTransaction[]
+
+  @@index([userId])
+}
+
+model WalletTransaction {
+  id          Int             @id @default(autoincrement())
+  walletId    Int
+  userId      Int
+  type        TransactionType
+  amount      Float
+  balance     Float
+  reference   String?
+  description String?
+  createdAt   DateTime        @default(now())
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([walletId])
+  @@index([userId])
+  @@index([type])
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}
+
+model RazorpayCustomer {
+  id         Int      @id @default(autoincrement())
+  customerId String   @unique
+  email      String
+  name       String
+  phone      String?
+  userId     Int?     @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([email])
+}
+
+model DriverLocation {
+  id        Int      @id @default(autoincrement())
+  driverId  Int
+  latitude  Float
+  longitude Float
+  heading   Float?
+  speed     Float?
+  accuracy  Float?
+  timestamp DateTime @default(now())
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  driver User @relation(fields: [driverId], references: [id])
+
+  @@index([driverId])
+  @@index([timestamp])
+  @@index([isActive])
+  @@index([isActive, timestamp])
+  @@index([driverId, timestamp])
+}
+
+model LocationHistory {
+  id           Int          @id @default(autoincrement())
+  driverId     Int
+  latitude     Float
+  longitude    Float
+  heading      Float?
+  speed        Float?
+  accuracy     Float?
+  locationType LocationType @default(DRIVER_LOCATION)
+  relatedId    Int?
+  timestamp    DateTime     @default(now())
+  createdAt    DateTime     @default(now())
+  user         User?        @relation(fields: [userId], references: [id])
+  userId       Int?
+
+  @@index([driverId])
+  @@index([timestamp])
+  @@index([locationType])
+}
+
+enum LocationType {
+  DRIVER_LOCATION
+  PICKUP_LOCATION
+  DROPOFF_LOCATION
+  SOS_LOCATION
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
 }

@@ -1,145 +1,139 @@
-const privacy = require('../../../src/utils/privacy');
+const PrivacyService = require('../../../src/utils/privacy');
 
 describe('Privacy Utils', () => {
   describe('maskPhoneNumber', () => {
     it('should mask phone number correctly', () => {
       const phone = '+1234567890';
+      const result = PrivacyService.maskPhoneNumber(phone);
       
-      const result = privacy.maskPhoneNumber(phone);
-      
-      expect(result).toMatch(/^\+\d{1,3}\*+\*+\*+\d{4}$/);
-      expect(result).toContain('6789');
+      expect(result).toMatch(/^\d{3}-\*{4}-7890$/);
+      expect(result).toContain('7890');
     });
 
     it('should handle 10-digit US numbers', () => {
       const phone = '1234567890';
+      const result = PrivacyService.maskPhoneNumber(phone);
       
-      const result = privacy.maskPhoneNumber(phone);
-      
-      expect(result).toMatch(/^\d{3}\*+\*+\*+\d{4}$/);
-      expect(result).toContain('6789');
+      expect(result).toMatch(/^\d{3}-\*{4}-7890$/);
     });
 
     it('should handle numbers with spaces', () => {
-      const phone = '+1 234 567 890';
+      const phone = '123 456 7890';
+      const result = PrivacyService.maskPhoneNumber(phone);
       
-      const result = privacy.maskPhoneNumber(phone);
-      
-      expect(result).toContain('6789');
+      expect(result).toContain('7890');
     });
 
-    it('should return XXX for invalid phone', () => {
+    it('should return asterisks for invalid phone', () => {
       const phone = '123';
+      const result = PrivacyService.maskPhoneNumber(phone);
       
-      const result = privacy.maskPhoneNumber(phone);
-      
-      expect(result).toBe('XXX-XXX-XXXX');
+      expect(result).toBe('***-***-****');
     });
   });
 
-  describe('generateVirtualPhone', () => {
-    it('should generate virtual phone with correct format', () => {
-      const userId = 123;
+  describe('generateVirtualNumber', () => {
+    it('should generate virtual number with correct format', () => {
+      const result = PrivacyService.generateVirtualNumber();
       
-      const result = privacy.generateVirtualPhone(userId);
-      
-      expect(result).toMatch(/^\+1-8XX-XXX-\d{4}$/);
-      expect(result).toContain(String(userId).padStart(4, '0').slice(-4));
+      expect(result).toMatch(/^\+1-\d{3}-\d{3}-\d{4}$/);
     });
 
-    it('should generate unique phones for different users', () => {
-      const result1 = privacy.generateVirtualPhone(123);
-      const result2 = privacy.generateVirtualPhone(456);
+    it('should generate unique numbers for different calls', () => {
+      const result1 = PrivacyService.generateVirtualNumber();
+      const result2 = PrivacyService.generateVirtualNumber();
       
       expect(result1).not.toBe(result2);
     });
   });
 
-  describe('hashEmail', () => {
-    it('should hash email consistently', () => {
-      const email = 'test@example.com';
-      
-      const result1 = privacy.hashEmail(email);
-      const result2 = privacy.hashEmail(email);
-      
-      expect(result1).toBe(result2);
+  describe('canShowPhoneNumber', () => {
+    it('should return true for in-progress rides', () => {
+      expect(PrivacyService.canShowPhoneNumber('in-progress')).toBe(true);
     });
 
-    it('should produce different hashes for different emails', () => {
-      const hash1 = privacy.hashEmail('test1@example.com');
-      const hash2 = privacy.hashEmail('test2@example.com');
-      
-      expect(hash1).not.toBe(hash2);
+    it('should return true for scheduled rides', () => {
+      expect(PrivacyService.canShowPhoneNumber('scheduled')).toBe(true);
     });
 
-    it('should return 32-char hash', () => {
-      const email = 'test@example.com';
-      
-      const result = privacy.hashEmail(email);
-      
-      expect(result).toHaveLength(32);
+    it('should return false for completed rides', () => {
+      expect(PrivacyService.canShowPhoneNumber('completed')).toBe(false);
     });
   });
 
-  describe('obfuscateAddress', () => {
-    it('should obfuscate full address', () => {
-      const address = '123 Main Street, San Francisco, CA 94102';
+  describe('blurProfile', () => {
+    it('should blur profile when not confirmed', () => {
+      const user = {
+        firstName: 'John',
+        lastName: 'Doe',
+        profilePicture: 'url/to/pic'
+      };
       
-      const result = privacy.obfuscateAddress(address);
+      const result = PrivacyService.blurProfile(user, false);
       
-      expect(result).not.toBe(address);
-      expect(result.length).toBeLessThan(address.length);
+      expect(result.lastName).toBeNull();
+      expect(result.profilePicture).toBe('blurred');
     });
 
-    it('should preserve city when preserveCity is true', () => {
-      const address = '123 Main Street, San Francisco, CA 94102';
+    it('should show full profile when confirmed', () => {
+      const user = {
+        firstName: 'John',
+        lastName: 'Doe',
+        profilePicture: 'url/to/pic'
+      };
       
-      const result = privacy.obfuscateAddress(address, { preserveCity: true });
+      const result = PrivacyService.blurProfile(user, true);
       
-      expect(result).toContain('San Francisco');
-    });
-
-    it('should show only street name when detailed is false', () => {
-      const address = '123 Main Street, San Francisco, CA 94102';
-      
-      const result = privacy.obfuscateAddress(address, { detailed: false });
-      
-      expect(result).toContain('Main Street');
-      expect(result).not.toContain('123');
+      expect(result.lastName).toBe('Doe');
+      expect(result.profilePicture).toBe('url/to/pic');
     });
   });
 
   describe('encryptData', () => {
     it('should encrypt data', () => {
-      const data = 'sensitive information';
+      const key = 'a'.repeat(64);
+      const data = 'test data';
       
-      const result = privacy.encryptData(data);
+      const result = PrivacyService.encryptData(data, key);
       
-      expect(result).not.toBe(data);
-      expect(typeof result).toBe('string');
+      expect(result).toHaveProperty('iv');
+      expect(result).toHaveProperty('data');
+      expect(result.data).not.toBe(data);
     });
 
-    it('should return empty string for empty input', () => {
-      const result = privacy.encryptData('');
+    it('should return object with iv and data', () => {
+      const key = 'a'.repeat(64);
       
-      expect(result).toBe('');
+      const result = PrivacyService.encryptData('test', key);
+      
+      expect(typeof result.iv).toBe('string');
+      expect(typeof result.data).toBe('string');
     });
   });
 
   describe('decryptData', () => {
     it('should decrypt encrypted data', () => {
-      const data = 'sensitive information';
-      const encrypted = privacy.encryptData(data);
+      const key = 'a'.repeat(64);
+      const data = 'test data';
       
-      const decrypted = privacy.decryptData(encrypted);
+      const encrypted = PrivacyService.encryptData(data, key);
+      const decrypted = PrivacyService.decryptData(encrypted.data, key, encrypted.iv);
       
       expect(decrypted).toBe(data);
     });
+  });
 
-    it('should return empty string for empty input', () => {
-      const result = privacy.decryptData('');
-      
-      expect(result).toBe('');
+  describe('isValidPhoneNumber', () => {
+    it('should return true for valid 10-digit phone', () => {
+      expect(PrivacyService.isValidPhoneNumber('1234567890')).toBe(true);
+    });
+
+    it('should return true for valid 11-digit phone', () => {
+      expect(PrivacyService.isValidPhoneNumber('11234567890')).toBe(true);
+    });
+
+    it('should return false for too short phone', () => {
+      expect(PrivacyService.isValidPhoneNumber('12345')).toBe(false);
     });
   });
 });

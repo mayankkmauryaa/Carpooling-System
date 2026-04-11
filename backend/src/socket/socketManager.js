@@ -3,6 +3,7 @@ const http = require('http');
 const jwt = require('jsonwebtoken');
 const { getRedisClient } = require('../database/redis');
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const logger = require('../middleware/logger');
 
 class SocketManager {
   constructor() {
@@ -33,7 +34,7 @@ class SocketManager {
     this.initializeNamespaces();
     this.setupGlobalEvents();
 
-    console.log('Socket.IO server initialized');
+    logger.info('Socket.IO server initialized');
     return this.io;
   }
 
@@ -47,9 +48,13 @@ class SocketManager {
           return next(new Error('Authentication token required'));
         }
 
+        if (!JWT_SECRET || JWT_SECRET === 'your-secret-key') {
+          return next(new Error('JWT_SECRET not configured'));
+        }
+
         const decoded = jwt.verify(token, JWT_SECRET);
         socket.user = {
-          id: decoded.id,
+          id: decoded.userId,
           email: decoded.email,
           role: decoded.role
         };
@@ -76,7 +81,7 @@ class SocketManager {
     const rides = this.namespaces.rides;
 
     rides.on('connection', (socket) => {
-      console.log(`User ${socket.user.id} connected to /rides`);
+      logger.info('Socket connected', { namespace: '/rides', userId: socket.user.id });
 
       socket.on('joinRide', async (rideId) => {
         const room = `ride_${rideId}`;
@@ -172,7 +177,7 @@ class SocketManager {
     const users = this.namespaces.users;
 
     users.on('connection', (socket) => {
-      console.log(`User ${socket.user.id} connected to /users`);
+      logger.info('Socket connected', { namespace: '/users', userId: socket.user.id });
       
       this.connectedUsers.set(socket.user.id, socket.id);
 
@@ -187,7 +192,7 @@ class SocketManager {
       });
 
       socket.on('goOffline', () => {
-        this.connectedDrivers.delete(socket.user.id);
+        this.connectedUsers.delete(socket.user.id);
         this.onlineDrivers.delete(socket.user.id);
         this.io.emit('driverStatusChanged', {
           driverId: socket.user.id,
@@ -223,7 +228,7 @@ class SocketManager {
     const notifications = this.namespaces.notifications;
 
     notifications.on('connection', (socket) => {
-      console.log(`User ${socket.user.id} connected to /notifications`);
+      logger.info('Socket connected', { namespace: '/notifications', userId: socket.user.id });
 
       socket.on('subscribe', (channel) => {
         socket.join(`notification_${channel}`);
@@ -243,7 +248,7 @@ class SocketManager {
     const chat = this.namespaces.chat;
 
     chat.on('connection', (socket) => {
-      console.log(`User ${socket.user.id} connected to /chat`);
+      logger.info('Socket connected', { namespace: '/chat', userId: socket.user.id });
 
       socket.on('joinConversation', (conversationId) => {
         const room = `conversation_${conversationId}`;
@@ -313,7 +318,7 @@ class SocketManager {
 
   setupGlobalEvents() {
     this.io.on('connection', (socket) => {
-      console.log(`User ${socket.user.id} connected globally`);
+      logger.info('Socket connected', { namespace: 'global', userId: socket.user?.id });
     });
   }
 
@@ -325,7 +330,7 @@ class SocketManager {
         return data ? JSON.parse(data) : null;
       }
     } catch (error) {
-      console.error('Redis error:', error);
+      logger.error('Redis getCachedRide error', { error: error.message, rideId });
     }
     return null;
   }
@@ -341,7 +346,7 @@ class SocketManager {
         );
       }
     } catch (error) {
-      console.error('Redis error:', error);
+      logger.error('Redis cacheDriverLocation error', { error: error.message, rideId, driverId });
     }
   }
 

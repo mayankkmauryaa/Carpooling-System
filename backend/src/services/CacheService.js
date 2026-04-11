@@ -10,6 +10,10 @@ class CacheService {
     return redis && redisConnection.isReady();
   }
 
+  isConnected() {
+    return this.isRedisAvailable();
+  }
+
   getFromMemory(key) {
     const item = memoryCache.get(key);
     if (!item) return null;

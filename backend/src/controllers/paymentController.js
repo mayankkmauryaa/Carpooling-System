@@ -1,6 +1,10 @@
 const paymentService = require('../services/paymentService');
+const bookingService = require('../services/bookingService');
+const emailService = require('../services/emailService');
+const eventBus = require('../events/eventBus');
 const { ApiResponse, PaginatedResponse } = require('../dto/response/ApiResponse');
 const { BadRequestException } = require('../exceptions');
+const logger = require('../middleware/logger');
 
 class PaymentController {
   async createOrder(req, res, next) {
@@ -234,7 +238,7 @@ class PaymentController {
       const event = req.body.event;
       const payload = req.body.payload;
 
-      console.log(`Processing webhook: ${event}`);
+      logger.info(`Processing webhook: ${event}`);
 
       switch (event) {
         case 'payment.captured':
@@ -253,7 +257,7 @@ class PaymentController {
           await handleSubscriptionCancelled(payload);
           break;
         default:
-          console.log(`Unhandled webhook event: ${event}`);
+          logger.debug(`Unhandled webhook event: ${event}`);
       }
 
       return ApiResponse.success(res, { received: true }, 'Webhook processed');
@@ -289,27 +293,157 @@ class PaymentController {
 
 async function handlePaymentCaptured(payload) {
   const paymentEntity = payload.payment.entity;
-  console.log(`Payment captured: ${paymentEntity.id}`);
+  const { prisma } = require('../database/connection');
+
+  try {
+    logger.info('Processing payment captured webhook', { paymentId: paymentEntity.id });
+
+    const payment = await prisma.payment.findFirst({
+      where: { razorpayPaymentId: paymentEntity.id }
+    });
+
+    if (payment) {
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: 'CAPTURED',
+          capturedAt: new Date(),
+          capturedAmount: paymentEntity.amount / 100
+        }
+      });
+
+      if (payment.tripId) {
+        await prisma.trip.update({
+          where: { id: payment.tripId },
+          data: { status: 'IN_PROGRESS' }
+        });
+
+        await eventBus.publishPaymentEvent('PAYMENT_CAPTURED', {
+          paymentId: paymentEntity.id,
+          tripId: payment.tripId,
+          amount: paymentEntity.amount / 100
+        });
+      }
+
+      logger.info('Payment captured processed successfully', { paymentId: paymentEntity.id });
+    }
+  } catch (error) {
+    logger.error('Error processing payment captured webhook', { error: error.message, paymentId: paymentEntity.id });
+  }
 }
 
 async function handlePaymentFailed(payload) {
   const paymentEntity = payload.payment.entity;
-  console.log(`Payment failed: ${paymentEntity.id}`);
+  const { prisma } = require('../database/connection');
+
+  try {
+    logger.warn('Processing payment failed webhook', { paymentId: paymentEntity.id });
+
+    const payment = await prisma.payment.findFirst({
+      where: { razorpayPaymentId: paymentEntity.id }
+    });
+
+    if (payment) {
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: { status: 'FAILED' }
+      });
+
+      if (payment.tripId) {
+        await prisma.trip.update({
+          where: { id: payment.tripId },
+          data: { status: 'CANCELLED' }
+        });
+      }
+
+      await eventBus.publishPaymentEvent('PAYMENT_FAILED', {
+        paymentId: paymentEntity.id,
+        tripId: payment?.tripId,
+        error: paymentEntity.error_description
+      });
+    }
+
+    logger.warn('Payment failure processed', { paymentId: paymentEntity.id });
+  } catch (error) {
+    logger.error('Error processing payment failed webhook', { error: error.message, paymentId: paymentEntity.id });
+  }
 }
 
 async function handleRefundProcessed(payload) {
   const refundEntity = payload.refund.entity;
-  console.log(`Refund processed: ${refundEntity.id}`);
+  const { prisma } = require('../database/connection');
+
+  try {
+    logger.info('Processing refund processed webhook', { refundId: refundEntity.id });
+
+    const refund = await prisma.refund.findFirst({
+      where: { razorpayRefundId: refundEntity.id }
+    });
+
+    if (refund) {
+      await prisma.refund.update({
+        where: { id: refund.id },
+        data: {
+          status: 'COMPLETED',
+          processedAt: new Date()
+        }
+      });
+
+      await prisma.payment.update({
+        where: { id: refund.paymentId },
+        data: { refundedAt: new Date() }
+      });
+
+      await eventBus.publishPaymentEvent('REFUND_PROCESSED', {
+        refundId: refundEntity.id,
+        paymentId: refund.paymentId,
+        amount: refundEntity.amount / 100
+      });
+    }
+
+    logger.info('Refund processed successfully', { refundId: refundEntity.id });
+  } catch (error) {
+    logger.error('Error processing refund webhook', { error: error.message, refundId: refundEntity.id });
+  }
 }
 
 async function handleSubscriptionActivated(payload) {
   const subscriptionEntity = payload.subscription.entity;
-  console.log(`Subscription activated: ${subscriptionEntity.id}`);
+  const { prisma } = require('../database/connection');
+
+  try {
+    logger.info('Processing subscription activated webhook', { subscriptionId: subscriptionEntity.id });
+
+    await eventBus.publishPaymentEvent('SUBSCRIPTION_ACTIVATED', {
+      subscriptionId: subscriptionEntity.id,
+      customerId: subscriptionEntity.customer_id,
+      status: subscriptionEntity.status
+    });
+
+    logger.info('Subscription activated processed', { subscriptionId: subscriptionEntity.id });
+  } catch (error) {
+    logger.error('Error processing subscription activated webhook', { error: error.message, subscriptionId: subscriptionEntity.id });
+  }
 }
 
 async function handleSubscriptionCancelled(payload) {
   const subscriptionEntity = payload.subscription.entity;
-  console.log(`Subscription cancelled: ${subscriptionEntity.id}`);
+  const { prisma } = require('../database/connection');
+
+  try {
+    logger.info('Processing subscription cancelled webhook', { subscriptionId: subscriptionEntity.id });
+
+    await eventBus.publishPaymentEvent('SUBSCRIPTION_CANCELLED', {
+      subscriptionId: subscriptionEntity.id,
+      customerId: subscriptionEntity.customer_id,
+      status: subscriptionEntity.status,
+      cancelledAt: new Date()
+    });
+
+    logger.info('Subscription cancelled processed', { subscriptionId: subscriptionEntity.id });
+  } catch (error) {
+    logger.error('Error processing subscription cancelled webhook', { error: error.message, subscriptionId: subscriptionEntity.id });
+  }
 }
 
 module.exports = new PaymentController();

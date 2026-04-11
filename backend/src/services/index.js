@@ -7,6 +7,15 @@ const messageService = require('./MessageService');
 const reviewService = require('./ReviewService');
 const cacheService = require('./CacheService');
 const sosService = require('./SOSService');
+const bookingService = require('./bookingService');
+const paymentService = require('./paymentService');
+const adminService = require('./adminService');
+const emailService = require('./emailService');
+const refundService = require('./refundService');
+const mapsService = require('./mapsService');
+const locationService = require('./locationService');
+const uploadService = require('./uploadService');
+const priceCalculationService = require('./priceCalculationService');
 
 module.exports = {
   authService,
@@ -17,5 +26,14 @@ module.exports = {
   messageService,
   reviewService,
   cacheService,
-  sosService
+  sosService,
+  bookingService,
+  paymentService,
+  adminService,
+  emailService,
+  refundService,
+  mapsService,
+  locationService,
+  uploadService,
+  priceCalculationService
 };

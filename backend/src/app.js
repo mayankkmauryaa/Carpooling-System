@@ -9,8 +9,16 @@ const { globalLimiter } = require('./middleware/rateLimiter');
 const { sanitizeRequest, httpParameterPollution } = require('./middleware/security');
 const v1Routes = require('./routes/v1');
 const { prisma } = require('./database/connection');
+const eventBus = require('./events/eventBus');
+const { httpMetricsMiddleware, metricsEndpoint } = require('./metrics/httpMetrics');
+
+const METRICS_ENABLED = process.env.METRICS_ENABLED !== 'false';
 
 const app = express();
+let server = null;
+
+app.setSocketServer = (s) => { server = s; };
+app.getServer = () => server;
 
 app.use(helmet());
 app.use(cors());
@@ -21,6 +29,10 @@ app.use(httpParameterPollution);
 app.use(sanitizeRequest);
 
 app.use(globalLimiter.middleware());
+
+if (METRICS_ENABLED) {
+  app.use(httpMetricsMiddleware);
+}
 
 app.get('/', (req, res) => {
   res.json({
@@ -47,6 +59,104 @@ app.get('/api/v1/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+app.get('/health/live', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/health/ready', async (req, res) => {
+  const checks = {
+    database: false,
+    redis: false,
+    kafka: false,
+    eventBus: false
+  };
+
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    checks.database = true;
+  } catch (error) {
+    logger.error('Health check: Database failed', { error: error.message });
+  }
+
+  try {
+    const { getRedisClient } = require('./database/redis');
+    const redis = getRedisClient();
+    if (redis) {
+      await redis.ping();
+      checks.redis = true;
+    }
+  } catch (error) {
+    logger.error('Health check: Redis failed', { error: error.message });
+  }
+
+  checks.eventBus = eventBus.isConnected;
+  checks.kafka = eventBus.isConnected;
+
+  const allHealthy = Object.values(checks).every(v => v === true);
+
+  if (allHealthy) {
+    res.status(200).json({
+      status: 'ok',
+      checks,
+      timestamp: new Date().toISOString()
+    });
+  } else {
+    res.status(503).json({
+      status: 'degraded',
+      checks,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+app.get('/health', async (req, res) => {
+  const checks = {
+    database: false,
+    redis: false,
+    kafka: false,
+    eventBus: false
+  };
+
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    checks.database = true;
+  } catch (error) {
+    logger.error('Health check: Database failed', { error: error.message });
+  }
+
+  try {
+    const { getRedisClient } = require('./database/redis');
+    const redis = getRedisClient();
+    if (redis) {
+      await redis.ping();
+      checks.redis = true;
+    }
+  } catch (error) {
+    logger.error('Health check: Redis failed', { error: error.message });
+  }
+
+  checks.eventBus = eventBus.isConnected;
+  checks.kafka = eventBus.isConnected;
+
+  const allHealthy = Object.values(checks).every(v => v === true);
+  const statusCode = allHealthy ? 200 : 503;
+
+  res.status(statusCode).json({
+    status: allHealthy ? 'healthy' : 'unhealthy',
+    checks,
+    version: '1.0.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
+if (METRICS_ENABLED) {
+  app.get('/metrics', metricsEndpoint);
+  app.get('/api/v1/metrics', metricsEndpoint);
+}
 
 app.get('/api/stats', async (req, res, next) => {
   try {

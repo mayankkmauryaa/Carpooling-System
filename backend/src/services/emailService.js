@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 const path = require('path');
 const { circuitBreakerRegistry } = require('../middleware/circuitBreaker');
 const CircuitBreakerConfig = require('../config/circuitBreaker');
+const logger = require('../middleware/logger');
 
 let transporter = null;
 
@@ -41,14 +42,14 @@ async function sendEmail(options) {
       return info;
     });
     
-    console.log('Email sent:', result.messageId);
+    logger.info('Email sent', { messageId: result.messageId, to: options.to });
     return { success: true, messageId: result.messageId };
   } catch (error) {
     if (error.message.includes('Circuit breaker')) {
-      console.warn('Email circuit breaker open, email queued for retry');
+      logger.warn('Email circuit breaker open, email queued for retry', { to: options.to });
       return { success: false, error: 'Service temporarily unavailable', queued: true };
     }
-    console.error('Email error:', error);
+    logger.error('Email send failed', { error: error.message, to: options.to });
     return { success: false, error: error.message };
   }
 }

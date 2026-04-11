@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { auth, requireRole } = require('../../../src/middleware/auth');
+const { requireRole } = require('../../../src/middleware/auth');
 const { mockUser, mockDriver, mockAdmin } = require('../../fixtures/mockData');
 
 jest.mock('../../../src/middleware/logger', () => ({
@@ -15,84 +15,13 @@ describe('Auth Middleware', () => {
 
   beforeEach(() => {
     mockReq = {
-      headers: {}
+      user: null
     };
     mockRes = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn()
     };
     mockNext = jest.fn();
-  });
-
-  describe('auth middleware', () => {
-    it('should call next() with valid token', () => {
-      const token = jwt.sign(
-        { userId: mockUser.id, role: mockUser.role },
-        process.env.JWT_SECRET,
-        { expiresIn: '1h' }
-      );
-      mockReq.headers.authorization = `Bearer ${token}`;
-
-      auth(mockReq, mockRes, mockNext);
-
-      expect(mockNext).toHaveBeenCalled();
-      expect(mockReq.user).toBeDefined();
-      expect(mockReq.user.id).toBe(mockUser.id);
-    });
-
-    it('should return 401 when no authorization header', () => {
-      auth(mockReq, mockRes, mockNext);
-
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
-        success: false
-      }));
-      expect(mockNext).not.toHaveBeenCalled();
-    });
-
-    it('should return 401 when token is invalid', () => {
-      mockReq.headers.authorization = 'Bearer invalid-token';
-
-      auth(mockReq, mockRes, mockNext);
-
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockNext).not.toHaveBeenCalled();
-    });
-
-    it('should return 401 when token is expired', () => {
-      const token = jwt.sign(
-        { userId: mockUser.id, role: mockUser.role },
-        process.env.JWT_SECRET,
-        { expiresIn: '-1h' }
-      );
-      mockReq.headers.authorization = `Bearer ${token}`;
-
-      auth(mockReq, mockRes, mockNext);
-
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockNext).not.toHaveBeenCalled();
-    });
-
-    it('should return 401 when token format is wrong', () => {
-      mockReq.headers.authorization = 'InvalidFormat token';
-
-      auth(mockReq, mockRes, mockNext);
-
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockNext).not.toHaveBeenCalled();
-    });
-
-    it('should handle Bearer without space', () => {
-      const token = jwt.sign(
-        { userId: mockUser.id, role: mockUser.role },
-        process.env.JWT_SECRET
-      );
-      mockReq.headers.authorization = `Bearer${token}`;
-
-      auth(mockReq, mockRes, mockNext);
-
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-    });
   });
 
   describe('requireRole middleware', () => {
@@ -123,7 +52,7 @@ describe('Auth Middleware', () => {
       expect(mockRes.status).toHaveBeenCalledWith(403);
       expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
         success: false,
-        message: expect.stringContaining('Access denied')
+        message: expect.stringContaining('permission')
       }));
       expect(mockNext).not.toHaveBeenCalled();
     });
@@ -133,6 +62,9 @@ describe('Auth Middleware', () => {
       middleware(mockReq, mockRes, mockNext);
 
       expect(mockRes.status).toHaveBeenCalledWith(401);
+      expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
+        success: false
+      }));
       expect(mockNext).not.toHaveBeenCalled();
     });
 

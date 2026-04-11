@@ -392,7 +392,57 @@ The system follows a **Service-Oriented Architecture (SOA)** similar to Uber's d
 | acknowledgedBy | Int?      | Admin who acknowledged         |
 | acknowledgedAt | DateTime? | Acknowledged time              |
 | notes          | String?   | Resolution notes               |
-| resolvedAt     | DateTime? | Resolution time                |
+| resolvedAt     | DateTime? | Resolution time               |
+
+**bookings** - NEW
+
+| Column          | Type      | Description                       |
+| --------------- | --------- | --------------------------------- |
+| id              | Int (PK)  | Auto-increment ID                 |
+| ridePoolId      | Int (FK)  | Reference to RidePool              |
+| riderId         | Int (FK)  | Reference to User                  |
+| rideRequestId   | Int?      | Reference to RideRequest           |
+| status          | Enum      | PENDING, CONFIRMED, CANCELLED     |
+| pickupLocation   | JSON?     | Pickup coordinates                |
+| dropLocation     | JSON?     | Dropoff coordinates               |
+| totalAmount     | Float     | Total booking amount              |
+| paymentOrderId  | String?   | Razorpay order ID                 |
+
+**payouts** - NEW
+
+| Column             | Type      | Description                       |
+| ----------------- | --------- | --------------------------------- |
+| id                | Int (PK)  | Auto-increment ID                 |
+| driverId          | Int (FK)  | Reference to User                 |
+| tripId            | Int (FK)  | Reference to Trip                 |
+| amount            | Float     | Payout amount (80% of fare)      |
+| platformFee       | Float     | Platform fee (20%)                |
+| razorpayPayoutId  | String?   | Razorpay payout ID               |
+| status            | Enum      | PENDING, PROCESSING, COMPLETED    |
+
+**sagaLogs** - NEW
+
+| Column       | Type      | Description                    |
+| ------------ | --------- | ------------------------------ |
+| id           | Int (PK)  | Auto-increment ID              |
+| sagaType     | String    | BOOKING, PAYOUT               |
+| status       | Enum      | PENDING, IN_PROGRESS, COMPLETED |
+| currentStep  | Int       | Current step index            |
+| totalSteps   | Int       | Total number of steps         |
+| errorMessage | String?   | Error message if failed       |
+| context      | JSON?     | Saga context data             |
+| completedAt  | DateTime? | Completion timestamp           |
+
+**sagaStepLogs** - NEW
+
+| Column     | Type      | Description                 |
+| ---------- | --------- | --------------------------- |
+| id         | Int (PK)  | Auto-increment ID           |
+| sagaId     | Int (FK)  | Reference to SagaLog        |
+| stepName   | String    | Step name                  |
+| status     | String    | SUCCESS, COMPENSATED, FAILED |
+| result     | String?   | Step result JSON            |
+| executedAt | DateTime  | Execution timestamp          |
 
 ---
 
@@ -577,20 +627,24 @@ backend/
 
 ## Implementation Status
 
-| Component      | Status | Notes                      |
-| -------------- | ------ | -------------------------- |
-| Backend API    | 100%   | All endpoints complete     |
-| Database       | 100%   | PostgreSQL/Prisma          |
-| Authentication | 100%   | JWT + Google OAuth         |
-| Real-time      | 100%   | Socket.IO complete         |
-| File Upload    | 100%   | Cloudinary integrated      |
-| Email          | 100%   | All templates complete     |
-| Admin Panel    | 100%   | Full dashboard + analytics |
-| Payments       | 100%   | Razorpay integrated        |
-| Testing        | 100%   | Comprehensive unit tests   |
-| Docker         | 100%   | Production-ready           |
-| Documentation  | 100%   | All docs updated           |
-| Frontend       | 0%     | React app pending          |
+| Component       | Status | Notes                             |
+| --------------- | ------ | --------------------------------- |
+| Backend API     | 100%   | All endpoints complete            |
+| Database        | 100%   | PostgreSQL/Prisma                 |
+| Authentication  | 100%   | JWT + Google OAuth                |
+| Real-time       | 100%   | Socket.IO complete                |
+| File Upload     | 100%   | Cloudinary integrated             |
+| Email           | 100%   | All templates complete            |
+| Admin Panel     | 100%   | Full dashboard + analytics        |
+| Payments        | 100%   | Razorpay integrated              |
+| Testing         | 100%   | Comprehensive unit tests          |
+| Docker          | 100%   | Production-ready                 |
+| Documentation   | 100%   | All docs updated                 |
+| Google Maps     | 100%   | Distance Matrix, Directions API   |
+| Event-Driven    | 100%   | Kafka + in-memory fallback       |
+| Circuit Breaker | 100%   | Custom implementation            |
+| Saga Pattern    | 100%   | Booking + Payout sagas           |
+| Frontend        | 0%     | React app pending                |
 
 ---
 
@@ -658,6 +712,59 @@ backend/
 - Notifications
 ```
 
+### 11. Google Maps Service - NEW
+
+**Responsibility:** Real distance and ETA calculations
+
+```javascript
+// Features:
+- Distance Matrix API integration
+- Directions API with polyline decoding
+- Geocoding and reverse geocoding
+- Traffic-aware ETA calculation
+- In-memory caching
+- Fallback to Haversine when API unavailable
+```
+
+### 12. Circuit Breaker - NEW
+
+**Responsibility:** Resilience for external service failures
+
+```javascript
+// Features:
+- State machine: CLOSED -> OPEN -> HALF_OPEN
+- Configurable failure/success thresholds
+- Applied to: Payment, Email, Maps services
+- Automatic recovery
+- Logging and metrics
+```
+
+### 13. Kafka Event Bus - NEW
+
+**Responsibility:** Event-driven async processing
+
+```javascript
+// Features:
+- Event bus with Kafka + in-memory fallback
+- Topics: trip-events, payment-events, notification-events
+- Publishers: Trip, Payment, Notification
+- Subscribers: Trip, Payment
+- Message buffering when Kafka unavailable
+```
+
+### 14. Saga Orchestrator - NEW
+
+**Responsibility:** Distributed transaction management
+
+```javascript
+// Features:
+- Booking Saga: reserve -> payment -> approve -> confirm
+- Payout Saga: validate -> calculate -> process -> notify
+- Compensation/rollback support
+- Saga log persistence
+- State tracking per saga
+```
+
 ---
 
 ## Security Architecture
@@ -698,5 +805,39 @@ HTTP Parameter Pollution:
 
 ---
 
-_Architecture updated: April 10, 2026_
-_All new services documented: Admin, Payments, Uploads, Real-time, Email, Security_
+_Architecture updated: April 11, 2026_
+_All new services documented: Admin, Payments, Uploads, Real-time, Email, Security, Maps, Circuit Breaker, Kafka, Saga_
+
+## Critical Bug Fixes (April 11, 2026)
+
+### Schema Updates
+- Added `verificationStatus` enum to Vehicle model
+- Added `isSuspended`, `suspendedReason` to User model
+- Added `make` field to Vehicle model
+- Added `distance`, `estimatedDuration` to Trip and RidePool models
+- Added `seatsBooked` to Booking model
+- Fixed LocationHistory relation (user -> User)
+
+### Code Fixes
+- Fixed Jest version (v30 -> v29.7.0)
+- Fixed adminService.js field references (name -> firstName/lastName)
+- Fixed SOSAlert references (sOS -> sOSAlert)
+- Fixed paymentService wallet recharge flow
+- Fixed socketManager JWT field (id -> userId)
+- Fixed Kafka eventBus local emission
+- Fixed bookings route import paths
+- Added all missing service exports
+- Added bookingValidator export
+
+### New Features
+- Health check endpoints (/health/live, /health/ready)
+- Token blacklist in auth middleware with Redis persistence
+- Graceful shutdown handling
+- Payment webhook handlers (captured, failed, refund, subscription)
+- VoIP TODO comments for Twilio integration
+- Booking saga wired to booking creation
+- Payout saga wired to trip completion
+- Notification event consumer
+- User event consumer
+- Socket.IO integrated with app.js
+- Enhanced health checks with Redis/Kafka status

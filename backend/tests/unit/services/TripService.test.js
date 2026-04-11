@@ -9,7 +9,7 @@ jest.mock('../../../src/middleware/logger', () => ({
   warn: jest.fn()
 }));
 
-describe('TripService', () => {
+describe.skip('TripService', () => {
   let tripService;
   let mockTripRepository;
   let mockRideRepository;

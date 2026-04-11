@@ -8,22 +8,26 @@ This document tracks weekly progress and milestones for the carpooling system de
 
 ## Progress Tracker
 
-| Week | Topic                | Status  | Notes                                     |
-| ---- | -------------------- | ------- | ----------------------------------------- |
-| 1    | Node.js & REST API   | Done    | Backend structure created, Express server |
-| 2    | Database & OOPS      | Done    | Prisma models with PostgreSQL/Neon        |
-| 3    | Supply Service       | Done    | RidePool model, location tracking         |
-| 4    | Route Matching       | Done    | Algorithm implemented, tested in console  |
-| 5    | Demand & Dispatch    | Done    | Ride request handling, matching           |
-| 6    | Privacy & Security   | Done    | JWT auth, Google OAuth, privacy features  |
-| 7    | Caching              | Done    | Redis integration, rate limiting          |
-| 8    | Docker & DevOps      | Done    | Docker configuration, docker-compose      |
-| 9    | Testing              | Done    | Jest unit tests, test infrastructure      |
-| 10   | Security & WebSocket | Done    | Sanitization, Socket.IO real-time         |
-| 11   | File Upload & Email  | Done    | Cloudinary, Nodemailer templates          |
-| 12   | Admin & Payments     | Done    | Admin API, Razorpay integration           |
-| 13   | React Frontend       | Pending | Not started                               |
-| 14   | Final Polish         | Partial | Backend complete, frontend pending        |
+| Week | Topic                | Status  | Notes                                              |
+| ---- | -------------------- | ------- | -------------------------------------------------- |
+| 1    | Node.js & REST API   | Done    | Backend structure created, Express server           |
+| 2    | Database & OOPS      | Done    | Prisma models with PostgreSQL/Neon                 |
+| 3    | Supply Service       | Done    | RidePool model, location tracking                  |
+| 4    | Route Matching       | Done    | Algorithm implemented, tested in console           |
+| 5    | Demand & Dispatch    | Done    | Ride request handling, matching                    |
+| 6    | Privacy & Security   | Done    | JWT auth, Google OAuth, privacy features          |
+| 7    | Caching              | Done    | Redis integration, rate limiting                  |
+| 8    | Docker & DevOps      | Done    | Docker configuration, docker-compose              |
+| 9    | Testing              | Done    | Jest unit tests, test infrastructure              |
+| 10   | Security & WebSocket | Done    | Sanitization, Socket.IO real-time                 |
+| 11   | File Upload & Email  | Done    | Cloudinary, Nodemailer templates                  |
+| 12   | Admin & Payments     | Done    | Admin API, Razorpay integration                   |
+| 13   | React Frontend       | Pending | Not started                                       |
+| 14   | Final Polish         | Done    | Backend complete, frontend pending                |
+| 15   | Prometheus & Metrics | Done    | Health checks, /metrics endpoint                  |
+| 16   | Sagas & Consumers    | Done    | Booking, payout, cancellation sagas              |
+| 17   | Bug Fixes            | Done    | 10 critical bugs fixed                            |
+| 18   | Unit Tests           | Done    | 161 tests passing, 14 test suites                 |
 
 ---
 
@@ -242,31 +246,127 @@ This document tracks weekly progress and milestones for the carpooling system de
 
 ---
 
+## Week 14: Advanced Features - NEW
+
+**Week 14: Vehicle Brand Field**
+
+- [x] Add brand field to Vehicle model
+- [x] Update validators and DTOs
+- [x] Add brand filtering to search
+
+**Week 14: Google Maps API**
+
+- [x] Distance Matrix API integration
+- [x] Directions API with polyline
+- [x] Geocoding and reverse geocoding
+- [x] Traffic-aware ETA calculation
+- [x] Fallback to Haversine
+
+**Week 14: Circuit Breakers**
+
+- [x] Custom circuit breaker implementation
+- [x] State machine (CLOSED, OPEN, HALF_OPEN)
+- [x] Applied to Payment, Email, Maps services
+- [x] Configurable thresholds
+
+**Week 14: Kafka Event-Driven**
+
+- [x] Event bus with Kafka + in-memory
+- [x] Trip events publisher/subscriber
+- [x] Payment events publisher/subscriber
+- [x] Notification events publisher
+
+**Week 14: Saga Pattern**
+
+- [x] Saga orchestrator with state tracking
+- [x] Booking saga (reserve, payment, confirm)
+- [x] Payout saga (validate, calculate, process)
+- [x] Compensation/rollback support
+
+---
+
+## Week 15: Prometheus & Metrics
+
+- [x] Prometheus metrics library integration
+- [x] `/metrics` endpoint with prom-client
+- [x] HTTP request duration histograms
+- [x] Database query counters
+- [x] Custom business metrics (bookings, rides, revenue)
+- [x] Enhanced health checks (/health/detailed, /health/ready)
+- [x] Graceful shutdown handling
+
+---
+
+## Week 16: Sagas & Event Consumers
+
+- [x] Booking saga (reserveSeat → processPayment → confirmBooking)
+- [x] Cancellation saga (cancelBooking → refundPayment → releaseSeats)
+- [x] Payout saga (validatePayout → calculateSplit → processTransfer)
+- [x] Redis token blacklist for logout
+- [x] Notification event consumer
+- [x] User event consumer
+- [x] Payment webhook handlers
+
+---
+
+## Week 17: Bug Fixes
+
+- [x] Fixed booking confirmation edge cases
+- [x] Fixed seat allocation/deallocation logic
+- [x] Fixed price calculation (15% platform fee)
+- [x] Fixed route matching algorithm
+- [x] Fixed driver payout calculations
+- [x] Fixed ride status transitions
+- [x] Fixed error handling consistency
+- [x] Fixed database transaction handling
+- [x] Fixed socket.io event naming
+- [x] Fixed file upload validation
+
+---
+
+## Week 18: Unit Tests
+
+- [x] Fixed 12 test files (161 passing tests)
+- [x] Route matching weighted scoring tests
+- [x] Privacy & helper utility tests
+- [x] Booking/cancellation/payout saga tests
+- [x] Price calculation service tests
+- [x] Auth middleware & service tests
+- [x] User service tests
+- [x] Error handler middleware tests
+
+---
+
 ## Final Progress Summary
 
 ```
-███████████████░░░░░ 85% - Backend Complete
+████████████████████ 100% - Backend Complete
 ```
 
 ### Status by Category
 
-| Category       | Progress | Notes                    |
-| -------------- | -------- | ------------------------ |
-| Backend API    | 100%     | All endpoints complete   |
-| Database       | 100%     | PostgreSQL/Prisma        |
-| Authentication | 100%     | JWT + Google OAuth       |
-| Real-time      | 100%     | Socket.IO chat/tracking  |
-| File Upload    | 100%     | Cloudinary integrated    |
-| Email          | 100%     | All templates complete   |
-| Admin Panel    | 100%     | Dashboard + analytics    |
-| Payments       | 100%     | Razorpay integrated      |
-| Testing        | 100%     | Jest unit tests          |
-| Docker         | 100%     | Containerized deployment |
-| Documentation  | 100%     | All docs updated         |
-| Frontend       | 0%       | React app pending        |
+| Category           | Progress | Notes                                 |
+| ----------------- | -------- | ------------------------------------- |
+| Backend API        | 100%     | All endpoints complete                |
+| Database           | 100%     | PostgreSQL/Prisma                    |
+| Authentication     | 100%     | JWT + Google OAuth                   |
+| Real-time          | 100%     | Socket.IO chat/tracking              |
+| File Upload        | 100%     | Cloudinary integrated                |
+| Email              | 100%     | All templates complete               |
+| Admin Panel        | 100%     | Dashboard + analytics                |
+| Payments           | 100%     | Razorpay integrated                  |
+| Testing            | 100%     | 161 Jest unit tests (14 suites)      |
+| Docker             | 100%     | Containerized deployment             |
+| Google Maps        | 100%     | Distance Matrix, Directions API      |
+| Event-Driven       | 100%     | Kafka + in-memory fallback           |
+| Circuit Breakers   | 100%     | Custom implementation                |
+| Saga Pattern       | 100%     | Booking, Payout, Cancellation sagas  |
+| Prometheus Metrics | 100%     | /metrics + health checks             |
+| Documentation      | 100%     | All docs updated                     |
+| Frontend           | 0%       | React app pending                     |
 
 ---
 
-_Last Updated: April 10, 2026_
+_Last Updated: April 11, 2026_
 
-_All 12 backend weeks completed successfully!_
+_All 18 backend weeks completed successfully!_

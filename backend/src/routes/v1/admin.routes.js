@@ -23,6 +23,9 @@ router.delete('/users/:userId', adminController.deleteUser);
 
 router.get('/vehicles', adminController.getAllVehicles);
 router.get('/vehicles/:vehicleId', adminController.getVehicleDetails);
+router.post('/vehicles', adminController.createVehicle);
+router.put('/vehicles/:vehicleId', adminController.updateVehicle);
+router.delete('/vehicles/:vehicleId', adminController.deleteVehicle);
 router.put('/vehicles/:vehicleId/verification', adminController.updateVehicleVerification);
 
 router.get('/rides', adminController.getAllRides);

@@ -277,5 +277,7 @@ module.exports = {
   calculatePayoutStep,
   processPayoutStep,
   updateDriverEarningsStep,
-  notifyDriverStep
+  notifyDriverStep,
+  cancelPayoutCompensation,
+  reverseEarningsCompensation
 };

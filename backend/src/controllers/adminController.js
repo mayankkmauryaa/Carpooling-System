@@ -153,6 +153,35 @@ class AdminController {
     }
   }
 
+  async createVehicle(req, res, next) {
+    try {
+      const vehicle = await adminService.createVehicle(req.body);
+      return ApiResponse.success(res, vehicle, 'Vehicle created successfully', 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateVehicle(req, res, next) {
+    try {
+      const { vehicleId } = req.params;
+      const vehicle = await adminService.updateVehicle(parseInt(vehicleId), req.body);
+      return ApiResponse.success(res, vehicle, 'Vehicle updated successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async deleteVehicle(req, res, next) {
+    try {
+      const { vehicleId } = req.params;
+      const result = await adminService.deleteVehicle(parseInt(vehicleId));
+      return ApiResponse.success(res, result, 'Vehicle deleted successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getAllRides(req, res, next) {
     try {
       const { page = 1, limit = 20, ...filters } = req.query;

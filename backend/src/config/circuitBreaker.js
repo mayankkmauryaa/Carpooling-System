@@ -1,10 +1,10 @@
 class CircuitBreakerConfig {
   static get defaults() {
     return {
-      failureThreshold: 5,
-      successThreshold: 2,
-      timeout: 30000,
-      halfOpenMaxCalls: 3
+      failureThreshold: parseInt(process.env.CIRCUIT_BREAKER_FAILURE_THRESHOLD) || 5,
+      successThreshold: parseInt(process.env.CIRCUIT_BREAKER_SUCCESS_THRESHOLD) || 2,
+      timeout: parseInt(process.env.CIRCUIT_BREAKER_TIMEOUT) || 30000,
+      halfOpenMaxCalls: parseInt(process.env.CIRCUIT_BREAKER_HALF_OPEN_MAX_CALLS) || 3
     };
   }
 
@@ -38,7 +38,22 @@ class CircuitBreakerConfig {
   }
 
   static getServiceConfig(serviceName) {
-    return this.services[serviceName] || this.defaults;
+    const customConfig = this.getServiceOverrides(serviceName);
+    return { ...this.services[serviceName], ...customConfig } || this.defaults;
+  }
+
+  static getServiceOverrides(serviceName) {
+    const prefix = `CIRCUIT_BREAKER_${serviceName.toUpperCase()}_`;
+    return {
+      failureThreshold: process.env[`${prefix}FAILURE_THRESHOLD`] 
+        ? parseInt(process.env[`${prefix}FAILURE_THRESHOLD`]) : undefined,
+      successThreshold: process.env[`${prefix}SUCCESS_THRESHOLD`] 
+        ? parseInt(process.env[`${prefix}SUCCESS_THRESHOLD`]) : undefined,
+      timeout: process.env[`${prefix}TIMEOUT`] 
+        ? parseInt(process.env[`${prefix}TIMEOUT`]) : undefined,
+      halfOpenMaxCalls: process.env[`${prefix}HALF_OPEN_MAX_CALLS`] 
+        ? parseInt(process.env[`${prefix}HALF_OPEN_MAX_CALLS`]) : undefined
+    };
   }
 }
 

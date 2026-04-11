@@ -118,7 +118,21 @@ async function cancelPaymentCompensation(context) {
     orderId: context.processPayment?.orderId
   });
 
-  return { success: true };
+  try {
+    if (context.processPayment?.orderId) {
+      await paymentService.cancelOrder(context.processPayment.orderId);
+      logger.info('Booking Saga: Payment order cancelled successfully', {
+        orderId: context.processPayment.orderId
+      });
+    }
+    return { success: true };
+  } catch (error) {
+    logger.error('Booking Saga: Payment cancellation failed during compensation', {
+      error: error.message,
+      orderId: context.processPayment?.orderId
+    });
+    return { success: false, error: error.message };
+  }
 }
 
 async function approveRequestStep(context) {
@@ -238,5 +252,9 @@ module.exports = {
   reserveSeatStep,
   processPaymentStep,
   approveRequestStep,
-  createBookingStep
+  createBookingStep,
+  releaseSeatCompensation,
+  cancelPaymentCompensation,
+  rejectRequestCompensation,
+  cancelBookingCompensation
 };

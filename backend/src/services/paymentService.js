@@ -3,6 +3,7 @@ const { prisma } = require('../database/connection');
 const crypto = require('crypto');
 const { circuitBreakerRegistry } = require('../middleware/circuitBreaker');
 const CircuitBreakerConfig = require('../config/circuitBreaker');
+const logger = require('../middleware/logger');
 
 let razorpay = null;
 
@@ -73,7 +74,29 @@ async function createOrder(amount, currency = 'INR', options = {}) {
     if (error.message.includes('Circuit breaker')) {
       throw new Error('Payment service temporarily unavailable. Please try again later.');
     }
-    console.error('Razorpay order creation error:', error);
+    logger.error('Razorpay order creation failed', { error: error.message });
+    throw error;
+  }
+}
+
+async function cancelOrder(orderId) {
+  try {
+    await executeWithCircuitBreaker(async () => {
+      const razorpayInstance = getRazorpayInstance();
+      return razorpayInstance.orders.cancel(orderId);
+    });
+
+    await prisma.payment.updateMany({
+      where: { razorpayOrderId: orderId },
+      data: { status: 'CANCELLED' }
+    });
+
+    return { success: true, orderId };
+  } catch (error) {
+    if (error.message.includes('Circuit breaker')) {
+      throw new Error('Payment service temporarily unavailable. Please try again later.');
+    }
+    logger.error('Razorpay order cancellation failed', { error: error.message });
     throw error;
   }
 }
@@ -106,7 +129,7 @@ async function createSubscription(customerId, planId, options = {}) {
     if (error.message.includes('Circuit breaker')) {
       throw new Error('Payment service temporarily unavailable. Please try again later.');
     }
-    console.error('Razorpay subscription error:', error);
+    logger.error('Razorpay subscription failed', { error: error.message });
     throw error;
   }
 }
@@ -126,7 +149,7 @@ async function cancelSubscription(subscriptionId) {
     if (error.message.includes('Circuit breaker')) {
       throw new Error('Payment service temporarily unavailable. Please try again later.');
     }
-    console.error('Razorpay cancel subscription error:', error);
+    logger.error('Razorpay cancel subscription failed', { error: error.message });
     throw error;
   }
 }
@@ -166,7 +189,7 @@ async function createCustomer(email, name, options = {}) {
     if (error.message.includes('Circuit breaker')) {
       throw new Error('Payment service temporarily unavailable. Please try again later.');
     }
-    console.error('Razorpay customer creation error:', error);
+    logger.error('Razorpay customer creation failed', { error: error.message });
     throw error;
   }
 }
@@ -185,7 +208,7 @@ async function getCustomer(customerId) {
       status: customer.status
     };
   } catch (error) {
-    console.error('Razorpay get customer error:', error);
+    logger.error('Razorpay get customer failed', { error: error.message });
     throw error;
   }
 }
@@ -223,7 +246,7 @@ async function addCustomerAddress(customerId, address) {
     if (error.message.includes('Circuit breaker')) {
       throw new Error('Payment service temporarily unavailable. Please try again later.');
     }
-    console.error('Razorpay add address error:', error);
+    logger.error('Razorpay add address failed', { error: error.message });
     throw error;
   }
 }
@@ -250,7 +273,7 @@ async function fetchPayment(paymentId) {
     if (error.message.includes('Circuit breaker')) {
       throw new Error('Payment service temporarily unavailable. Please try again later.');
     }
-    console.error('Razorpay fetch payment error:', error);
+    logger.error('Razorpay fetch payment failed', { error: error.message });
     throw error;
   }
 }
@@ -285,7 +308,7 @@ async function capturePayment(paymentId, amount, options = {}) {
     if (error.message.includes('Circuit breaker')) {
       throw new Error('Payment service temporarily unavailable. Please try again later.');
     }
-    console.error('Razorpay capture payment error:', error);
+    logger.error('Razorpay capture payment failed', { error: error.message });
     throw error;
   }
 }
@@ -334,7 +357,7 @@ async function refundPayment(paymentId, amount, options = {}) {
     if (error.message.includes('Circuit breaker')) {
       throw new Error('Payment service temporarily unavailable. Please try again later.');
     }
-    console.error('Razorpay refund error:', error);
+    logger.error('Razorpay refund failed', { error: error.message });
     throw error;
   }
 }
@@ -357,7 +380,7 @@ async function getRefund(refundId) {
     if (error.message.includes('Circuit breaker')) {
       throw new Error('Payment service temporarily unavailable. Please try again later.');
     }
-    console.error('Razorpay fetch refund error:', error);
+    logger.error('Razorpay fetch refund failed', { error: error.message });
     throw error;
   }
 }
@@ -397,7 +420,7 @@ async function createTransfer(orderId, transfers) {
     if (error.message.includes('Circuit breaker')) {
       throw new Error('Payment service temporarily unavailable. Please try again later.');
     }
-    console.error('Razorpay transfer error:', error);
+    logger.error('Razorpay transfer failed', { error: error.message });
     throw error;
   }
 }
@@ -452,7 +475,7 @@ async function createAccount(accountDetails) {
     if (error.message.includes('Circuit breaker')) {
       throw new Error('Payment service temporarily unavailable. Please try again later.');
     }
-    console.error('Razorpay create account error:', error);
+    logger.error('Razorpay create account failed', { error: error.message });
     throw error;
   }
 }
@@ -485,7 +508,7 @@ async function createPayout(accountId, options = {}) {
     if (error.message.includes('Circuit breaker')) {
       throw new Error('Payment service temporarily unavailable. Please try again later.');
     }
-    console.error('Razorpay payout error:', error);
+    logger.error('Razorpay payout failed', { error: error.message });
     throw error;
   }
 }
@@ -519,30 +542,38 @@ async function createWalletTransaction(userId, amount, type, options = {}) {
       notes: { type: 'WALLET_RECHARGE' }
     });
 
-    const payment = await fetchPayment(order.paymentId || options.paymentId);
-    if (payment.status === 'captured') {
-      await prisma.wallet.update({
-        where: { userId },
-        data: { balance: walletBalance.balance + amount }
-      });
+    if (options.paymentId) {
+      const payment = await fetchPayment(options.paymentId);
+      if (payment && payment.status === 'captured') {
+        await prisma.wallet.update({
+          where: { userId },
+          data: { balance: walletBalance.balance + amount }
+        });
 
-      await prisma.walletTransaction.create({
-        data: {
-          userId,
-          type: 'CREDIT',
-          amount,
-          balance: walletBalance.balance + amount,
-          reference: order.orderId,
-          description: options.description || 'Wallet Recharge'
-        }
-      });
+        await prisma.walletTransaction.create({
+          data: {
+            userId,
+            type: 'CREDIT',
+            amount,
+            balance: walletBalance.balance + amount,
+            reference: order.orderId,
+            description: options.description || 'Wallet Recharge'
+          }
+        });
 
-      return {
-        success: true,
-        newBalance: walletBalance.balance + amount,
-        transactionId: order.orderId
-      };
+        return {
+          success: true,
+          newBalance: walletBalance.balance + amount,
+          transactionId: order.orderId
+        };
+      }
     }
+
+    return {
+      success: true,
+      orderId: order.orderId,
+      message: 'Order created. Complete payment to recharge wallet.'
+    };
   } else if (type === 'DEBIT') {
     if (walletBalance.balance < amount) {
       throw new Error('Insufficient wallet balance');

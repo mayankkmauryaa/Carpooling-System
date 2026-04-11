@@ -68,7 +68,22 @@ class TripService extends BaseService {
       throw BadRequestException.rideNotActive();
     }
 
-    const passengers = typeof ride.passengers === 'string' ? JSON.parse(ride.passengers) : (ride.passengers || []);
+    let passengers = [];
+    if (typeof ride.passengers === 'string') {
+      try {
+        passengers = JSON.parse(ride.passengers);
+      } catch (parseError) {
+        logger.error('Failed to parse passengers JSON', {
+          rideId: ride.id,
+          error: parseError.message,
+          rawValue: ride.passengers
+        });
+        passengers = [];
+      }
+    } else {
+      passengers = ride.passengers || [];
+    }
+
     const riderIds = passengers
       .filter(p => p.status === 'confirmed')
       .map(p => p.userId);

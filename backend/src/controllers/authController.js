@@ -1,5 +1,6 @@
 const { authService } = require('../services');
 const { ApiResponse } = require('../dto');
+const { blacklistToken } = require('../middleware/auth');
 
 exports.register = async (req, res, next) => {
   try {
@@ -31,6 +32,9 @@ exports.refresh = async (req, res, next) => {
 
 exports.logout = async (req, res, next) => {
   try {
+    if (req.token) {
+      blacklistToken(req.token);
+    }
     res.json(ApiResponse.success(null, 'Logged out successfully'));
   } catch (error) {
     next(error);
@@ -46,8 +50,12 @@ exports.getMe = async (req, res, next) => {
   }
 };
 
-exports.verify = async (req, res) => {
-  res.json({ status: 'success', data: { valid: true, userId: req.user.id } });
+exports.verify = async (req, res, next) => {
+  try {
+    res.json({ status: 'success', data: { valid: true, userId: req.user.id } });
+  } catch (error) {
+    next(error);
+  }
 };
 
 exports.googleAuth = async (req, res, next) => {

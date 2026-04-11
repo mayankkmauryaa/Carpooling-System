@@ -1,10 +1,10 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Carpooling System API - Routes</title>
-    <style>
+    <style type="text/css">
       body {
         font-family: Arial, sans-serif;
         margin: 20px;
@@ -92,7 +92,7 @@
   <body>
     <h1>🚗 Carpooling System API</h1>
     <p class="section-desc">
-      All available routes for the backend API - Updated April 2026
+      All available routes for the backend API - Updated April 11, 2026
     </p>
 
     <h2>🔐 Authentication</h2>
@@ -733,16 +733,53 @@
       <span class="query">subscribe, unsubscribe, markAsRead</span>
     </div>
 
-    <h2>🌐 System</h2>
-    <div class="route-section">
+    <h2>📊 Prometheus Metrics <span class="badge">NEW</span></h2>
+    <div class="route-section new">
+      <p class="section-desc">Prometheus-compatible metrics endpoint</p>
+      <a href="/metrics"
+        ><span class="method get">GET</span> /metrics</a
+      >
+      - Prometheus metrics<br /><br />
+      <a href="/api/v1/metrics"
+        ><span class="method get">GET</span> /api/v1/metrics</a
+      >
+      - API metrics
+    </div>
+
+    <h2>🏥 Health Checks <span class="badge">NEW</span></h2>
+    <div class="route-section new">
+      <p class="section-desc">System health and readiness endpoints</p>
       <a href="/api/health"><span class="method get">GET</span> /api/health</a>
-      - Health check<br /><br />
+      - Basic health check<br /><br />
       <a href="/api/v1/health"
         ><span class="method get">GET</span> /api/v1/health</a
       >
-      - API version health<br /><br />
-      <a href="/api/stats"><span class="method get">GET</span> /api/stats</a> -
-      System statistics
+      - API health check<br /><br />
+      <a href="/health/live"
+        ><span class="method get">GET</span> /health/live</a
+      >
+      - Liveness probe<br /><br />
+      <a href="/health/ready"
+        ><span class="method get">GET</span> /health/ready</a
+      >
+      - Readiness probe<br /><br />
+      <a href="/health"
+        ><span class="method get">GET</span> /health</a
+      >
+      - Detailed health check<br /><br />
+      <a href="/api/stats"
+        ><span class="method get">GET</span> /api/stats</a
+      >
+      - System statistics
+    </div>
+
+    <h2>🔄 Sagas <span class="badge">NEW</span></h2>
+    <div class="route-section new">
+      <p class="section-desc">Event-driven saga orchestrator for transactions</p>
+      <strong>Booking Saga</strong> - Reserve seat, process payment, confirm booking<br /><br />
+      <strong>Cancellation Saga</strong> - Cancel booking, refund payment, release seats<br /><br />
+      <strong>Payout Saga</strong> - Validate payout, calculate split, process transfer<br /><br />
+      <em>Sagas are triggered internally via event consumers (Kafka/in-memory)</em>
     </div>
 
     <hr />
@@ -751,8 +788,7 @@
       <code>Authorization: Bearer &lt;token&gt;</code>
     </p>
     <p>
-      <strong>Updated:</strong> April 10, 2026 | Backend Complete - All 12
-      Features
+      <strong>Updated:</strong> April 11, 2026 | Backend Complete - All 18 Weeks
     </p>
   </body>
 </html>

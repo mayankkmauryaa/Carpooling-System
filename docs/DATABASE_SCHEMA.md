@@ -16,6 +16,8 @@ This document defines the PostgreSQL database schema for the carpooling system u
 
 ---
 
+## CheckOut Database Diagram : [Diagram](https://drawsql.app/draw?t=b0eb68fc-6703-42d5-999d-b99ded4a514c&view=1)
+
 ## 🗄️ Database: PostgreSQL (Neon)
 
 ### Connection String Format

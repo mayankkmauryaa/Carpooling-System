@@ -2,9 +2,17 @@ const EventEmitter = require('events');
 const KafkaConfig = require('../config/kafka');
 const logger = require('../middleware/logger');
 
+const TOPICS = {
+  TRIP_EVENTS: 'trip-events',
+  PAYMENT_EVENTS: 'payment-events',
+  NOTIFICATION_EVENTS: 'notification-events',
+  USER_EVENTS: 'user-events'
+};
+
 class EventBus extends EventEmitter {
   constructor() {
     super();
+    this.setMaxListeners(100);
     this.producer = null;
     this.isConnected = false;
     this.messageBuffer = [];
@@ -50,7 +58,7 @@ class EventBus extends EventEmitter {
 
   async publish(topic, event) {
     const message = {
-      key: event.key || null,
+      key: event.key || String(Date.now()),
       value: JSON.stringify(event),
       headers: {
         timestamp: Date.now().toString(),
@@ -58,6 +66,8 @@ class EventBus extends EventEmitter {
         version: '1.0'
       }
     };
+
+    this.emitLocal(event.type, event);
 
     if (this.isConnected && this.producer) {
       try {
@@ -72,7 +82,6 @@ class EventBus extends EventEmitter {
       }
     } else {
       this.bufferMessage(topic, message);
-      this.emitLocal(topic, event);
     }
   }
 
@@ -113,11 +122,33 @@ class EventBus extends EventEmitter {
     this.emit('*', event);
   }
 
+  emit(eventType, data) {
+    super.emit(eventType, data);
+    logger.debug(`EventBus: Emitted event ${eventType}`, { data });
+  }
+
+  async publishTripEvent(eventType, data) {
+    return this.publish(TOPICS.TRIP_EVENTS, { type: eventType, ...data });
+  }
+
+  async publishPaymentEvent(eventType, data) {
+    return this.publish(TOPICS.PAYMENT_EVENTS, { type: eventType, ...data });
+  }
+
+  async publishNotificationEvent(eventType, data) {
+    return this.publish(TOPICS.NOTIFICATION_EVENTS, { type: eventType, ...data });
+  }
+
+  async publishUserEvent(eventType, data) {
+    return this.publish(TOPICS.USER_EVENTS, { type: eventType, ...data });
+  }
+
   getStats() {
     return {
       isConnected: this.isConnected,
       bufferSize: this.messageBuffer.length,
-      listeners: this.listenerCount('*')
+      listeners: this.listenerCount('*'),
+      topics: TOPICS
     };
   }
 }
@@ -125,3 +156,4 @@ class EventBus extends EventEmitter {
 const eventBus = new EventBus();
 
 module.exports = eventBus;
+module.exports.TOPICS = TOPICS;

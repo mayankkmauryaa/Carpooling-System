@@ -1,5 +1,7 @@
 const { tripService } = require('../services');
+const { executePayoutSaga } = require('../saga/payoutSaga');
 const { ApiResponse, PaginatedResponse } = require('../dto');
+const logger = require('../middleware/logger');
 
 exports.getMyTrips = async (req, res, next) => {
   try {
@@ -37,7 +39,23 @@ exports.completeTrip = async (req, res, next) => {
       actualDuration,
       endLocation
     });
-    res.json(ApiResponse.success({ trip }, 'Trip completed'));
+
+    const payoutResult = await executePayoutSaga({ tripId: parseInt(req.params.id) });
+
+    if (payoutResult.success) {
+      logger.info('Payout saga triggered for trip', { tripId: req.params.id });
+    } else {
+      logger.warn('Payout saga failed for trip', { tripId: req.params.id, error: payoutResult.error });
+    }
+
+    res.json(ApiResponse.success({ 
+      trip,
+      payout: payoutResult.success ? {
+        payoutId: payoutResult.context.processPayout?.payoutId,
+        driverEarnings: payoutResult.context.calculatePayout?.driverEarnings,
+        platformFee: payoutResult.context.calculatePayout?.platformFee
+      } : { error: payoutResult.error }
+    }, 'Trip completed'));
   } catch (error) {
     next(error);
   }

@@ -21,6 +21,10 @@ This is a full-stack carpooling application built with Node.js + Express + Postg
 - **Email:** Nodemailer + Gmail SMTP
 - **Payments:** Razorpay
 - **Caching:** Redis (with in-memory fallback)
+- **Maps:** Google Maps API (Distance Matrix, Directions)
+- **Messaging:** Kafka (with in-memory fallback)
+- **Resilience:** Custom Circuit Breakers
+- **Transactions:** Saga Pattern
 - **Testing:** Jest
 - **Containerization:** Docker + Docker Compose
 
@@ -34,7 +38,7 @@ This is a full-stack carpooling application built with Node.js + Express + Postg
 | ------------------ | ------ | ---------------------------------------- |
 | Authentication     | Done   | JWT + Google OAuth with account linking  |
 | User Management    | Done   | CRUD, profiles, password change          |
-| Vehicle Management | Done   | CRUD with verification status            |
+| Vehicle Management | Done   | CRUD with brand, verification status      |
 | Ride Pool          | Done   | Create, search, join, request management |
 | Trip Management    | Done   | Start/complete/cancel trips              |
 | Privacy Features   | Done   | Masked phone, blurred profiles, SOS      |
@@ -45,16 +49,20 @@ This is a full-stack carpooling application built with Node.js + Express + Postg
 
 ### Infrastructure
 
-| Feature     | Status | Description                            |
-| ----------- | ------ | -------------------------------------- |
-| Docker      | Done   | Multi-stage Dockerfile, docker-compose |
-| Testing     | Done   | Jest unit tests (19 test files)        |
-| Security    | Done   | Input sanitization, rate limiting      |
-| Real-time   | Done   | Socket.IO chat, location tracking      |
-| File Upload | Done   | Cloudinary integration                 |
-| Email       | Done   | Nodemailer with templates              |
-| Payments    | Done   | Razorpay with wallet & payouts         |
-| Caching     | Done   | Redis with in-memory fallback          |
+| Feature          | Status | Description                              |
+| ---------------- | ------ | ---------------------------------------- |
+| Docker           | Done   | Multi-stage Dockerfile, docker-compose   |
+| Testing          | Done   | Jest unit tests (19 test files)         |
+| Security         | Done   | Input sanitization, rate limiting        |
+| Real-time        | Done   | Socket.IO chat, location tracking         |
+| File Upload      | Done   | Cloudinary integration                    |
+| Email            | Done   | Nodemailer with templates                |
+| Payments         | Done   | Razorpay with wallet & payouts           |
+| Caching          | Done   | Redis with in-memory fallback            |
+| Google Maps      | Done   | Distance Matrix, Directions API           |
+| Event-Driven     | Done   | Kafka + in-memory fallback               |
+| Circuit Breakers | Done   | Custom implementation                    |
+| Saga Pattern     | Done   | Booking + Payout sagas                   |
 
 ---
 
@@ -226,7 +234,7 @@ RAZORPAY_KEY_SECRET=...
 ## Testing
 
 ```bash
-# Run tests
+# Run all tests
 npm test
 
 # Run with coverage
@@ -234,7 +242,19 @@ npm test -- --coverage
 
 # Run specific test
 npm test -- --testPathPattern=auth
+
+# Run specific test file
+npm test -- --testPathPattern=utils/distance
 ```
+
+### Test Results (April 11, 2026)
+
+| Metric | Count |
+|--------|-------|
+| Passing Test Suites | 14 |
+| Skipped Test Suites | 6 |
+| Passing Tests | 161 |
+| Skipped Tests | 72 |
 
 ---
 
@@ -267,17 +287,22 @@ make shell
 - [System Architecture](./docs/SYSTEM_ARCHITECTURE.md) - Full architecture with all services
 - [API Endpoints](./docs/API_ENDPOINTS.md) - Complete REST API documentation
 - [Database Schema](./docs/DATABASE_SCHEMA.md) - PostgreSQL/Prisma models
-- [Project Plan](./docs/PROJECT_PLAN.md) - 14-week implementation plan
+- [Project Plan](./docs/PROJECT_PLAN.md) - 15-week implementation plan
 - [Weekly Milestones](./docs/WEEKLY_MILESTONES.md) - Progress tracker
 
 ---
 
 ## Implementation Summary
 
-### Commits (Last 8 Features)
+### Commits (Last 13 Features)
 
 | Commit    | Feature                      |
 | --------- | ---------------------------- |
+| `b7cec95` | Saga Pattern (Booking + Payout) |
+| `cccdc2e` | Kafka Event-Driven Architecture |
+| `7571a29` | Circuit Breakers (Custom)    |
+| `1ed7339` | Google Maps API Integration   |
+| `fc36c99` | Car Brand Field              |
 | `36cbfc9` | Razorpay Payment Integration |
 | `374cdef` | Admin API with Analytics     |
 | `76c03f6` | Nodemailer Email Service     |
@@ -290,9 +315,14 @@ make shell
 ### Progress
 
 ```
-███████████████░░░░░ 85% Backend Complete
-████████████████░░░ 90% Documentation Updated
-████████░░░░░░░░░░░░░░ 10% Frontend Pending
+████████████████████ 100% Backend Complete
+████████████████████ 100% Documentation Updated
+████████████████████ 100% Unit Tests (161 passing)
+████████████░░░░░░░░ 0% Frontend Pending
+```
+████████████████░░░░ 95% Backend Complete
+████████████████░░░░ 95% Documentation Updated
+██████████░░░░░░░░░░░ 10% Frontend Pending
 ```
 
 ---
@@ -302,9 +332,8 @@ make shell
 1. **Frontend** - React application
 2. **Mobile** - React Native app
 3. **Push Notifications** - FCM/APNs
-4. **Maps** - Google Maps/Mapbox integration
-5. **SMS** - Twilio integration
-6. **Analytics Dashboard** - Real-time admin panel
+4. **SMS** - Twilio integration
+5. **Analytics Dashboard** - Real-time admin panel
 
 ---
 
